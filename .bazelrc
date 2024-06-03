@@ -52,6 +52,12 @@ common --incompatible_default_to_explicit_init_py
 common --verbose_failures
 test --test_output=errors
 
+# Use the remote cache. This will only work for users who have permission to access it.
+common:remote_cache --remote_cache=grpcs://remotebuildexecution.googleapis.com
+common:remote_cache --google_default_credentials=true
+common:remote_cache --remote_instance_name=projects/pigweed-rbe-open/instances/default-instance
+common:remote_cache --remote_upload_local_results=false
+
 # User bazelrc file; see
 # https://bazel.build/configure/best-practices#bazelrc-file
 #
