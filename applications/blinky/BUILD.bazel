@@ -1,0 +1,50 @@
+# Copyright 2024 The Pigweed Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations under
+# the License.
+
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+load("//targets:transition.bzl", "rp2040_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_binary(
+    name = "blinky",
+    srcs = ["main.cc"],
+    deps = [
+        "//libraries/pw_board_led",
+        "@pigweed//pw_chrono:system_clock",
+        "@pigweed//pw_chrono:system_timer",
+        "@pigweed//pw_log",
+        "@pigweed//pw_system",
+    ],
+)
+
+rp2040_binary(
+    name = "rp2040_blinky.elf",
+    binary = ":blinky",
+)
+
+native_binary(
+    name = "console",
+    src = "//tools:console",
+    args = [
+        # TODO(343949763): Remove device path specification if possible.
+        "-d",
+        "/dev/ttyACM0",
+        "-b",
+        "115200",
+        "--token-databases",
+        "$(rootpath //applications/blinky:rp2040_blinky.elf)",
+    ],
+    data = [":rp2040_blinky.elf"],
+)

@@ -1,0 +1,38 @@
+# Copyright 2024 The Pigweed Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations under
+# the License.
+
+# Bazel platform definitions.
+load("@local_config_platform//:constraints.bzl", "HOST_CONSTRAINTS")
+
+# TODO(343326881): Use host_device_simulator platform from
+# upstream Pigweed when that is ready.
+platform(
+    name = "host",
+    constraint_values = [
+    ] + HOST_CONSTRAINTS,
+)
+
+cc_library(
+    name = "boot",
+    srcs = [
+        "boot.cc",
+    ],
+    deps = [
+        "@pigweed//pw_log",
+        "@pigweed//pw_system:init",
+        "@pigweed//pw_system:rpc_server",
+        "@pigweed//pw_thread:sleep",
+        "@pigweed//targets/host:system_rpc_server",
+    ],
+)
