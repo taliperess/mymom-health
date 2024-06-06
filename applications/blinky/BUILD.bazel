@@ -13,6 +13,7 @@
 # the License.
 
 load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+load("@pigweed//targets/host_device_simulator:transition.bzl", "host_device_simulator_binary")
 load("//targets:transition.bzl", "rp2040_binary")
 
 package(default_visibility = ["//visibility:public"])
@@ -29,13 +30,38 @@ cc_binary(
     ],
 )
 
+# Create an rp2040 flashable ELF
 rp2040_binary(
     name = "rp2040_blinky.elf",
     binary = ":blinky",
 )
 
+# Create a host binary using the Pigweed upstream pw_system host_device_simulator.
+host_device_simulator_binary(
+    name = "simulator_blinky",
+    binary = ":blinky",
+)
+
+# Allow running the built simulator_blinky binary with:
+#   bazel run //applications/blinky:simulator_blinky_runner
 native_binary(
-    name = "console",
+    name = "simulator_blinky_runner",
+    src = ":simulator_blinky",
+)
+
+#
+# bazel run //applications/blinky:simulator_console
+native_binary(
+    name = "simulator_console",
+    src = "//tools:console",
+    args = [
+        "--socket",
+        "default",
+    ],
+)
+
+native_binary(
+    name = "rp2040_console",
     src = "//tools:console",
     args = [
         # TODO(343949763): Remove device path specification if possible.
