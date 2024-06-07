@@ -91,8 +91,8 @@ git_repository(
     name = "pigweed",
     # ROLL: Warning: this entry is automatically updated.
     # ROLL: Last updated 2024-06-07.
-    # ROLL: By https://cr-buildbucket.appspot.com/build/8745766591149266433.
-    commit = "465d99734d3a1b1a2cf445cbd445fd3442a8fa55",
+    # ROLL: By https://cr-buildbucket.appspot.com/build/8745766200193822321.
+    commit = "1c97f713f41c5ad54aea564c592db8a7300401ab",
     remote = "https://pigweed.googlesource.com/pigweed/pigweed",
 )
 
@@ -100,8 +100,8 @@ git_repository(
     name = "pw_toolchain",
     # ROLL: Warning: this entry is automatically updated.
     # ROLL: Last updated 2024-06-07.
-    # ROLL: By https://cr-buildbucket.appspot.com/build/8745766591149266433.
-    commit = "465d99734d3a1b1a2cf445cbd445fd3442a8fa55",
+    # ROLL: By https://cr-buildbucket.appspot.com/build/8745766200193822321.
+    commit = "1c97f713f41c5ad54aea564c592db8a7300401ab",
     remote = "https://pigweed.googlesource.com/pigweed/pigweed",
     strip_prefix = "pw_toolchain_bazel",
 )
