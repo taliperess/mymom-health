@@ -42,15 +42,8 @@ host_device_simulator_binary(
     binary = ":blinky",
 )
 
-# Allow running the built simulator_blinky binary with:
-#   bazel run //applications/blinky:simulator_blinky_runner
-native_binary(
-    name = "simulator_blinky_runner",
-    src = ":simulator_blinky",
-)
-
-#
-# bazel run //applications/blinky:simulator_console
+# Connect to a running blinky host_device_simulator_binary with:
+#   bazel run //applications/blinky:simulator_console
 native_binary(
     name = "simulator_console",
     src = "//tools:console",
