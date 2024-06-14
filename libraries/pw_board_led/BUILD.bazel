@@ -12,7 +12,8 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-load("@pigweed//pw_build:pigweed.bzl", "host_backend_alias", "pw_facade")
+load("@pigweed//pw_build:compatibility.bzl", "host_backend_alias")
+load("@pigweed//pw_build:pigweed.bzl", "pw_facade")
 
 package(default_visibility = ["//visibility:public"])
 
