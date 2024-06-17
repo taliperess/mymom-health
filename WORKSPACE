@@ -90,18 +90,18 @@ rules_fuzzing_dependencies()
 git_repository(
     name = "pigweed",
     # ROLL: Warning: this entry is automatically updated.
-    # ROLL: Last updated 2024-06-16.
-    # ROLL: By https://cr-buildbucket.appspot.com/build/8744939448234798993.
-    commit = "8059f92ef1a93df94bf7a1fa2d3cae46cf689f30",
+    # ROLL: Last updated 2024-06-17.
+    # ROLL: By https://cr-buildbucket.appspot.com/build/8744860130638231489.
+    commit = "76f06970fcdd064f7a85d3d8ffe779a1cfa91b69",
     remote = "https://pigweed.googlesource.com/pigweed/pigweed",
 )
 
 git_repository(
     name = "pw_toolchain",
     # ROLL: Warning: this entry is automatically updated.
-    # ROLL: Last updated 2024-06-16.
-    # ROLL: By https://cr-buildbucket.appspot.com/build/8744939448234798993.
-    commit = "8059f92ef1a93df94bf7a1fa2d3cae46cf689f30",
+    # ROLL: Last updated 2024-06-17.
+    # ROLL: By https://cr-buildbucket.appspot.com/build/8744860130638231489.
+    commit = "76f06970fcdd064f7a85d3d8ffe779a1cfa91b69",
     remote = "https://pigweed.googlesource.com/pigweed/pigweed",
     strip_prefix = "pw_toolchain_bazel",
 )
