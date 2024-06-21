@@ -14,11 +14,6 @@
 
 package(default_visibility = ["//visibility:public"])
 
-constraint_value(
-    name = "backend_constraint_value",
-    constraint_setting = "//libraries/pw_board_led:pw_board_led_constraint_setting",
-)
-
 cc_library(
     name = "pw_board_led_host",
     srcs = ["led.cc"],
@@ -26,4 +21,6 @@ cc_library(
         "//libraries/pw_board_led:pw_board_led.facade",
         "@pigweed//pw_log",
     ],
+    # TODO: https://pwbug.dev/348008794 - Mark incompatible_with_mcu once
+    # that's implemented.
 )

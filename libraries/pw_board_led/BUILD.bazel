@@ -20,21 +20,13 @@ package(default_visibility = ["//visibility:public"])
 pw_facade(
     name = "pw_board_led",
     hdrs = ["public/pw_board_led/led.h"],
-    backend = ":pw_board_led_backend",
+    backend = ":backend",
     includes = ["public"],
 )
 
-constraint_setting(
-    name = "pw_board_led_constraint_setting",
-)
-
-alias(
-    name = "pw_board_led_backend",
-    actual = select({
-        "//libraries/pw_board_led_host:backend_constraint_value": "//libraries/pw_board_led_host",
-        "//libraries/pw_board_led_rp2040:backend_constraint_value": "//libraries/pw_board_led_rp2040",
-        "//conditions:default": ":unspecified_backend",
-    }),
+label_flag(
+    name = "backend",
+    build_setting_default = ":unspecified_backend",
 )
 
 host_backend_alias(

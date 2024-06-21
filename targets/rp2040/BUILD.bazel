@@ -17,7 +17,6 @@ package(default_visibility = ["//visibility:public"])
 platform(
     name = "platform",
     constraint_values = [
-        "//libraries/pw_board_led_rp2040:backend_constraint_value",
         "@freertos//:port_ARM_CM0",
         "@freertos//:disable_task_statics",
         "@pico-sdk//bazel/constraint:rp2040",

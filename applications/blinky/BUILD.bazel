@@ -47,6 +47,7 @@ host_device_simulator_binary(
 native_binary(
     name = "simulator_console",
     src = "//tools:console",
+    # This arg lets us skip manual port selection.
     args = [
         "--socket",
         "default",
