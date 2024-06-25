@@ -20,7 +20,6 @@ platform(
         "@freertos//:port_ARM_CM0",
         "@freertos//:disable_task_statics",
         "@pico-sdk//bazel/constraint:rp2040",
-        "@pico-sdk//bazel/constraint:stdio_usb",
         "@pigweed//pw_build/constraints/rtos:freertos",
         "@pigweed//pw_build/constraints/chipset:rp2040",
         "@pigweed//pw_interrupt_cortex_m:backend",

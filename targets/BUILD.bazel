@@ -19,7 +19,7 @@ package(default_visibility = ["//visibility:public"])
 alias(
     name = "malloc",
     actual = select({
-        "@pico-sdk//bazel/constraint:rp2": "@pico-sdk//src/rp2_common/pico_malloc",
+        "@pico-sdk//bazel/constraint:rp2040": "@pico-sdk//src/rp2_common/pico_malloc",
         "//conditions:default": "@bazel_tools//tools/cpp:malloc",
     }),
 )

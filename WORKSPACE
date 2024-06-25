@@ -202,17 +202,6 @@ http_archive(
     urls = ["https://github.com/STMicroelectronics/cmsis_core/archive/refs/tags/v5.4.0_cm4.tar.gz"],
 )
 
-git_repository(
-    name = "pico-sdk",
-    commit = "4de7ec6bd73cd154533f35d9058279267ba77176",
-    remote = "https://pigweed.googlesource.com/third_party/github/raspberrypi/pico-sdk",
-)
+load("@pigweed//targets/rp2040:deps.bzl", "pigweed_rp2_deps")
 
-# TODO: Provide tinyusb as a proper Bazel module.
-http_archive(
-    name = "tinyusb",
-    build_file = "@pico-sdk//src/rp2_common/tinyusb:tinyusb.BUILD",
-    sha256 = "ac57109bba00d26ffa33312d5f334990ec9a9a4d82bf890ed8b825b4610d1da2",
-    strip_prefix = "tinyusb-86c416d4c0fb38432460b3e11b08b9de76941bf5",
-    url = "https://github.com/hathach/tinyusb/archive/86c416d4c0fb38432460b3e11b08b9de76941bf5.zip",
-)
+pigweed_rp2_deps()
