@@ -1,0 +1,4 @@
+{
+    "bazel.enableCodeLens": true,
+    "bazel.executable": "bazelisk"
+}
