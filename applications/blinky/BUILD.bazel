@@ -74,3 +74,13 @@ flash_rp2040(
     name = "flash",
     rp2040_binary = "rp2040_blinky.elf"
 )
+
+load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile_commands")
+
+refresh_compile_commands(
+    name = "refresh_compile_commands",
+    targets = {
+      "//applications/blinky:blinky": "",
+      "//applications/blinky:rp2040_blinky.elf": ""
+    },
+)
