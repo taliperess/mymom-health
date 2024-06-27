@@ -20,6 +20,7 @@ py_binary(
     name = "console",
     srcs = ["showcase_tools/console.py"],
     deps = [
+        "//applications/blinky:py_pb2",
         "//libraries/rpc:rp2040_system_protos_py_pb2",
         "@pigweed//pw_protobuf:common_py_pb2",
         "@pigweed//pw_rpc:echo_py_pb2",

@@ -16,6 +16,14 @@ load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 load("@pigweed//targets/host_device_simulator:transition.bzl", "host_device_simulator_binary")
 load("@pigweed//targets/rp2040:flash.bzl", "flash_rp2040")
 load("//targets:transition.bzl", "rp2040_binary")
+load(
+    "@pigweed//pw_protobuf_compiler:pw_proto_library.bzl",
+    "pw_proto_filegroup",
+    "pwpb_proto_library",
+    "pwpb_rpc_proto_library",
+)
+load("@rules_python//python:proto.bzl", "py_proto_library")
+load("@rules_python//python:defs.bzl", "py_binary")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -23,10 +31,12 @@ cc_binary(
     name = "blinky",
     srcs = ["main.cc"],
     deps = [
+        ":pwpb_rpc",
         "//libraries/pw_board_led",
         "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_chrono:system_timer",
         "@pigweed//pw_log",
+        "@pigweed//pw_sync:interrupt_spin_lock",
         "@pigweed//pw_system",
     ],
 )
@@ -72,7 +82,33 @@ native_binary(
 
 flash_rp2040(
     name = "flash",
-    rp2040_binary = "rp2040_blinky.elf"
+    rp2040_binary = "rp2040_blinky.elf",
+)
+
+proto_library(
+    name = "proto",
+    srcs = ["blinky.proto"],
+    import_prefix = "blinky_pb",
+    strip_import_prefix = "/applications/blinky",
+    deps = [
+        "@pigweed//pw_protobuf:common_proto",
+    ],
+)
+
+pwpb_proto_library(
+    name = "pwpb",
+    deps = [":proto"],
+)
+
+pwpb_rpc_proto_library(
+    name = "pwpb_rpc",
+    pwpb_proto_library_deps = [":pwpb"],
+    deps = [":proto"],
+)
+
+py_proto_library(
+    name = "py_pb2",
+    deps = [":proto"],
 )
 
 load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile_commands")
