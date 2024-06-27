@@ -16,7 +16,7 @@
 
 #include <mutex>
 
-#include "applications/blinky/blinky_pb/blinky.rpc.pwpb.h"
+#include "applications/blinky/blinky_pb/blinky.rpc.pb.h"
 #include "pw_board_led/led.h"
 #include "pw_chrono/system_clock.h"
 #include "pw_chrono/system_timer.h"
@@ -54,10 +54,9 @@ void ToggleLedCallback(pw::chrono::SystemClock::time_point) {
 }
 
 class BlinkyService final
-    : public blinky::pw_rpc::pwpb::Blinky::Service<BlinkyService> {
+    : public blinky::pw_rpc::nanopb::Blinky::Service<BlinkyService> {
 public:
-  pw::Status ToggleLed(const pw::protobuf::pwpb::Empty::Message &,
-                       pw::protobuf::pwpb::Empty::Message &) {
+  pw::Status ToggleLed(const pw_protobuf_Empty &, pw_protobuf_Empty &) {
     std::lock_guard lock(blink_lock);
     blink_timer.Cancel();
     num_toggles = 0;
@@ -65,8 +64,7 @@ public:
     return pw::OkStatus();
   }
 
-  pw::Status Blink(const blinky::pwpb::BlinkRequest::Message &request,
-                   pw::protobuf::pwpb::Empty::Message &) {
+  pw::Status Blink(const blinky_BlinkRequest &request, pw_protobuf_Empty &) {
     std::lock_guard lock(blink_lock);
 
     blink_timer.Cancel();
@@ -86,16 +84,15 @@ public:
     auto actual_ms =
         std::chrono::duration_cast<std::chrono::milliseconds>(blink_interval);
 
-    if (!request.blink_count.has_value()) {
+    if (!request.has_blink_count) {
       PW_LOG_INFO("Blinking forever at a %ums interval",
                   static_cast<unsigned>(blink_interval.count()));
       num_toggles = std::numeric_limits<uint32_t>::max();
     } else {
-      PW_LOG_INFO("Blinking %u times at a %ums interval",
-                  request.blink_count.value(),
+      PW_LOG_INFO("Blinking %u times at a %ums interval", request.blink_count,
                   static_cast<unsigned>(actual_ms.count()));
       // Multiply by two as each blink is an on/off pair.
-      num_toggles = request.blink_count.value() * 2;
+      num_toggles = request.blink_count * 2;
     }
 
     pw::system::GetWorkQueue().PushWork(ScheduleLedToggle);

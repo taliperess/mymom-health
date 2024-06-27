@@ -14,26 +14,27 @@
 #pragma once
 
 #include "hardware/adc.h"
-#include "rp2040_system/rp2040_system.pwpb.h"
-#include "rp2040_system/rp2040_system.rpc.pwpb.h"
 #include "pico/bootrom.h"
 #include "pw_status/status.h"
+#include "rp2040_system/rp2040_system.rpc.pb.h"
 
 namespace rp2040_system::rpc {
 
-class Rp2040_SystemService final : public pw_rpc::pwpb::Rp2040_System::Service<Rp2040_SystemService> {
- public:
-  pw::Status Reboot(const pwpb::RebootRequest::Message& request,
-                    pwpb::RebootResponse::Message& /*response*/) {
+class Rp2040_SystemService final
+    : public pw_rpc::nanopb::Rp2040_System::Service<Rp2040_SystemService> {
+public:
+  pw::Status Reboot(const rp2040_system_rpc_RebootRequest &request,
+                    pw_protobuf_Empty & /*response*/) {
     uint32_t disable_interface_mask = 0;
 
     if (request.reboot_type ==
-        pwpb::RebootType::Enum::BOTH_MASS_STORAGE_AND_PICOBOOT) {
+        rp2040_system_rpc_RebootType_Enum_BOTH_MASS_STORAGE_AND_PICOBOOT) {
       disable_interface_mask = 0;
-    } else if (request.reboot_type == pwpb::RebootType::Enum::PICOBOOT_ONLY) {
+    } else if (request.reboot_type ==
+               rp2040_system_rpc_RebootType_Enum_PICOBOOT_ONLY) {
       disable_interface_mask = 1;
     } else if (request.reboot_type ==
-               pwpb::RebootType::Enum::MASS_STORAGE_ONLY) {
+               rp2040_system_rpc_RebootType_Enum_MASS_STORAGE_ONLY) {
       disable_interface_mask = 2;
     } else {
       return pw::Status::Unknown();
@@ -43,10 +44,10 @@ class Rp2040_SystemService final : public pw_rpc::pwpb::Rp2040_System::Service<R
     return pw::OkStatus();
   }
 
-  pw::Status OnboardTemp(const pwpb::OnboardTempRequest::Message& /*request*/,
-                         pwpb::OnboardTempResponse::Message& response) {
+  pw::Status OnboardTemp(const pw_protobuf_Empty & /*request*/,
+                         rp2040_system_rpc_OnboardTempResponse &response) {
     adc_set_temp_sensor_enabled(true);
-    adc_select_input(4);  // 4 is the on board temp sensor.
+    adc_select_input(4); // 4 is the on board temp sensor.
 
     // See raspberry-pi-pico-c-sdk.pdf, Section '4.1.1. hardware_adc'
     const float conversion_factor = 3.3f / (1 << 12);
@@ -58,4 +59,4 @@ class Rp2040_SystemService final : public pw_rpc::pwpb::Rp2040_System::Service<R
   }
 };
 
-}  // namespace rp2040_system::rpc
+} // namespace rp2040_system::rpc

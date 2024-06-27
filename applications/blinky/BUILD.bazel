@@ -18,9 +18,8 @@ load("@pigweed//targets/rp2040:flash.bzl", "flash_rp2040")
 load("//targets:transition.bzl", "rp2040_binary")
 load(
     "@pigweed//pw_protobuf_compiler:pw_proto_library.bzl",
-    "pw_proto_filegroup",
-    "pwpb_proto_library",
-    "pwpb_rpc_proto_library",
+    "nanopb_proto_library",
+    "nanopb_rpc_proto_library",
 )
 load("@rules_python//python:proto.bzl", "py_proto_library")
 load("@rules_python//python:defs.bzl", "py_binary")
@@ -31,7 +30,7 @@ cc_binary(
     name = "blinky",
     srcs = ["main.cc"],
     deps = [
-        ":pwpb_rpc",
+        ":nanopb_rpc",
         "//libraries/pw_board_led",
         "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_chrono:system_timer",
@@ -95,14 +94,14 @@ proto_library(
     ],
 )
 
-pwpb_proto_library(
-    name = "pwpb",
+nanopb_proto_library(
+    name = "nanopb",
     deps = [":proto"],
 )
 
-pwpb_rpc_proto_library(
-    name = "pwpb_rpc",
-    pwpb_proto_library_deps = [":pwpb"],
+nanopb_rpc_proto_library(
+    name = "nanopb_rpc",
+    nanopb_proto_library_deps = [":nanopb"],
     deps = [":proto"],
 )
 

@@ -19,7 +19,7 @@
 #define PW_LOG_MODULE_NAME "pw_system"
 
 #include "FreeRTOS.h"
-#include "rp2040_system/rp2040_system_service_pwpb.h"
+#include "rp2040_system/rp2040_system_service_nanopb.h"
 #include "pico/stdlib.h"
 #include "pw_assert/check.h"
 #include "pw_log/log.h"

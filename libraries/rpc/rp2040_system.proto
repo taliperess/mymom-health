@@ -18,8 +18,8 @@ package rp2040_system.rpc;
 import "pw_protobuf_protos/common.proto";
 
 service Rp2040_System {
-  rpc Reboot(RebootRequest) returns (RebootResponse);
-  rpc OnboardTemp(OnboardTempRequest) returns (OnboardTempResponse);
+  rpc Reboot(RebootRequest) returns (pw.protobuf.Empty);
+  rpc OnboardTemp(pw.protobuf.Empty) returns (OnboardTempResponse);
 }
 
 message RebootType {
@@ -35,9 +35,6 @@ message RebootRequest {
   RebootType.Enum reboot_type = 1;  // Required
 }
 
-message RebootResponse {}
-
-message OnboardTempRequest {}
 message OnboardTempResponse {
   float temp = 1;
 }
