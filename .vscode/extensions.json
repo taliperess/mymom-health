@@ -1,7 +1,8 @@
 {
     "recommendations": [
         "BazelBuild.vscode-bazel",
-        "llvm-vs-code-extensions.vscode-clangd"
+        "llvm-vs-code-extensions.vscode-clangd",
+        "pigweed.pigweed-vscode"
     ],
     "unwantedRecommendations": [
         "ms-vscode.cpptools"
