@@ -13,6 +13,7 @@
 # the License.
 
 load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile_commands")
 load("@pigweed//targets/host_device_simulator:transition.bzl", "host_device_simulator_binary")
 load("@pigweed//targets/rp2040:flash.bzl", "flash_rp2040")
 load("//targets:transition.bzl", "rp2040_binary")
@@ -110,12 +111,15 @@ py_proto_library(
     deps = [":proto"],
 )
 
-load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile_commands")
-
 refresh_compile_commands(
     name = "refresh_compile_commands",
+    out_dir = ".compile_commands",
+    target_file_names = {
+        "//applications/blinky:simulator_blinky": "host_simulator",
+        "//applications/blinky:rp2040_blinky.elf": "rp2040",
+    },
     targets = {
-      "//applications/blinky:blinky": "",
-      "//applications/blinky:rp2040_blinky.elf": ""
+        "//applications/blinky:simulator_blinky": "",
+        "//applications/blinky:rp2040_blinky.elf": "",
     },
 )
