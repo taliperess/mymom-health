@@ -69,9 +69,6 @@ native_binary(
     name = "rp2040_console",
     src = "//tools:console",
     args = [
-        # TODO(343949763): Remove device path specification if possible.
-        "-d",
-        "/dev/ttyACM0",
         "-b",
         "115200",
         "--token-databases",
