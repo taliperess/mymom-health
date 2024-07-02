@@ -16,7 +16,7 @@
 
 #include <mutex>
 
-#include "applications/blinky/blinky_pb/blinky.rpc.pb.h"
+#include "apps/blinky/blinky_pb/blinky.rpc.pb.h"
 #include "pw_board_led/led.h"
 #include "pw_chrono/system_clock.h"
 #include "pw_chrono/system_timer.h"

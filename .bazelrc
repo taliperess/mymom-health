@@ -37,9 +37,9 @@ build --@pico-sdk//bazel/config:PICO_STDIO_UART=True
 # bazel build --config=presubmit
 build:presubmit -- \
   //... \
-  //applications/blinky:blinky \
-  //applications/blinky:rp2040_blinky.elf \
-  //applications/blinky:simulator_blinky \
+  //apps/blinky:blinky \
+  //apps/blinky:rp2040_blinky.elf \
+  //apps/blinky:simulator_blinky \
   //tools:console
 
 # Don't automatically create __init__.py files.

@@ -54,7 +54,7 @@ host_device_simulator_binary(
 )
 
 # Connect to a running blinky host_device_simulator_binary with:
-#   bazel run //applications/blinky:simulator_console
+#   bazel run //apps/blinky:simulator_console
 native_binary(
     name = "simulator_console",
     src = "//tools:console",
@@ -72,7 +72,7 @@ native_binary(
         "-b",
         "115200",
         "--token-databases",
-        "$(rootpath //applications/blinky:rp2040_blinky.elf)",
+        "$(rootpath //apps/blinky:rp2040_blinky.elf)",
     ],
     data = [":rp2040_blinky.elf"],
 )
@@ -86,7 +86,7 @@ proto_library(
     name = "proto",
     srcs = ["blinky.proto"],
     import_prefix = "blinky_pb",
-    strip_import_prefix = "/applications/blinky",
+    strip_import_prefix = "/apps/blinky",
     deps = [
         "@pigweed//pw_protobuf:common_proto",
     ],
@@ -112,11 +112,11 @@ refresh_compile_commands(
     name = "refresh_compile_commands",
     out_dir = ".compile_commands",
     target_file_names = {
-        "//applications/blinky:simulator_blinky": "host_simulator",
-        "//applications/blinky:rp2040_blinky.elf": "rp2040",
+        "//apps/blinky:simulator_blinky": "host_simulator",
+        "//apps/blinky:rp2040_blinky.elf": "rp2040",
     },
     targets = {
-        "//applications/blinky:simulator_blinky": "",
-        "//applications/blinky:rp2040_blinky.elf": "",
+        "//apps/blinky:simulator_blinky": "",
+        "//apps/blinky:rp2040_blinky.elf": "",
     },
 )
