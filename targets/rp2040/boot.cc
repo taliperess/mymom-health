@@ -19,12 +19,12 @@
 #define PW_LOG_MODULE_NAME "pw_system"
 
 #include "FreeRTOS.h"
-#include "rp2040_system/rp2040_system_service_nanopb.h"
 #include "pico/stdlib.h"
 #include "pw_assert/check.h"
 #include "pw_log/log.h"
 #include "pw_string/util.h"
 #include "pw_system/init.h"
+#include "rp2040_system/rp2040_system_service_nanopb.h"
 #include "task.h"
 
 namespace {
@@ -37,7 +37,7 @@ StaticTask_t freertos_timer_tcb;
 
 std::array<char, configMAX_TASK_NAME_LEN> temp_thread_name_buffer;
 
-}  // namespace
+} // namespace
 
 extern "C" {
 
@@ -48,23 +48,23 @@ unsigned long getRunTimeCounterValue(void) {
 }
 
 // Required for configCHECK_FOR_STACK_OVERFLOW.
-void vApplicationStackOverflowHook(TaskHandle_t, char* pcTaskName) {
+void vApplicationStackOverflowHook(TaskHandle_t, char *pcTaskName) {
   pw::string::Copy(pcTaskName, temp_thread_name_buffer);
   PW_CRASH("Stack OVF for task %s", temp_thread_name_buffer.data());
 }
 
 // Required for configUSE_TIMERS.
-void vApplicationGetTimerTaskMemory(StaticTask_t** ppxTimerTaskTCBBuffer,
-                                    StackType_t** ppxTimerTaskStackBuffer,
-                                    uint32_t* pulTimerTaskStackSize) {
+void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
+                                    StackType_t **ppxTimerTaskStackBuffer,
+                                    uint32_t *pulTimerTaskStackSize) {
   *ppxTimerTaskTCBBuffer = &freertos_timer_tcb;
   *ppxTimerTaskStackBuffer = freertos_timer_stack.data();
   *pulTimerTaskStackSize = freertos_timer_stack.size();
 }
 
-void vApplicationGetIdleTaskMemory(StaticTask_t** ppxIdleTaskTCBBuffer,
-                                   StackType_t** ppxIdleTaskStackBuffer,
-                                   uint32_t* pulIdleTaskStackSize) {
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
+                                   StackType_t **ppxIdleTaskStackBuffer,
+                                   uint32_t *pulIdleTaskStackSize) {
   *ppxIdleTaskTCBBuffer = &freertos_idle_tcb;
   *ppxIdleTaskStackBuffer = freertos_idle_stack.data();
   *pulIdleTaskStackSize = freertos_idle_stack.size();
@@ -83,4 +83,4 @@ int main() {
   PW_UNREACHABLE;
 }
 
-}  // extern "C"
+} // extern "C"

@@ -29,4 +29,4 @@ pw::Status BlinkyService::Blink(const blinky_BlinkRequest &request,
   return blinky_.Blink(blink_count, interval_ms);
 }
 
-}  // namespace am
+} // namespace am

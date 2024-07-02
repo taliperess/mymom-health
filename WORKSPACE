@@ -207,6 +207,9 @@ load("@pigweed//targets/rp2040:deps.bzl", "pigweed_rp2_deps")
 pigweed_rp2_deps()
 
 load("@pigweed//pw_ide:deps.bzl", "pw_ide_deps")
+
 pw_ide_deps()
+
 load("@hedron_compile_commands//:workspace_setup.bzl", "hedron_compile_commands_setup")
+
 hedron_compile_commands_setup()

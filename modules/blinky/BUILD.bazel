@@ -23,8 +23,8 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "blinky",
-    hdrs = [ "blinky.h" ],
-    srcs = [ "blinky.cc" ],
+    srcs = ["blinky.cc"],
+    hdrs = ["blinky.h"],
     deps = [
         "//modules/indicators:indicators.facade",
         "@pigweed//pw_chrono:system_clock",
@@ -39,8 +39,8 @@ cc_library(
 
 cc_library(
     name = "service",
-    hdrs = [ "service.h" ],
     srcs = ["service.cc"],
+    hdrs = ["service.h"],
     deps = [
         ":blinky",
         ":nanopb_rpc",
@@ -73,4 +73,3 @@ py_proto_library(
     name = "py_pb2",
     deps = [":proto"],
 )
-

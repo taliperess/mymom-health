@@ -34,4 +34,4 @@ void SystemLed::Toggle() {
   }
 }
 
-}  // namespace am
+} // namespace am

@@ -17,7 +17,7 @@ namespace am {
 
 /// Interface for a simple LED.
 class SystemLed {
- public:
+public:
   virtual ~SystemLed() = default;
 
   /// Returns whether the LED is on.
@@ -32,7 +32,7 @@ class SystemLed {
   // Turns the LED on if it is off, or off if it is on.
   void Toggle();
 
- private:
+private:
   /// Turns the LED on the board on or off.
   ///
   /// @param  enable  True turns the LED on; false turns it off.
@@ -41,4 +41,4 @@ class SystemLed {
   bool led_is_on_ = false;
 };
 
-}  // namespace am
+} // namespace am

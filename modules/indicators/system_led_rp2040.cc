@@ -21,4 +21,4 @@ namespace am {
 
 void SystemLed::Set(bool enable) { SystemSetLed(enable); }
 
-}  // namespace am
+} // namespace am

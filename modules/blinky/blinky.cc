@@ -82,4 +82,4 @@ pw::Status Blinky::ScheduleToggleLocked() {
   return pw::OkStatus();
 }
 
-}  // namespace am
+} // namespace am

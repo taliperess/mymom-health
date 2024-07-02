@@ -17,13 +17,6 @@ load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile
 load("@pigweed//targets/host_device_simulator:transition.bzl", "host_device_simulator_binary")
 load("@pigweed//targets/rp2040:flash.bzl", "flash_rp2040")
 load("//targets:transition.bzl", "rp2040_binary")
-load(
-    "@pigweed//pw_protobuf_compiler:pw_proto_library.bzl",
-    "nanopb_proto_library",
-    "nanopb_rpc_proto_library",
-)
-load("@rules_python//python:proto.bzl", "py_proto_library")
-load("@rules_python//python:defs.bzl", "py_binary")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -31,7 +24,7 @@ cc_binary(
     name = "blinky",
     srcs = ["main.cc"],
     deps = [
-        "//modules/blinky:blinky",
+        "//modules/blinky",
         "//modules/blinky:service",
         "//modules/indicators",
         "@pigweed//pw_log",
@@ -84,11 +77,11 @@ refresh_compile_commands(
     name = "refresh_compile_commands",
     out_dir = ".compile_commands",
     target_file_names = {
-        "//apps/blinky:simulator_blinky": "host_simulator",
         "//apps/blinky:rp2040_blinky.elf": "rp2040",
+        "//apps/blinky:simulator_blinky": "host_simulator",
     },
     targets = {
-        "//apps/blinky:simulator_blinky": "",
         "//apps/blinky:rp2040_blinky.elf": "",
+        "//apps/blinky:simulator_blinky": "",
     },
 )

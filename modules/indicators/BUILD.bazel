@@ -19,8 +19,8 @@ package(default_visibility = ["//visibility:public"])
 
 pw_facade(
     name = "indicators",
-    srcs = [ "system_led.cc" ],
-    hdrs = [ "system_led.h" ],
+    srcs = ["system_led.cc"],
+    hdrs = ["system_led.h"],
     backend = ":backend",
 )
 
@@ -36,7 +36,7 @@ host_backend_alias(
 
 cc_library(
     name = "indicators_host",
-    srcs = [ "system_led_host.cc" ],
+    srcs = ["system_led_host.cc"],
     deps = [
         ":indicators.facade",
         "@pigweed//pw_log",
@@ -47,7 +47,7 @@ cc_library(
 
 cc_library(
     name = "indicators_rp2040",
-    srcs = [ "system_led_rp2040.cc" ],
+    srcs = ["system_led_rp2040.cc"],
     deps = [
         ":indicators.facade",
         "//drivers:system",
