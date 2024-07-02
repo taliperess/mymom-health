@@ -23,13 +23,13 @@ namespace {
 void SystemInit() {
   static bool initialized = false;
   if (!initialized) {
+    initialized = true;
+
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
     SystemSetLed(false);
 
     adc_init();
-
-    initialized = true;
   }
 }
 
