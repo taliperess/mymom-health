@@ -16,34 +16,40 @@
 
 #include "hardware/adc.h"
 #include "pico/bootrom.h"
+#include "pw_digital_io_rp2040/digital_io.h"
 
 namespace am {
 namespace {
+
+pw::digital_io::Rp2040DigitalInOut system_led({
+    .pin = PICO_DEFAULT_LED_PIN,
+    .polarity = pw::digital_io::Polarity::kActiveHigh,
+});
 
 void SystemInit() {
   static bool initialized = false;
   if (!initialized) {
     initialized = true;
 
-    gpio_init(PICO_DEFAULT_LED_PIN);
-    gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
+    system_led.Enable();
     SystemSetLed(false);
 
     adc_init();
   }
 }
 
-}  // namespace
+} // namespace
 
 void SystemSetLed(bool enable) {
   SystemInit();
-  gpio_put(PICO_DEFAULT_LED_PIN, enable ? 0 : 1);
+  system_led.SetState(enable ? pw::digital_io::State::kActive
+                             : pw::digital_io::State::kInactive);
 }
 
 float SystemReadTemp() {
   SystemInit();
   adc_set_temp_sensor_enabled(true);
-  adc_select_input(4);  // 4 is the on board temp sensor.
+  adc_select_input(4); // 4 is the on board temp sensor.
 
   // See raspberry-pi-pico-c-sdk.pdf, Section '4.1.1. hardware_adc'
   constexpr float kConversionFactor = 3.3f / (1 << 12);
@@ -65,4 +71,4 @@ void SystemReboot(uint8_t reboot_types) {
   }
 }
 
-}  // namespace am
+} // namespace am
