@@ -32,7 +32,7 @@ proto_library(
     name = "rp2040_system_proto",
     srcs = [":rp2040_system_proto_and_options"],
     import_prefix = "rp2040_system",
-    strip_import_prefix = "/libraries/rpc",
+    strip_import_prefix = "/modules/rpc",
     deps = [
         "@pigweed//pw_protobuf:common_proto",
     ],

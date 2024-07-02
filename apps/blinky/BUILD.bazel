@@ -32,7 +32,7 @@ cc_binary(
     srcs = ["main.cc"],
     deps = [
         ":nanopb_rpc",
-        "//libraries/pw_board_led",
+        "//modules/pw_board_led",
         "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_chrono:system_timer",
         "@pigweed//pw_log",

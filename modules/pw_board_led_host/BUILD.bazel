@@ -18,7 +18,7 @@ cc_library(
     name = "pw_board_led_host",
     srcs = ["led.cc"],
     deps = [
-        "//libraries/pw_board_led:pw_board_led.facade",
+        "//modules/pw_board_led:pw_board_led.facade",
         "@pigweed//pw_log",
     ],
     # TODO: https://pwbug.dev/348008794 - Mark incompatible_with_mcu once

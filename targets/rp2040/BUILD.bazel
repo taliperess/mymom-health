@@ -56,7 +56,7 @@ cc_library(
         "boot.cc",
     ],
     deps = [
-        "//libraries/rpc:rp2040_system_service",
+        "//modules/rpc:rp2040_system_service",
         "@freertos",
         "@pigweed//pw_assert",
         "@pigweed//pw_string",
