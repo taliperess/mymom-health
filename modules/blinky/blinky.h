@@ -28,12 +28,13 @@ namespace am {
 
 /// Simple component that blink the on-board LED.
 class Blinky final {
-public:
+ public:
   constexpr static pw::chrono::SystemClock::duration kDefaultInterval =
       std::chrono::seconds(1);
 
-  Blinky(pw::work_queue::WorkQueue &work_queue, SystemLed &led)
-      : work_queue_(work_queue), led_(led),
+  Blinky(pw::work_queue::WorkQueue& work_queue, SystemLed& led)
+      : work_queue_(work_queue),
+        led_(led),
         timer_(pw::bind_member<&Blinky::ToggleCallback>(this)) {}
 
   /// Turns the LED on if it is off, and off if it is on.
@@ -49,22 +50,22 @@ public:
   /// Returns whether this instance is currently blinking or not.
   bool IsIdle() const PW_LOCKS_EXCLUDED(lock_);
 
-private:
+ private:
   /// Adds a toggle callback to the work queue.
   pw::Status ScheduleToggleLocked() PW_EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
   /// Callback for the timer to toggle the LED.
   void ToggleCallback(pw::chrono::SystemClock::time_point);
 
-  pw::work_queue::WorkQueue &work_queue_;
-  SystemLed &led_;
+  pw::work_queue::WorkQueue& work_queue_;
+  SystemLed& led_;
   pw::chrono::SystemTimer timer_;
 
   mutable pw::sync::InterruptSpinLock lock_;
-  uint32_t
-      num_toggles_ PW_GUARDED_BY(lock_) = std::numeric_limits<uint32_t>::max();
-  pw::chrono::SystemClock::duration
-      interval_ PW_GUARDED_BY(lock_) = kDefaultInterval;
+  uint32_t num_toggles_ PW_GUARDED_BY(lock_) =
+      std::numeric_limits<uint32_t>::max();
+  pw::chrono::SystemClock::duration interval_ PW_GUARDED_BY(lock_) =
+      kDefaultInterval;
 };
 
-} // namespace am
+}  // namespace am

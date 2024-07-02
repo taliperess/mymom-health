@@ -38,7 +38,7 @@ void SystemInit() {
   }
 }
 
-} // namespace
+}  // namespace
 
 void SystemSetLed(bool enable) {
   SystemInit();
@@ -49,7 +49,7 @@ void SystemSetLed(bool enable) {
 float SystemReadTemp() {
   SystemInit();
   adc_set_temp_sensor_enabled(true);
-  adc_select_input(4); // 4 is the on board temp sensor.
+  adc_select_input(4);  // 4 is the on board temp sensor.
 
   // See raspberry-pi-pico-c-sdk.pdf, Section '4.1.1. hardware_adc'
   constexpr float kConversionFactor = 3.3f / (1 << 12);
@@ -71,4 +71,4 @@ void SystemReboot(uint8_t reboot_types) {
   }
 }
 
-} // namespace am
+}  // namespace am

@@ -37,4 +37,4 @@ enum class RebootType : uint8_t {
 /// @param  reboot_types  Bit-flag combination of ``RebootType``s.
 void SystemReboot(uint8_t reboot_types);
 
-} // namespace am
+}  // namespace am

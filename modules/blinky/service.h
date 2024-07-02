@@ -20,15 +20,15 @@ namespace am {
 
 class BlinkyService final
     : public ::blinky::pw_rpc::nanopb::Blinky::Service<BlinkyService> {
-public:
-  constexpr explicit BlinkyService(Blinky &blinky) : blinky_(blinky) {}
+ public:
+  constexpr explicit BlinkyService(Blinky& blinky) : blinky_(blinky) {}
 
-  pw::Status ToggleLed(const pw_protobuf_Empty &, pw_protobuf_Empty &);
+  pw::Status ToggleLed(const pw_protobuf_Empty&, pw_protobuf_Empty&);
 
-  pw::Status Blink(const blinky_BlinkRequest &request, pw_protobuf_Empty &);
+  pw::Status Blink(const blinky_BlinkRequest& request, pw_protobuf_Empty&);
 
-private:
-  Blinky &blinky_;
+ private:
+  Blinky& blinky_;
 };
 
-} // namespace am
+}  // namespace am

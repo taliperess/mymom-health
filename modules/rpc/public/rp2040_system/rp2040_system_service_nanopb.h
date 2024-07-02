@@ -22,9 +22,9 @@ namespace rp2040_system::rpc {
 
 class Rp2040_SystemService final
     : public pw_rpc::nanopb::Rp2040_System::Service<Rp2040_SystemService> {
-public:
-  pw::Status Reboot(const rp2040_system_rpc_RebootRequest &request,
-                    pw_protobuf_Empty & /*response*/) {
+ public:
+  pw::Status Reboot(const rp2040_system_rpc_RebootRequest& request,
+                    pw_protobuf_Empty& /*response*/) {
     uint32_t disable_interface_mask = 0;
 
     if (request.reboot_type ==
@@ -44,10 +44,10 @@ public:
     return pw::OkStatus();
   }
 
-  pw::Status OnboardTemp(const pw_protobuf_Empty & /*request*/,
-                         rp2040_system_rpc_OnboardTempResponse &response) {
+  pw::Status OnboardTemp(const pw_protobuf_Empty& /*request*/,
+                         rp2040_system_rpc_OnboardTempResponse& response) {
     adc_set_temp_sensor_enabled(true);
-    adc_select_input(4); // 4 is the on board temp sensor.
+    adc_select_input(4);  // 4 is the on board temp sensor.
 
     // See raspberry-pi-pico-c-sdk.pdf, Section '4.1.1. hardware_adc'
     const float conversion_factor = 3.3f / (1 << 12);
@@ -59,4 +59,4 @@ public:
   }
 };
 
-} // namespace rp2040_system::rpc
+}  // namespace rp2040_system::rpc

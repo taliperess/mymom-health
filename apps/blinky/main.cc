@@ -32,4 +32,4 @@ void UserAppInit() {
   PW_LOG_INFO("Started blinky app; waiting for RPCs...");
 }
 
-} // namespace pw::system
+}  // namespace pw::system

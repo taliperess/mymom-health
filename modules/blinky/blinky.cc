@@ -57,8 +57,8 @@ pw::Status Blinky::Blink(uint32_t blink_count, uint32_t interval_ms) {
   if (num_toggles_ == std::numeric_limits<uint32_t>::max()) {
     PW_LOG_INFO("Blinking forever at a %ums interval", interval_ms);
   } else {
-    PW_LOG_INFO("Blinking %u times at a %ums interval", num_toggles_ / 2,
-                interval_ms);
+    PW_LOG_INFO(
+        "Blinking %u times at a %ums interval", num_toggles_ / 2, interval_ms);
   }
   return ScheduleToggleLocked();
 }
@@ -82,4 +82,4 @@ pw::Status Blinky::ScheduleToggleLocked() {
   return pw::OkStatus();
 }
 
-} // namespace am
+}  // namespace am

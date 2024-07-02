@@ -32,7 +32,9 @@ message RebootType {
 }
 
 message RebootRequest {
-  RebootType.Enum reboot_type = 1; // Required
+  RebootType.Enum reboot_type = 1;  // Required
 }
 
-message OnboardTempResponse { float temp = 1; }
+message OnboardTempResponse {
+  float temp = 1;
+}

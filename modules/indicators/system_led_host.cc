@@ -27,4 +27,4 @@ void SystemLed::Set(bool enable) {
   }
 }
 
-} // namespace am
+}  // namespace am
