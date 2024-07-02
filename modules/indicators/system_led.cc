@@ -1,4 +1,4 @@
-// Copyright 2020 The Pigweed Authors
+// Copyright 2024 The Pigweed Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy of
@@ -12,40 +12,26 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-#include "pw_board_led/led.h"
+#include "modules/indicators/system_led.h"
 
-#include <cinttypes>
+namespace am {
 
-#include "pw_log/log.h"
-
-// pw::board_led API implementation for the a host machine using log statements
-// to simulate blinking an LED.
-namespace pw::board_led {
-namespace {
-
-bool led_on = false;
-
-}  // namespace
-
-void Init() { TurnOff(); }
-
-void TurnOff() {
-  PW_LOG_INFO("[ ]");
-  led_on = false;
+void SystemLed::TurnOn() {
+  Set(true);
+  led_is_on_ = true;
 }
 
-void TurnOn() {
-  PW_LOG_INFO("[*]");
-  led_on = true;
+void SystemLed::TurnOff() {
+  Set(false);
+  led_is_on_ = false;
 }
 
-void Toggle() {
-  // Check if the LED is on. If so, turn it off.
-  if (led_on) {
+void SystemLed::Toggle() {
+  if (IsOn()) {
     TurnOff();
   } else {
     TurnOn();
   }
 }
 
-}  // namespace pw::board_led
+}  // namespace am

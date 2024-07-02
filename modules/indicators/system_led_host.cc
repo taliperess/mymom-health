@@ -12,42 +12,19 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-#include "pw_board_led/led.h"
+// SimpleLED implementation for the rp2040 using the pico-sdk.
 
-#include "pico/stdlib.h"
+#include "modules/indicators/system_led.h"
+#include "pw_log/log.h"
 
-// pw::board_led API implementation for the rp2040 using the pico-sdk.
-namespace pw::board_led {
-namespace {
+namespace am {
 
-constexpr uint kLedPin = PICO_DEFAULT_LED_PIN;
-bool led_on = false;
-
-}  // namespace
-
-void Init() {
-  gpio_init(kLedPin);
-  gpio_set_dir(kLedPin, GPIO_OUT);
-  TurnOff();
-}
-
-void TurnOff() {
-  gpio_put(kLedPin, 0);
-  led_on = false;
-}
-
-void TurnOn() {
-  gpio_put(kLedPin, 1);
-  led_on = true;
-}
-
-void Toggle() {
-  // Check if the LED is on. If so, turn it off.
-  if (led_on) {
-    TurnOff();
+void SystemLed::Set(bool enable) {
+  if (enable) {
+    PW_LOG_INFO("[*]");
   } else {
-    TurnOn();
+    PW_LOG_INFO("[ ]");
   }
 }
 
-}  // namespace pw::board_led
+}  // namespace am

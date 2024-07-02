@@ -23,7 +23,7 @@ def _rp2040_transition_impl(settings, attr):
 
     return {
         "//command_line_option:platforms": "//targets/rp2040:platform",
-        "//modules/pw_board_led:backend": "//modules/pw_board_led_rp2040",
+        "//modules/indicators:backend": "//modules/indicators:indicators_rp2040",
         "@freertos//:freertos_config": "//targets/rp2040:freertos_config",
         "@pigweed//pw_assert:backend": "@pigweed//pw_assert_basic",
         "@pigweed//pw_assert:backend_impl": "@pigweed//pw_assert_basic:impl",
@@ -49,7 +49,7 @@ _rp2040_transition = transition(
     inputs = [],
     outputs = [
         "//command_line_option:platforms",
-        "//modules/pw_board_led:backend",
+        "//modules/indicators:backend",
         "@freertos//:freertos_config",
         "@pigweed//pw_assert:backend",
         "@pigweed//pw_assert:backend_impl",

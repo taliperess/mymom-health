@@ -31,12 +31,10 @@ cc_binary(
     name = "blinky",
     srcs = ["main.cc"],
     deps = [
-        ":nanopb_rpc",
-        "//modules/pw_board_led",
-        "@pigweed//pw_chrono:system_clock",
-        "@pigweed//pw_chrono:system_timer",
+        "//modules/blinky:blinky",
+        "//modules/blinky:service",
+        "//modules/indicators",
         "@pigweed//pw_log",
-        "@pigweed//pw_sync:interrupt_spin_lock",
         "@pigweed//pw_system",
     ],
 )
@@ -80,32 +78,6 @@ native_binary(
 flash_rp2040(
     name = "flash",
     rp2040_binary = "rp2040_blinky.elf",
-)
-
-proto_library(
-    name = "proto",
-    srcs = ["blinky.proto"],
-    import_prefix = "blinky_pb",
-    strip_import_prefix = "/apps/blinky",
-    deps = [
-        "@pigweed//pw_protobuf:common_proto",
-    ],
-)
-
-nanopb_proto_library(
-    name = "nanopb",
-    deps = [":proto"],
-)
-
-nanopb_rpc_proto_library(
-    name = "nanopb_rpc",
-    nanopb_proto_library_deps = [":nanopb"],
-    deps = [":proto"],
-)
-
-py_proto_library(
-    name = "py_pb2",
-    deps = [":proto"],
 )
 
 refresh_compile_commands(
