@@ -18,7 +18,7 @@ package(default_visibility = ["//visibility:public"])
 
 py_binary(
     name = "console",
-    srcs = ["showcase_tools/console.py"],
+    srcs = ["airmaranth/console.py"],
     deps = [
         "//applications/blinky:py_pb2",
         "//libraries/rpc:rp2040_system_protos_py_pb2",
