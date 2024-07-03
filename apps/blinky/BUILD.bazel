@@ -13,7 +13,6 @@
 # the License.
 
 load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
-load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile_commands")
 load("@pigweed//targets/host_device_simulator:transition.bzl", "host_device_simulator_binary")
 load("@pigweed//targets/rp2040:flash.bzl", "flash_rp2040")
 load("//targets:transition.bzl", "rp2040_binary")
@@ -71,17 +70,4 @@ native_binary(
 flash_rp2040(
     name = "flash",
     rp2040_binary = "rp2040_blinky.elf",
-)
-
-refresh_compile_commands(
-    name = "refresh_compile_commands",
-    out_dir = ".compile_commands",
-    target_file_names = {
-        "//apps/blinky:rp2040_blinky.elf": "rp2040",
-        "//apps/blinky:simulator_blinky": "host_simulator",
-    },
-    targets = {
-        "//apps/blinky:rp2040_blinky.elf": "",
-        "//apps/blinky:simulator_blinky": "",
-    },
 )
