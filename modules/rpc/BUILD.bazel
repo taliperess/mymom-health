@@ -23,15 +23,15 @@ load("@rules_python//python:proto.bzl", "py_proto_library")
 package(default_visibility = ["//visibility:public"])
 
 pw_proto_filegroup(
-    name = "rp2040_system_proto_and_options",
-    srcs = ["rp2040_system.proto"],
-    options_files = ["rp2040_system.options"],
+    name = "system_proto_and_options",
+    srcs = ["system.proto"],
+    options_files = ["system.options"],
 )
 
 proto_library(
-    name = "rp2040_system_proto",
-    srcs = [":rp2040_system_proto_and_options"],
-    import_prefix = "rp2040_system",
+    name = "system_proto",
+    srcs = [":system_proto_and_options"],
+    import_prefix = "modules/rpc",
     strip_import_prefix = "/modules/rpc",
     deps = [
         "@pigweed//pw_protobuf:common_proto",
@@ -39,27 +39,28 @@ proto_library(
 )
 
 nanopb_proto_library(
-    name = "rp2040_system_nanopb",
-    deps = [":rp2040_system_proto"],
+    name = "system_nanopb",
+    deps = [":system_proto"],
 )
 
 nanopb_rpc_proto_library(
-    name = "rp2040_system_nanopb_rpc",
-    nanopb_proto_library_deps = [":rp2040_system_nanopb"],
-    deps = [":rp2040_system_proto"],
+    name = "system_nanopb_rpc",
+    nanopb_proto_library_deps = [":system_nanopb"],
+    deps = [":system_proto"],
 )
 
 py_proto_library(
-    name = "rp2040_system_protos_py_pb2",
-    deps = [":rp2040_system_proto"],
+    name = "system_protos_py_pb2",
+    deps = [":system_proto"],
 )
 
 cc_library(
-    name = "rp2040_system_service",
-    hdrs = ["public/rp2040_system/rp2040_system_service_nanopb.h"],
+    name = "system_service",
+    srcs = ["system_service.cc"],
+    hdrs = ["system_service.h"],
     includes = ["public"],
     deps = [
-        ":rp2040_system_nanopb_rpc",
+        ":system_nanopb_rpc",
         "@pico-sdk//src/rp2_common/hardware_adc",
         "@pico-sdk//src/rp2_common/pico_bootrom",
     ],

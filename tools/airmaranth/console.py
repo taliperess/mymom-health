@@ -20,7 +20,7 @@ from typing import Optional
 from blinky_pb import blinky_pb2
 from pw_protobuf_protos import common_pb2
 import pw_system.console
-from rp2040_system import rp2040_system_pb2
+from modules.rpc import system_pb2
 from pw_rpc import echo_pb2
 
 
@@ -28,7 +28,7 @@ def main(args: Optional[argparse.Namespace] = None) -> int:
     compiled_protos = [
         common_pb2,
         echo_pb2,
-        rp2040_system_pb2,
+        system_pb2,
         blinky_pb2,
     ]
     return pw_system.console.main_with_compiled_protos(compiled_protos, args)

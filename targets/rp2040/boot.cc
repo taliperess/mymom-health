@@ -19,12 +19,12 @@
 #define PW_LOG_MODULE_NAME "pw_system"
 
 #include "FreeRTOS.h"
+#include "modules/rpc/system_service.h"
 #include "pico/stdlib.h"
 #include "pw_assert/check.h"
 #include "pw_log/log.h"
 #include "pw_string/util.h"
 #include "pw_system/init.h"
-#include "rp2040_system/rp2040_system_service_nanopb.h"
 #include "task.h"
 
 namespace {
@@ -70,15 +70,16 @@ void vApplicationGetIdleTaskMemory(StaticTask_t** ppxIdleTaskTCBBuffer,
   *pulIdleTaskStackSize = freertos_idle_stack.size();
 }
 
-rp2040_system::rpc::Rp2040_SystemService rp2040_system_service;
+am::rpc::SystemService system_service;
 
 int main() {
   // PICO_SDK Inits
   stdio_init_all();
   PW_LOG_INFO("pw_system main");
 
+  system_service.Init();
   pw::system::Init();
-  pw::system::GetRpcServer().RegisterService(rp2040_system_service);
+  pw::system::GetRpcServer().RegisterService(system_service);
   vTaskStartScheduler();
   PW_UNREACHABLE;
 }

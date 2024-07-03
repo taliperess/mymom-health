@@ -21,7 +21,7 @@ py_binary(
     srcs = ["airmaranth/console.py"],
     deps = [
         "//modules/blinky:py_pb2",
-        "//modules/rpc:rp2040_system_protos_py_pb2",
+        "//modules/rpc:system_protos_py_pb2",
         "@pigweed//pw_protobuf:common_py_pb2",
         "@pigweed//pw_rpc:echo_py_pb2",
         "@pigweed//pw_system/py:pw_system_lib",
