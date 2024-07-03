@@ -14,13 +14,12 @@
 
 #include "modules/rpc/system_service.h"
 
-#include "hardware/adc.h"
+#include "drivers/system.h"
 #include "pico/bootrom.h"
+#include "pw_log/log.h"
 #include "pw_status/status.h"
 
 namespace am::rpc {
-
-void SystemService::Init() { adc_init(); }
 
 pw::Status SystemService::Reboot(const am_rpc_RebootRequest& request,
                                  pw_protobuf_Empty& /*response*/) {
@@ -43,16 +42,34 @@ pw::Status SystemService::Reboot(const am_rpc_RebootRequest& request,
 
 pw::Status SystemService::OnboardTemp(const pw_protobuf_Empty& /*request*/,
                                       am_rpc_OnboardTempResponse& response) {
-  adc_set_temp_sensor_enabled(true);
-  adc_select_input(4);  // 4 is the on board temp sensor.
-
-  // See raspberry-pi-pico-c-sdk.pdf, Section '4.1.1. hardware_adc'
-  const float conversion_factor = 3.3f / (1 << 12);
-  float adc = static_cast<float>(adc_read()) * conversion_factor;
-  float temp_c = 27.0f - (adc - 0.706f) / 0.001721f;
-  response.temp = temp_c;
-
+  response.temp = SystemReadTemp();
   return pw::OkStatus();
+}
+
+void SystemService::OnboardTempStream(
+    const am_rpc_OnboardTempStreamRequest& request,
+    ServerWriter<am_rpc_OnboardTempResponse>& writer) {
+  if (request.sample_interval_ms < 100) {
+    writer.Finish(pw::Status::InvalidArgument());
+    return;
+  }
+
+  temp_sample_interval_ = pw::chrono::SystemClock::for_at_least(
+      std::chrono::milliseconds(request.sample_interval_ms));
+  temp_sample_writer_ = std::move(writer);
+
+  ScheduleTempSample();
+}
+
+void SystemService::TempSampleCallback() {
+  float temp = SystemReadTemp();
+
+  pw::Status status = temp_sample_writer_.Write({.temp = temp});
+  if (status.ok()) {
+    ScheduleTempSample();
+  } else {
+    PW_LOG_INFO("Temperature stream closed; ending periodic sampling");
+  }
 }
 
 }  // namespace am::rpc

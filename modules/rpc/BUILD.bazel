@@ -61,7 +61,11 @@ cc_library(
     includes = ["public"],
     deps = [
         ":system_nanopb_rpc",
+        "//drivers:system",
         "@pico-sdk//src/rp2_common/hardware_adc",
         "@pico-sdk//src/rp2_common/pico_bootrom",
+        "@pigweed//pw_chrono:system_clock",
+        "@pigweed//pw_chrono:system_timer",
+        "@pigweed//pw_log",
     ],
 )

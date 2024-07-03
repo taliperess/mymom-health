@@ -19,7 +19,9 @@ import "pw_protobuf_protos/common.proto";
 
 service System {
   rpc Reboot(RebootRequest) returns (pw.protobuf.Empty);
+
   rpc OnboardTemp(pw.protobuf.Empty) returns (OnboardTempResponse);
+  rpc OnboardTempStream(OnboardTempStreamRequest) returns (stream OnboardTempResponse);
 }
 
 message RebootType {
@@ -37,4 +39,9 @@ message RebootRequest {
 
 message OnboardTempResponse {
   float temp = 1;
+}
+
+message OnboardTempStreamRequest {
+  // The interval at which to sample the temperature sensor. Minimum 100ms.
+  uint32 sample_interval_ms = 1;
 }

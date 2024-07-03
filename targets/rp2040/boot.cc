@@ -77,7 +77,6 @@ int main() {
   stdio_init_all();
   PW_LOG_INFO("pw_system main");
 
-  system_service.Init();
   pw::system::Init();
   pw::system::GetRpcServer().RegisterService(system_service);
   vTaskStartScheduler();
