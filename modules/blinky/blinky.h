@@ -37,6 +37,11 @@ class Blinky final {
         led_(led),
         timer_(pw::bind_member<&Blinky::ToggleCallback>(this)) {}
 
+  ~Blinky() { timer_.Cancel(); }
+
+  /// Returns the currently configured interval for one blink.
+  pw::chrono::SystemClock::duration interval() const;
+
   /// Turns the LED on if it is off, and off if it is on.
   pw::Status Toggle() PW_LOCKS_EXCLUDED(lock_);
 
@@ -52,7 +57,7 @@ class Blinky final {
 
  private:
   /// Adds a toggle callback to the work queue.
-  pw::Status ScheduleToggleLocked() PW_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  pw::Status ScheduleToggle() PW_LOCKS_EXCLUDED(lock_);
 
   /// Callback for the timer to toggle the LED.
   void ToggleCallback(pw::chrono::SystemClock::time_point);
@@ -62,8 +67,7 @@ class Blinky final {
   pw::chrono::SystemTimer timer_;
 
   mutable pw::sync::InterruptSpinLock lock_;
-  uint32_t num_toggles_ PW_GUARDED_BY(lock_) =
-      std::numeric_limits<uint32_t>::max();
+  uint32_t num_toggles_ PW_GUARDED_BY(lock_) = 0;
   pw::chrono::SystemClock::duration interval_ PW_GUARDED_BY(lock_) =
       kDefaultInterval;
 };

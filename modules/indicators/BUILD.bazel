@@ -55,3 +55,14 @@ cc_library(
         "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
     ],
 )
+
+cc_library(
+    name = "indicators_for_testing",
+    srcs = ["system_led_testing.cc"],
+    hdrs = ["system_led_testing.h"],
+    deps = [
+        ":indicators",
+        "@pigweed//pw_chrono:system_clock",
+        "@pigweed//pw_containers:vector",
+    ],
+)

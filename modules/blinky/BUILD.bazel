@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+load("@pigweed//pw_build:pigweed.bzl", "pw_cc_test")
 load(
     "@pigweed//pw_protobuf_compiler:pw_proto_library.bzl",
     "nanopb_proto_library",
@@ -34,6 +35,18 @@ cc_library(
         "@pigweed//pw_sync:interrupt_spin_lock",
         "@pigweed//pw_sync:lock_annotations",
         "@pigweed//pw_work_queue",
+    ],
+)
+
+pw_cc_test(
+    name = "blinky_test",
+    srcs = ["blinky_test.cc"],
+    deps = [
+        ":blinky",
+        "//modules/indicators:indicators_for_testing",
+        "//modules/testing:work_queue",
+        "@pigweed//pw_thread:sleep",
+        "@pigweed//pw_unit_test",
     ],
 )
 
