@@ -15,7 +15,7 @@
 load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 load("@pigweed//targets/host_device_simulator:transition.bzl", "host_device_simulator_binary")
 load("@pigweed//targets/rp2040:flash.bzl", "flash_rp2040")
-load("//targets:transition.bzl", "rp2040_binary")
+load("//targets/rp2040:binary.bzl", "rp2040_binary")
 
 package(default_visibility = ["//visibility:public"])
 
