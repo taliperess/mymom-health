@@ -15,14 +15,19 @@
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "system",
-    srcs = ["system.cc"],
-    hdrs = ["system.h"],
+    name = "monochrome_led",
+    srcs = ["monochrome_led.cc"],
+    hdrs = ["monochrome_led.h"],
+)
+
+cc_library(
+    name = "monochrome_led_fake",
+    srcs = ["monochrome_led_fake.cc"],
+    hdrs = ["monochrome_led_fake.h"],
     deps = [
-        "@pico-sdk//src/common/pico_stdlib:pico_stdlib",
-        "@pico-sdk//src/rp2_common/hardware_adc",
-        "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
-        "@pico-sdk//src/rp2_common/pico_bootrom",
-        "@pigweed//pw_digital_io_rp2040",
+        ":monochrome_led",
+        "@pigweed//pw_chrono:system_clock",
+        "@pigweed//pw_containers:vector",
+        "@pigweed//pw_log",
     ],
 )

@@ -11,34 +11,22 @@
 // WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 // License for the specific language governing permissions and limitations under
 // the License.
-#pragma once
 
-namespace am {
+#include "system/system.h"
 
-/// Interface for a simple LED.
-class SystemLed {
- public:
-  virtual ~SystemLed() = default;
+#include "modules/board/board_fake.h"
+#include "modules/led/monochrome_led_fake.h"
 
-  /// Returns whether the LED is on.
-  bool IsOn() const { return led_is_on_; };
+namespace am::system {
 
-  /// Turns on the LED.
-  void TurnOn();
+am::Board& Board() {
+  static BoardFake board;
+  return board;
+}
 
-  /// Turns off the LED.
-  void TurnOff();
+am::MonochromeLed& MonochromeLed() {
+  static MonochromeLedFake monochrome_led;
+  return monochrome_led;
+}
 
-  // Turns the LED on if it is off, or off if it is on.
-  void Toggle();
-
- private:
-  /// Turns the LED on the board on or off.
-  ///
-  /// @param  enable  True turns the LED on; false turns it off.
-  virtual void Set(bool enable);
-
-  bool led_is_on_ = false;
-};
-
-}  // namespace am
+}  // namespace am::system

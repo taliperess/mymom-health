@@ -13,21 +13,20 @@
 // the License.
 #define PW_LOG_MODULE_NAME "MAIN"
 
-#include "modules/blinky/blinky.h"
 #include "modules/blinky/service.h"
-#include "modules/indicators/system_led.h"
 #include "pw_log/log.h"
 #include "pw_system/rpc_server.h"
 #include "pw_system/work_queue.h"
+#include "system/system.h"
+
+static am::BlinkyService blinky_service;
 
 namespace pw::system {
 
 // This will run once after pw::system::Init() completes. This callback must
 // return or it will block the work queue.
 void UserAppInit() {
-  static am::SystemLed led;
-  static am::Blinky blinky(pw::system::GetWorkQueue(), led);
-  static am::BlinkyService blinky_service(blinky);
+  blinky_service.Init(pw::system::GetWorkQueue(), am::system::MonochromeLed());
   pw::system::GetRpcServer().RegisterService(blinky_service);
   PW_LOG_INFO("Started blinky app; waiting for RPCs...");
 }

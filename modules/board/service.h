@@ -13,39 +13,40 @@
 // the License.
 #pragma once
 
-#include "modules/rpc/system.rpc.pb.h"
+#include "modules/board/board.h"
+#include "modules/board/board.rpc.pb.h"
 #include "pw_chrono/system_timer.h"
 #include "pw_status/status.h"
+#include "pw_work_queue/work_queue.h"
 
-namespace am::rpc {
+namespace am {
 
-class SystemService final
-    : public pw_rpc::nanopb::System::Service<SystemService> {
+class BoardService final
+    : public ::board::pw_rpc::nanopb::Board::Service<BoardService> {
  public:
-  SystemService()
-      : temp_sample_timer_([this](pw::chrono::SystemClock::time_point) {
-          TempSampleCallback();
-        }) {}
+  BoardService();
 
-  pw::Status Reboot(const am_rpc_RebootRequest& request,
+  void Init(pw::work_queue::WorkQueue& work_queue, Board& board);
+
+  pw::Status Reboot(const board_RebootRequest& request,
                     pw_protobuf_Empty& /*response*/);
 
   pw::Status OnboardTemp(const pw_protobuf_Empty& /*request*/,
-                         am_rpc_OnboardTempResponse& response);
+                         board_OnboardTempResponse& response);
 
-  void OnboardTempStream(const am_rpc_OnboardTempStreamRequest& request,
-                         ServerWriter<am_rpc_OnboardTempResponse>& writer);
+  void OnboardTempStream(const board_OnboardTempStreamRequest& request,
+                         ServerWriter<board_OnboardTempResponse>& writer);
 
  private:
   void TempSampleCallback();
 
-  void ScheduleTempSample() {
-    temp_sample_timer_.InvokeAfter(temp_sample_interval_);
-  }
+  void ScheduleTempSample();
 
+  pw::work_queue::WorkQueue* work_queue_ = nullptr;
+  Board* board_ = nullptr;
   pw::chrono::SystemTimer temp_sample_timer_;
   pw::chrono::SystemClock::duration temp_sample_interval_;
-  ServerWriter<am_rpc_OnboardTempResponse> temp_sample_writer_;
+  ServerWriter<board_OnboardTempResponse> temp_sample_writer_;
 };
 
-}  // namespace am::rpc
+}  // namespace am

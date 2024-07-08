@@ -11,28 +11,19 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
-"""Wraps pw_system's console to inject additional RPC protos."""
 
-import argparse
-import sys
-from typing import Optional
+package(default_visibility = ["//visibility:public"])
 
-from blinky_pb import blinky_pb2
-from pw_protobuf_protos import common_pb2
-import pw_system.console
-from modules.board import board_pb2
-from pw_rpc import echo_pb2
+label_flag(
+    name = "system",
+    build_setting_default = "//targets/host:system",
+)
 
-
-def main(args: Optional[argparse.Namespace] = None) -> int:
-    compiled_protos = [
-        common_pb2,
-        echo_pb2,
-        board_pb2,
-        blinky_pb2,
-    ]
-    return pw_system.console.main_with_compiled_protos(compiled_protos, args)
-
-
-if __name__ == '__main__':
-    sys.exit(main())
+cc_library(
+    name = "headers",
+    hdrs = ["system.h"],
+    deps = [
+        "//modules/board",
+        "//modules/led:monochrome_led",
+    ],
+)

@@ -1,4 +1,4 @@
-# Copyright 2023 The Pigweed Authors
+# Copyright 2024 The Pigweed Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy of
@@ -12,18 +12,26 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-load("@rules_python//python:defs.bzl", "py_binary")
-
 package(default_visibility = ["//visibility:public"])
 
-py_binary(
-    name = "console",
-    srcs = ["airmaranth/console.py"],
+cc_library(
+    name = "pico_board",
+    srcs = ["pico_board.cc"],
     deps = [
-        "//modules/blinky:py_pb2",
-        "//modules/board:py_pb2",
-        "@pigweed//pw_protobuf:common_py_pb2",
-        "@pigweed//pw_rpc:echo_py_pb2",
-        "@pigweed//pw_system/py:pw_system_lib",
+        "//modules/board",
+        "@pico-sdk//src/common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/hardware_adc",
+        "@pico-sdk//src/rp2_common/pico_bootrom",
+    ],
+)
+
+cc_library(
+    name = "pico_led",
+    srcs = ["pico_led.cc"],
+    deps = [
+        "//modules/led:monochrome_led",
+        "@pico-sdk//src/common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
+        "@pigweed//pw_digital_io_rp2040",
     ],
 )

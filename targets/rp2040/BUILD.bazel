@@ -56,11 +56,22 @@ cc_library(
         "boot.cc",
     ],
     deps = [
-        "//modules/rpc:system_service",
+        ":system",
+        "//modules/board:service",
         "@freertos",
         "@pigweed//pw_assert",
         "@pigweed//pw_string",
         "@pigweed//pw_system:init",
     ],
     alwayslink = 1,
+)
+
+cc_library(
+    name = "system",
+    srcs = ["system.cc"],
+    deps = [
+        "//device:pico_board",
+        "//device:pico_led",
+        "//system:headers",
+    ],
 )

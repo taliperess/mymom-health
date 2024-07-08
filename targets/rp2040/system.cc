@@ -12,13 +12,21 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// SimpleLED implementation for the rp2040 using the pico-sdk.
+#include "system/system.h"
 
-#include "drivers/system.h"
-#include "modules/indicators/system_led.h"
+#include "modules/board/board.h"
+#include "modules/led/monochrome_led.h"
 
-namespace am {
+namespace am::system {
 
-void SystemLed::Set(bool enable) { SystemSetLed(enable); }
+am::Board& Board() {
+  static ::am::Board board;
+  return board;
+}
 
-}  // namespace am
+am::MonochromeLed& MonochromeLed() {
+  static ::am::MonochromeLed monochrome_led;
+  return monochrome_led;
+}
+
+}  // namespace am::system

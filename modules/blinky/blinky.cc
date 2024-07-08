@@ -11,17 +11,27 @@
 // WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 // License for the specific language governing permissions and limitations under
 // the License.
+#include "blinky.h"
 #define PW_LOG_MODULE_NAME "BLINKY"
-
-#include "modules/blinky/blinky.h"
 
 #include <mutex>
 
+#include "modules/blinky/blinky.h"
 #include "pw_log/log.h"
 #include "pw_preprocessor/compiler.h"
 #include "pw_status/try.h"
+#include "system/system.h"
 
 namespace am {
+
+Blinky::Blinky() : timer_(pw::bind_member<&Blinky::ToggleCallback>(this)) {}
+
+void Blinky::Init(pw::work_queue::WorkQueue& work_queue, MonochromeLed& led) {
+  work_queue_ = &work_queue;
+  led_ = &led;
+}
+
+Blinky::~Blinky() { timer_.Cancel(); }
 
 pw::chrono::SystemClock::duration Blinky::interval() const {
   std::lock_guard lock(lock_);
@@ -33,7 +43,7 @@ pw::Status Blinky::Toggle() {
   PW_LOG_INFO("Toggling LED");
   {
     std::lock_guard lock(lock_);
-    led_.Toggle();
+    led_->Toggle();
     if (num_toggles_ > 0) {
       --num_toggles_;
     }
@@ -64,7 +74,7 @@ pw::Status Blinky::Blink(uint32_t blink_count, uint32_t interval_ms) {
   timer_.Cancel();
   {
     std::lock_guard lock(lock_);
-    led_.TurnOff();
+    led_->TurnOff();
     num_toggles_ = num_toggles;
     interval_ = interval;
   }
@@ -85,7 +95,7 @@ pw::Status Blinky::ScheduleToggle() {
   // Scheduling the timer again might not be safe from this context, so instead
   // just defer to the work queue.
   if (num_toggles > 0) {
-    PW_TRY(work_queue_.PushWork([this]() { timer_.InvokeAfter(interval()); }));
+    PW_TRY(work_queue_->PushWork([this]() { timer_.InvokeAfter(interval()); }));
   } else {
     PW_LOG_INFO("Stopped blinking");
   }

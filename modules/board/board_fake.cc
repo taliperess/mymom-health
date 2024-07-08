@@ -12,4 +12,14 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-// TODO(tonymd): Add example of a proto option when appropriate.
+#include "modules/board/board.h"
+
+namespace am {
+
+Board::Board() {}
+
+float Board::ReadInternalTemperature() { return 20.0f; }
+
+pw::Status Board::Reboot(board_RebootType_Enum) { return pw::OkStatus(); }
+
+}  // namespace am

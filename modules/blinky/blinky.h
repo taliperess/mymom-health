@@ -15,7 +15,7 @@
 
 #include <chrono>
 
-#include "modules/indicators/system_led.h"
+#include "modules/led/monochrome_led.h"
 #include "pw_chrono/system_clock.h"
 #include "pw_chrono/system_timer.h"
 #include "pw_function/function.h"
@@ -32,12 +32,14 @@ class Blinky final {
   constexpr static pw::chrono::SystemClock::duration kDefaultInterval =
       std::chrono::seconds(1);
 
-  Blinky(pw::work_queue::WorkQueue& work_queue, SystemLed& led)
-      : work_queue_(work_queue),
-        led_(led),
-        timer_(pw::bind_member<&Blinky::ToggleCallback>(this)) {}
+  Blinky();
 
-  ~Blinky() { timer_.Cancel(); }
+  ~Blinky();
+
+  /// Injects this object's dependencies.
+  ///
+  /// This method MUST be called befire using any other method.
+  void Init(pw::work_queue::WorkQueue& work_queue, MonochromeLed& led);
 
   /// Returns the currently configured interval for one blink.
   pw::chrono::SystemClock::duration interval() const;
@@ -62,8 +64,8 @@ class Blinky final {
   /// Callback for the timer to toggle the LED.
   void ToggleCallback(pw::chrono::SystemClock::time_point);
 
-  pw::work_queue::WorkQueue& work_queue_;
-  SystemLed& led_;
+  pw::work_queue::WorkQueue* work_queue_ = nullptr;
+  MonochromeLed* led_ = nullptr;
   pw::chrono::SystemTimer timer_;
 
   mutable pw::sync::InterruptSpinLock lock_;

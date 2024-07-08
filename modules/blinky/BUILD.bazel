@@ -27,7 +27,8 @@ cc_library(
     srcs = ["blinky.cc"],
     hdrs = ["blinky.h"],
     deps = [
-        "//modules/indicators:indicators.facade",
+        "//modules/led:monochrome_led",
+        "//system",
         "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_chrono:system_timer",
         "@pigweed//pw_function",
@@ -43,7 +44,7 @@ pw_cc_test(
     srcs = ["blinky_test.cc"],
     deps = [
         ":blinky",
-        "//modules/indicators:indicators_for_testing",
+        "//modules/led:monochrome_led_fake",
         "//modules/testing:work_queue",
         "@pigweed//pw_thread:sleep",
         "@pigweed//pw_unit_test",

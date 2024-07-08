@@ -13,28 +13,34 @@
 // the License.
 #pragma once
 
-#include <cstdint>
-
 namespace am {
 
-/// Turns the LED on the board on or off.
-///
-/// @param  enable  True turns the LED on; false turns it off.
-void SystemSetLed(bool enable);
+/// Interface for a simple LED.
+class MonochromeLed {
+ public:
+  MonochromeLed();
+  virtual ~MonochromeLed() = default;
 
-/// Returns the CPU core temperature, in degress Celsius.
-float SystemReadTemp();
+  /// Returns whether the LED is on.
+  bool IsOn() const { return led_is_on_; };
 
-/// Bit flags used to indicate whether to reboot using interrupt masks for
-/// mass storage, picoboot, or both.
-enum class RebootType : uint8_t {
-  kMassStorage = 0x1,
-  kPicoboot = 0x2,
+  /// Turns on the LED.
+  void TurnOn();
+
+  /// Turns off the LED.
+  void TurnOff();
+
+  // Turns the LED on if it is off, or off if it is on.
+  void Toggle();
+
+ protected:
+  /// Turns the LED on the board on or off.
+  ///
+  /// @param  enable  True turns the LED on; false turns it off.
+  virtual void Set(bool enable);
+
+ private:
+  bool led_is_on_ = false;
 };
-
-/// Reboot the board.
-///
-/// @param  reboot_types  Bit-flag combination of ``RebootType``s.
-void SystemReboot(uint8_t reboot_types);
 
 }  // namespace am

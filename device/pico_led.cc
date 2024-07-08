@@ -12,26 +12,27 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-#include "modules/indicators/system_led.h"
+// SimpleLED implementation for the rp2040 using the pico-sdk.
+
+#include "modules/led/monochrome_led.h"
+#include "pico/stdlib.h"
+#include "pw_digital_io_rp2040/digital_io.h"
 
 namespace am {
 
-void SystemLed::TurnOn() {
-  Set(true);
-  led_is_on_ = true;
-}
+static pw::digital_io::Rp2040DigitalInOut led({
+    .pin = PICO_DEFAULT_LED_PIN,
+    .polarity = pw::digital_io::Polarity::kActiveHigh,
+});
 
-void SystemLed::TurnOff() {
+MonochromeLed::MonochromeLed() {
+  led.Enable();
   Set(false);
-  led_is_on_ = false;
 }
 
-void SystemLed::Toggle() {
-  if (IsOn()) {
-    TurnOff();
-  } else {
-    TurnOn();
-  }
+void MonochromeLed::Set(bool enable) {
+  led.SetState(enable ? pw::digital_io::State::kActive
+                      : pw::digital_io::State::kInactive);
 }
 
 }  // namespace am

@@ -11,20 +11,18 @@
 // WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 // License for the specific language governing permissions and limitations under
 // the License.
+#pragma once
 
-// SimpleLED implementation for the rp2040 using the pico-sdk.
+#include "modules/board/board.h"
+#include "modules/led/monochrome_led.h"
 
-#include "modules/indicators/system_led.h"
-#include "pw_log/log.h"
+// The functions in this file return specific implementations of singleton types
+// provided by the system.
 
-namespace am {
+namespace am::system {
 
-void SystemLed::Set(bool enable) {
-  if (enable) {
-    PW_LOG_INFO("[*]");
-  } else {
-    PW_LOG_INFO("[ ]");
-  }
-}
+Board& Board();
 
-}  // namespace am
+MonochromeLed& MonochromeLed();
+
+}  // namespace am::system

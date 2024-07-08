@@ -13,15 +13,16 @@
 // the License.
 syntax = "proto3";
 
-package am.rpc;
+package board;
 
 import "pw_protobuf_protos/common.proto";
 
-service System {
+service Board {
   rpc Reboot(RebootRequest) returns (pw.protobuf.Empty);
 
   rpc OnboardTemp(pw.protobuf.Empty) returns (OnboardTempResponse);
-  rpc OnboardTempStream(OnboardTempStreamRequest) returns (stream OnboardTempResponse);
+  rpc OnboardTempStream(OnboardTempStreamRequest)
+      returns (stream OnboardTempResponse);
 }
 
 message RebootType {

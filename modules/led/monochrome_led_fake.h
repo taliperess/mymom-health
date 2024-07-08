@@ -17,22 +17,25 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "modules/indicators/system_led.h"
+#include "modules/led/monochrome_led.h"
 #include "pw_chrono/system_clock.h"
 #include "pw_containers/vector.h"
 
 namespace am {
 
-// This class is a fake implementation of ``SystemLed`` that allows capturing
-// sequences of on/off toggles.
-class SystemLedForTest : public SystemLed {
+// This class is a fake implementation of ``MonochromeLed`` that allows
+// capturing sequences of on/off toggles.
+class MonochromeLedFake : public MonochromeLed {
  public:
   static constexpr size_t kCapacity = 256;
+
+  MonochromeLedFake() { set_interval_ms(1); }
 
   pw::chrono::SystemClock::duration interval() const { return interval_; }
 
   void set_interval_ms(uint32_t interval_ms) {
-    interval_ = std::chrono::milliseconds(interval_ms);
+    interval_ = pw::chrono::SystemClock::for_at_least(
+        std::chrono::milliseconds(interval_ms));
   }
 
   /// Returns on/off intervals encoded as follows: the top bit indicates whether
@@ -43,11 +46,12 @@ class SystemLedForTest : public SystemLed {
   /// Encodes the parameters in the same manner as ``GetOutput``.
   static uint8_t Encode(bool is_on, size_t num_intervals);
 
- private:
-  /// @copydoc ``SystemLed::SetLed``.
+ protected:
+  /// @copydoc ``MonochromeLed::Set``.
   void Set(bool enable) override;
 
-  pw::chrono::SystemClock::duration interval_ = std::chrono::milliseconds(1);
+ private:
+  pw::chrono::SystemClock::duration interval_;
   pw::chrono::SystemClock::time_point last_;
   pw::Vector<uint8_t, kCapacity> output_;
 };

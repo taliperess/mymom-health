@@ -23,9 +23,8 @@ cc_binary(
     name = "blinky",
     srcs = ["main.cc"],
     deps = [
-        "//modules/blinky",
         "//modules/blinky:service",
-        "//modules/indicators",
+        "//system",
         "@pigweed//pw_log",
         "@pigweed//pw_system",
     ],
