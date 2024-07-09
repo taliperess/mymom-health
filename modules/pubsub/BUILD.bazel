@@ -23,9 +23,10 @@ cc_library(
     name = "pubsub",
     hdrs = ["pubsub.h"],
     deps = [
+        "@pigweed//pw_containers:inline_deque",
         "@pigweed//pw_function",
-        "@pigweed//pw_sync:binary_semaphore",
         "@pigweed//pw_sync:interrupt_spin_lock",
+        "@pigweed//pw_sync:lock_annotations",
         "@pigweed//pw_work_queue",
     ],
 )

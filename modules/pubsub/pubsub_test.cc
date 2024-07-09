@@ -34,27 +34,30 @@ class PubSubTest : public am::TestWithWorkQueue<> {
   void TearDown() { StopWorkQueue(); }
 
  protected:
+  pw::InlineDeque<TestEvent, 4> event_queue_;
   std::array<PubSub::SubscribeCallback, 4> subscribers_buffer_;
   int result_ = 0;
+  int events_processed_ = 0;
   pw::sync::TimedThreadNotification notification_;
+  pw::sync::TimedThreadNotification work_queue_start_notification_;
 };
 
 TEST_F(PubSubTest, Publish_OneSubscriber) {
-  PubSub pubsub(work_queue(), subscribers_buffer_);
+  PubSub pubsub(work_queue(), event_queue_, subscribers_buffer_);
 
   pubsub.Subscribe([this](TestEvent event) {
     result_ = event.value;
     notification_.release();
   });
 
-  pubsub.Publish({.value = 42});
+  EXPECT_TRUE(pubsub.Publish({.value = 42}));
 
-  notification_.try_acquire_for(500ms);
+  EXPECT_TRUE(notification_.try_acquire_for(50ms));
   EXPECT_EQ(result_, 42);
 }
 
 TEST_F(PubSubTest, Publish_MultipleSubscribers) {
-  PubSub pubsub(work_queue(), subscribers_buffer_);
+  PubSub pubsub(work_queue(), event_queue_, subscribers_buffer_);
 
   for (size_t i = 0; i < subscribers_buffer_.size(); ++i) {
     struct {
@@ -74,14 +77,75 @@ TEST_F(PubSubTest, Publish_MultipleSubscribers) {
     });
   }
 
-  pubsub.Publish({.value = 4});
+  EXPECT_TRUE(pubsub.Publish({.value = 4}));
 
-  notification_.try_acquire_for(500ms);
+  EXPECT_TRUE(notification_.try_acquire_for(50ms));
   EXPECT_EQ(result_, static_cast<int>(4 * subscribers_buffer_.size()));
 }
 
+TEST_F(PubSubTest, Publish_MultipleEvents) {
+  PubSub pubsub(work_queue(), event_queue_, subscribers_buffer_);
+
+  pubsub.Subscribe([this](TestEvent event) {
+    result_ += event.value;
+    events_processed_++;
+
+    if (events_processed_ % 4 == 0) {
+      notification_.release();
+    }
+  });
+
+  EXPECT_TRUE(pubsub.Publish({.value = 1}));
+  EXPECT_TRUE(pubsub.Publish({.value = 2}));
+  EXPECT_TRUE(pubsub.Publish({.value = 3}));
+  EXPECT_TRUE(pubsub.Publish({.value = 4}));
+
+  EXPECT_TRUE(notification_.try_acquire_for(50ms));
+  EXPECT_EQ(result_, 10);
+  EXPECT_EQ(events_processed_, 4);
+
+  EXPECT_TRUE(pubsub.Publish({.value = 5}));
+  EXPECT_TRUE(pubsub.Publish({.value = 6}));
+  EXPECT_TRUE(pubsub.Publish({.value = 7}));
+  EXPECT_TRUE(pubsub.Publish({.value = 8}));
+
+  EXPECT_TRUE(notification_.try_acquire_for(50ms));
+  EXPECT_EQ(result_, 36);
+  EXPECT_EQ(events_processed_, 8);
+}
+
+TEST_F(PubSubTest, Publish_MultipleEvents_QueueFull) {
+  PubSub pubsub(work_queue(), event_queue_, subscribers_buffer_);
+
+  work_queue().PushWork([this]() {
+    // Block the work queue until all events are published.
+    PW_ASSERT(work_queue_start_notification_.try_acquire_for(1s));
+  });
+
+  pubsub.Subscribe([this](TestEvent event) {
+    result_ += event.value;
+    events_processed_++;
+
+    if (events_processed_ == 5) {
+      notification_.release();
+    }
+  });
+
+  EXPECT_TRUE(pubsub.Publish({.value = 10}));
+  EXPECT_TRUE(pubsub.Publish({.value = 11}));
+  EXPECT_TRUE(pubsub.Publish({.value = 12}));
+  EXPECT_TRUE(pubsub.Publish({.value = 13}));
+  EXPECT_FALSE(pubsub.Publish({.value = 14}));
+  work_queue_start_notification_.release();
+
+  // This should time out as the fifth event never gets sent.
+  EXPECT_FALSE(notification_.try_acquire_for(50ms));
+  EXPECT_EQ(events_processed_, 4);
+  EXPECT_EQ(result_, 46);
+}
+
 TEST_F(PubSubTest, Subscribe_Full) {
-  PubSub pubsub(work_queue(), subscribers_buffer_);
+  PubSub pubsub(work_queue(), event_queue_, subscribers_buffer_);
 
   EXPECT_TRUE(pubsub.Subscribe([this](TestEvent) { notification_.release(); })
                   .has_value());
@@ -102,7 +166,7 @@ TEST_F(PubSubTest, Subscribe_Full) {
 }
 
 TEST_F(PubSubTest, Subscribe_Unsubscribe) {
-  PubSub pubsub(work_queue(), subscribers_buffer_);
+  PubSub pubsub(work_queue(), event_queue_, subscribers_buffer_);
 
   auto token1 =
       pubsub.Subscribe([this](TestEvent) { notification_.release(); });

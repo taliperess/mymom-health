@@ -18,9 +18,10 @@
 #include <optional>
 #include <type_traits>
 
+#include "pw_containers/inline_deque.h"
 #include "pw_function/function.h"
-#include "pw_sync/binary_semaphore.h"
 #include "pw_sync/interrupt_spin_lock.h"
+#include "pw_sync/lock_annotations.h"
 #include "pw_work_queue/work_queue.h"
 
 namespace am {
@@ -36,31 +37,22 @@ class PubSubBase {
       typename = std::enable_if_t<std::is_trivially_copyable_v<Event> &&
                                   std::is_trivially_destructible_v<Event>>>
   PubSubBase(pw::work_queue::WorkQueue& work_queue,
+             pw::InlineDeque<Event>& event_queue,
              pw::span<SubscribeCallback> subscribers)
       : work_queue_(&work_queue),
+        event_queue_(&event_queue),
         subscribers_(subscribers),
-        subscriber_count_(0) {
-    event_lock_.release();
-  }
-
-  /// Pushes an event to the event queue, blocking until the event is
-  /// accepted. This is **NOT** interrupt safe.
-  void Publish(Event event) {
-    // Wait for the current event to be finished processing.
-    event_lock_.acquire();
-    PublishLocked(event);
-  }
+        subscriber_count_(0) {}
 
   /// Attempts to push an event to the event queue, returning whether it was
-  /// successfully published.
-  /// The `PubSub` takes ownership of the event.
-  bool TryPublish(Event event) {
-    if (!event_lock_.try_acquire()) {
-      return false;
+  /// successfully published. This is both thread safe and interrupt safe.
+  bool Publish(Event event) {
+    if (event_lock_.try_lock()) {
+      bool result = PublishLocked(event);
+      event_lock_.unlock();
+      return result;
     }
-
-    PublishLocked(event);
-    return true;
+    return false;
   }
 
   /// Registers a callback to be run when events are received.
@@ -68,12 +60,10 @@ class PubSubBase {
   /// unsubscribe.
   ///
   /// All subscribed callbacks are invoked from the context of the work queue
-  /// provided to the constructor, while a lock is held.
-  /// As a result, certain operations such as publishing to the work queue are
-  /// disallowed, and generally, callbacks should avoid long blocking operations
-  /// to not starve other callbacks or work queue tasks.
+  /// provided to the constructor. Callbacks should avoid long blocking
+  /// operations to not starve other callbacks or work queue tasks.
   std::optional<SubscribeToken> Subscribe(SubscribeCallback&& callback) {
-    std::lock_guard lock(subscriber_lock_);
+    std::lock_guard lock(subscribers_lock_);
 
     auto slot = std::find_if(subscribers_.begin(),
                              subscribers_.end(),
@@ -89,7 +79,7 @@ class PubSubBase {
 
   /// Unregisters a previously registered subscriber.
   bool Unsubscribe(SubscribeToken token) {
-    std::lock_guard lock(subscriber_lock_);
+    std::lock_guard lock(subscribers_lock_);
 
     const size_t index = static_cast<size_t>(token);
     if (index >= subscribers_.size()) {
@@ -101,37 +91,52 @@ class PubSubBase {
     return true;
   }
 
-  constexpr size_t max_subscribers() const { return subscribers_.size(); }
+  constexpr size_t max_subscribers() const PW_NO_LOCK_SAFETY_ANALYSIS {
+    return subscribers_.size();
+  }
   constexpr size_t subscriber_count() const { return subscriber_count_; }
 
  private:
-  void PublishLocked(Event event) {
-    queued_event_ = event;
+  bool PublishLocked(Event event) PW_EXCLUSIVE_LOCKS_REQUIRED(event_lock_) {
+    if (event_queue_->full()) {
+      return false;
+    }
+
+    event_queue_->push_back(event);
     work_queue_->PushWork([this]() { NotifySubscribers(); });
+    return true;
   }
 
   void NotifySubscribers() {
-    subscriber_lock_.lock();
+    event_lock_.lock();
+
+    if (event_queue_->empty()) {
+      event_lock_.unlock();
+      return;
+    }
+
+    // Copy the event out of the queue so that the lock does not have to be held
+    // while running subscriber callbacks.
+    Event event = event_queue_->front();
+    event_queue_->pop_front();
+    event_lock_.unlock();
+
+    subscribers_lock_.lock();
     for (auto& callback : subscribers_) {
       if (callback != nullptr) {
-        callback(queued_event_);
+        callback(event);
       }
     }
-    subscriber_lock_.unlock();
-
-    // Allow new events to be processed.
-    event_lock_.release();
+    subscribers_lock_.unlock();
   }
 
   pw::work_queue::WorkQueue* work_queue_;
 
-  // Lock protecting the event queue. Uses a semaphore as it is acquired and
-  // released by different threads.
-  pw::sync::BinarySemaphore event_lock_;
-  Event queued_event_;
+  pw::sync::InterruptSpinLock event_lock_;
+  pw::InlineDeque<Event>* event_queue_ PW_GUARDED_BY(event_lock_);
 
-  pw::sync::InterruptSpinLock subscriber_lock_;
-  pw::span<SubscribeCallback> subscribers_;
+  pw::sync::InterruptSpinLock subscribers_lock_;
+  pw::span<SubscribeCallback> subscribers_ PW_GUARDED_BY(subscribers_lock_);
   size_t subscriber_count_;
 };
 
@@ -140,16 +145,17 @@ class PubSubBase {
 // TODO
 struct Event {};
 
-template <size_t kMaxSubscribers>
+template <size_t kMaxEvents, size_t kMaxSubscribers>
 class PubSub : public internal::PubSubBase<Event> {
  public:
   using PubSubBase::SubscribeCallback;
   using PubSubBase::SubscribeToken;
 
   constexpr PubSub(pw::work_queue::WorkQueue& work_queue)
-      : PubSubBase(work_queue, subscribers_) {}
+      : PubSubBase(work_queue, event_queue_, subscribers_) {}
 
  private:
+  pw::InlineDeque<Event, kMaxEvents> event_queue_;
   std::array<SubscribeCallback, kMaxSubscribers> subscribers_;
 };
 
