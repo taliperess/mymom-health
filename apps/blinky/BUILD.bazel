@@ -34,7 +34,6 @@ cc_binary(
         "@pigweed//pw_assert:backend_impl",
         "@pigweed//pw_log:backend_impl",
         "@pigweed//pw_system:extra_platform_libs",
-        "@pigweed//pw_tokenizer:linker_script",
     ],
 )
 
