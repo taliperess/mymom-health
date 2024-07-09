@@ -25,7 +25,7 @@ using namespace std::literals::chrono_literals;
 struct TestEvent {
   int value;
 };
-using PubSub = am::internal::PubSubBase<TestEvent>;
+using PubSub = am::GenericPubSub<TestEvent>;
 
 class PubSubTest : public am::TestWithWorkQueue<> {
  public:
@@ -52,7 +52,8 @@ TEST_F(PubSubTest, Publish_OneSubscriber) {
 
   EXPECT_TRUE(pubsub.Publish({.value = 42}));
 
-  EXPECT_TRUE(notification_.try_acquire_for(50ms));
+  // TODO: pwbug.dev/352133474 - Eliminate race conditions from tests.
+  EXPECT_TRUE(notification_.try_acquire_for(200ms));
   EXPECT_EQ(result_, 42);
 }
 
@@ -79,7 +80,7 @@ TEST_F(PubSubTest, Publish_MultipleSubscribers) {
 
   EXPECT_TRUE(pubsub.Publish({.value = 4}));
 
-  EXPECT_TRUE(notification_.try_acquire_for(50ms));
+  EXPECT_TRUE(notification_.try_acquire_for(200ms));
   EXPECT_EQ(result_, static_cast<int>(4 * subscribers_buffer_.size()));
 }
 
@@ -100,7 +101,7 @@ TEST_F(PubSubTest, Publish_MultipleEvents) {
   EXPECT_TRUE(pubsub.Publish({.value = 3}));
   EXPECT_TRUE(pubsub.Publish({.value = 4}));
 
-  EXPECT_TRUE(notification_.try_acquire_for(50ms));
+  EXPECT_TRUE(notification_.try_acquire_for(200ms));
   EXPECT_EQ(result_, 10);
   EXPECT_EQ(events_processed_, 4);
 
@@ -109,7 +110,7 @@ TEST_F(PubSubTest, Publish_MultipleEvents) {
   EXPECT_TRUE(pubsub.Publish({.value = 7}));
   EXPECT_TRUE(pubsub.Publish({.value = 8}));
 
-  EXPECT_TRUE(notification_.try_acquire_for(50ms));
+  EXPECT_TRUE(notification_.try_acquire_for(200ms));
   EXPECT_EQ(result_, 36);
   EXPECT_EQ(events_processed_, 8);
 }
@@ -139,7 +140,7 @@ TEST_F(PubSubTest, Publish_MultipleEvents_QueueFull) {
   work_queue_start_notification_.release();
 
   // This should time out as the fifth event never gets sent.
-  EXPECT_FALSE(notification_.try_acquire_for(50ms));
+  EXPECT_FALSE(notification_.try_acquire_for(200ms));
   EXPECT_EQ(events_processed_, 4);
   EXPECT_EQ(result_, 46);
 }

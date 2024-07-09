@@ -25,10 +25,9 @@
 #include "pw_work_queue/work_queue.h"
 
 namespace am {
-namespace internal {
 
 template <typename Event>
-class PubSubBase {
+class GenericPubSub {
  public:
   using SubscribeCallback = pw::Function<void(Event)>;
   using SubscribeToken = size_t;
@@ -36,9 +35,9 @@ class PubSubBase {
   template <
       typename = std::enable_if_t<std::is_trivially_copyable_v<Event> &&
                                   std::is_trivially_destructible_v<Event>>>
-  PubSubBase(pw::work_queue::WorkQueue& work_queue,
-             pw::InlineDeque<Event>& event_queue,
-             pw::span<SubscribeCallback> subscribers)
+  GenericPubSub(pw::work_queue::WorkQueue& work_queue,
+                pw::InlineDeque<Event>& event_queue,
+                pw::span<SubscribeCallback> subscribers)
       : work_queue_(&work_queue),
         event_queue_(&event_queue),
         subscribers_(subscribers),
@@ -140,23 +139,25 @@ class PubSubBase {
   size_t subscriber_count_;
 };
 
-}  // namespace internal
-
-// TODO
-struct Event {};
-
-template <size_t kMaxEvents, size_t kMaxSubscribers>
-class PubSub : public internal::PubSubBase<Event> {
+template <typename Event, size_t kMaxEvents, size_t kMaxSubscribers>
+class GenericPubSubBuffer : public GenericPubSub<Event> {
  public:
-  using PubSubBase::SubscribeCallback;
-  using PubSubBase::SubscribeToken;
+  using SubscribeCallback = typename GenericPubSub<Event>::SubscribeCallback;
+  using SubscribeToken = typename GenericPubSub<Event>::SubscribeToken;
 
-  constexpr PubSub(pw::work_queue::WorkQueue& work_queue)
-      : PubSubBase(work_queue, event_queue_, subscribers_) {}
+  constexpr GenericPubSubBuffer(pw::work_queue::WorkQueue& work_queue)
+      : GenericPubSub<Event>(work_queue, event_queue_, subscribers_) {}
 
  private:
   pw::InlineDeque<Event, kMaxEvents> event_queue_;
   std::array<SubscribeCallback, kMaxSubscribers> subscribers_;
 };
+
+// TODO
+struct Event {};
+
+// PubSub using Airmaranth events.
+// TODO: Does this belong here or alongside the event definition?
+using PubSub = GenericPubSub<Event>;
 
 }  // namespace am
