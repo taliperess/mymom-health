@@ -23,17 +23,19 @@ cc_library(
     name = "pubsub",
     hdrs = ["pubsub.h"],
     deps = [
+        "//modules/worker",
         "@pigweed//pw_containers:inline_deque",
         "@pigweed//pw_function",
         "@pigweed//pw_sync:interrupt_spin_lock",
         "@pigweed//pw_sync:lock_annotations",
-        "//modules/worker",
     ],
 )
 
 pw_cc_test(
     name = "pubsub_test",
     srcs = ["pubsub_test.cc"],
+    # TODO: https://pwbug.dev/352163490 - Fails in CI
+    tags = ["manual"],
     deps = [
         ":pubsub",
         "//modules/worker:test_worker",

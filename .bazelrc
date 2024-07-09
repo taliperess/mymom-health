@@ -51,6 +51,8 @@ build:presubmit -- \
 # pw_transfer/py/pw_transfer.
 common --incompatible_default_to_explicit_init_py
 
+common:asan --@pigweed//pw_toolchain/host_clang:asan
+
 # Error output settings.
 common --verbose_failures
 test --test_output=errors

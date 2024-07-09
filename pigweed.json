@@ -8,6 +8,15 @@
           [
             "build",
             "--config=presubmit"
+          ],
+          [
+            "test",
+            "//..."
+          ],
+          [
+            "test",
+            "--config=asan",
+            "//..."
           ]
         ]
       }
