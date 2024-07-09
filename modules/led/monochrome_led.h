@@ -18,7 +18,6 @@ namespace am {
 /// Interface for a simple LED.
 class MonochromeLed {
  public:
-  MonochromeLed();
   virtual ~MonochromeLed() = default;
 
   /// Returns whether the LED is on.
@@ -34,6 +33,8 @@ class MonochromeLed {
   void Toggle();
 
  protected:
+  MonochromeLed();
+
   /// Turns the LED on the board on or off.
   ///
   /// @param  enable  True turns the LED on; false turns it off.

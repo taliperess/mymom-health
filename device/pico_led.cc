@@ -14,6 +14,8 @@
 
 // SimpleLED implementation for the rp2040 using the pico-sdk.
 
+#include "device/pico_led.h"
+
 #include "modules/led/monochrome_led.h"
 #include "pico/stdlib.h"
 #include "pw_digital_io_rp2040/digital_io.h"
@@ -25,12 +27,12 @@ static pw::digital_io::Rp2040DigitalInOut led({
     .polarity = pw::digital_io::Polarity::kActiveHigh,
 });
 
-MonochromeLed::MonochromeLed() {
+PicoMonochromeLed::PicoMonochromeLed() {
   led.Enable();
   Set(false);
 }
 
-void MonochromeLed::Set(bool enable) {
+void PicoMonochromeLed::Set(bool enable) {
   led.SetState(enable ? pw::digital_io::State::kActive
                       : pw::digital_io::State::kInactive);
 }

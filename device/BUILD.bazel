@@ -28,6 +28,7 @@ cc_library(
 cc_library(
     name = "pico_led",
     srcs = ["pico_led.cc"],
+    hdrs = ["pico_led.h"],
     deps = [
         "//modules/led:monochrome_led",
         "@pico-sdk//src/common/pico_stdlib:pico_stdlib",
