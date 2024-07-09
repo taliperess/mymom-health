@@ -17,17 +17,19 @@
 #include <mutex>
 
 #include "modules/blinky/blinky.h"
+#include "modules/worker/worker.h"
 #include "pw_log/log.h"
 #include "pw_preprocessor/compiler.h"
 #include "pw_status/try.h"
+#include "pw_system/system.h"
 #include "system/system.h"
 
 namespace am {
 
 Blinky::Blinky() : timer_(pw::bind_member<&Blinky::ToggleCallback>(this)) {}
 
-void Blinky::Init(pw::work_queue::WorkQueue& work_queue, MonochromeLed& led) {
-  work_queue_ = &work_queue;
+void Blinky::Init(Worker& worker, MonochromeLed& led) {
+  worker_ = &worker;
   led_ = &led;
 }
 
@@ -95,7 +97,7 @@ pw::Status Blinky::ScheduleToggle() {
   // Scheduling the timer again might not be safe from this context, so instead
   // just defer to the work queue.
   if (num_toggles > 0) {
-    PW_TRY(work_queue_->PushWork([this]() { timer_.InvokeAfter(interval()); }));
+    worker_->RunOnce([this]() { timer_.InvokeAfter(interval()); });
   } else {
     PW_LOG_INFO("Stopped blinking");
   }

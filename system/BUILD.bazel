@@ -27,3 +27,16 @@ cc_library(
         "//modules/led:monochrome_led",
     ],
 )
+
+
+cc_library(
+    name = "worker",
+    hdrs = ["worker.h"],
+    srcs = ["worker.cc"],
+    deps = [
+      "//modules/worker",
+      "@pigweed//pw_function",
+      "@pigweed//pw_log",
+      "@pigweed//pw_system:async",
+    ],
+)

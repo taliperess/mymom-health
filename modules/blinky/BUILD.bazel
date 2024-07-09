@@ -28,6 +28,7 @@ cc_library(
     hdrs = ["blinky.h"],
     deps = [
         "//modules/led:monochrome_led",
+        "//modules/worker",
         "//system",
         "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_chrono:system_timer",
@@ -35,7 +36,7 @@ cc_library(
         "@pigweed//pw_preprocessor",
         "@pigweed//pw_sync:interrupt_spin_lock",
         "@pigweed//pw_sync:lock_annotations",
-        "@pigweed//pw_work_queue",
+        "@pigweed//pw_system:async",
     ],
 )
 
@@ -45,7 +46,7 @@ pw_cc_test(
     deps = [
         ":blinky",
         "//modules/led:monochrome_led_fake",
-        "//modules/testing:work_queue",
+        "//modules/worker:test_worker",
         "@pigweed//pw_thread:sleep",
         "@pigweed//pw_unit_test",
     ],
@@ -58,7 +59,6 @@ cc_library(
     deps = [
         ":blinky",
         ":nanopb_rpc",
-        "@pigweed//pw_system",
     ],
 )
 

@@ -15,14 +15,23 @@
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "work_queue",
-    testonly = True,
-    srcs = ["work_queue.cc"],
-    hdrs = ["work_queue.h"],
+    name = "worker",
+    hdrs = ["worker.h"],
     deps = [
-        "@pigweed//pw_thread:test_thread_context",
-        "@pigweed//pw_thread:thread",
-        "@pigweed//pw_unit_test",
-        "@pigweed//pw_work_queue",
+      "@pigweed//pw_function",
+    ]
+)
+
+cc_library(
+    name = "test_worker",
+    testonly = True,
+    srcs = ["test_worker.cc"],
+    hdrs = ["test_worker.h"],
+    deps = [
+      ":worker",
+      "@pigweed//pw_thread:test_thread_context",
+      "@pigweed//pw_thread:thread",
+      "@pigweed//pw_unit_test",
+      "@pigweed//pw_work_queue",
     ],
 )

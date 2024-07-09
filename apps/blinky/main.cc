@@ -14,21 +14,24 @@
 #define PW_LOG_MODULE_NAME "MAIN"
 
 #include "modules/blinky/service.h"
+#include "modules/board/service.h"
 #include "pw_log/log.h"
-#include "pw_system/rpc_server.h"
-#include "pw_system/work_queue.h"
+#include "pw_system/system.h"
 #include "system/system.h"
+#include "system/worker.h"
 
-static am::BlinkyService blinky_service;
+int main() {
+  am::system::Init();
 
-namespace pw::system {
+  static am::BoardService board_service;
+  board_service.Init(am::system::GetWorker(), am::system::Board());
+  pw::System().rpc_server().RegisterService(board_service);
 
-// This will run once after pw::system::Init() completes. This callback must
-// return or it will block the work queue.
-void UserAppInit() {
-  blinky_service.Init(pw::system::GetWorkQueue(), am::system::MonochromeLed());
-  pw::system::GetRpcServer().RegisterService(blinky_service);
+  static am::BlinkyService blinky_service;
+  blinky_service.Init(am::system::GetWorker(), am::system::MonochromeLed());
+  pw::System().rpc_server().RegisterService(blinky_service);
+
   PW_LOG_INFO("Started blinky app; waiting for RPCs...");
+  am::system::Start();
+  PW_UNREACHABLE;
 }
-
-}  // namespace pw::system

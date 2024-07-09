@@ -16,13 +16,13 @@
 #include <chrono>
 
 #include "modules/led/monochrome_led.h"
+#include "modules/worker/worker.h"
 #include "pw_chrono/system_clock.h"
 #include "pw_chrono/system_timer.h"
 #include "pw_function/function.h"
 #include "pw_status/status.h"
 #include "pw_sync/interrupt_spin_lock.h"
 #include "pw_sync/lock_annotations.h"
-#include "pw_work_queue/work_queue.h"
 
 namespace am {
 
@@ -39,7 +39,7 @@ class Blinky final {
   /// Injects this object's dependencies.
   ///
   /// This method MUST be called befire using any other method.
-  void Init(pw::work_queue::WorkQueue& work_queue, MonochromeLed& led);
+  void Init(Worker& worker, MonochromeLed& led);
 
   /// Returns the currently configured interval for one blink.
   pw::chrono::SystemClock::duration interval() const;
@@ -64,7 +64,7 @@ class Blinky final {
   /// Callback for the timer to toggle the LED.
   void ToggleCallback(pw::chrono::SystemClock::time_point);
 
-  pw::work_queue::WorkQueue* work_queue_ = nullptr;
+  Worker* worker_ = nullptr;
   MonochromeLed* led_ = nullptr;
   pw::chrono::SystemTimer timer_;
 

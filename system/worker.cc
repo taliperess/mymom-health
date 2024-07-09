@@ -11,24 +11,30 @@
 // WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 // License for the specific language governing permissions and limitations under
 // the License.
-#pragma once
 
-#include "modules/board/board.h"
-#include "modules/led/monochrome_led.h"
+#include "system/worker.h"
 
-// The functions in this file return specific implementations of singleton types
-// provided by the system.
+#include "pw_system/system.h"
+#include "pw_log/log.h"
 
 namespace am::system {
+namespace internal {
 
-/// Initializes the system. This must be called before anything else in `main`.
-void Init();
+/// A worker which delegates work to `pw::System`.
+class SystemWorker final: public Worker {
+ public:
+  void RunOnce(pw::Function<void()>&& work) override {
+    if (!pw::System().RunOnce(std::move(work))) {
+      PW_LOG_ERROR("Unable to schedule work on system worker.");
+  }
+  }
+};
 
-/// Starts the main system scheduler. This function never returns.
-void Start();
+}  // namespace internal
 
-Board& Board();
-
-MonochromeLed& MonochromeLed();
+Worker& GetWorker() {
+    static internal::SystemWorker worker;
+    return worker;
+}
 
 }  // namespace am::system

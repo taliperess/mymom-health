@@ -75,6 +75,7 @@ cc_library(
     deps = [
         ":board",
         ":nanopb_rpc",
+        "//modules/worker",
         "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_chrono:system_timer",
         "@pigweed//pw_log",

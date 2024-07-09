@@ -17,8 +17,27 @@
 #include "device/pico_led.h"
 #include "modules/board/board.h"
 #include "modules/led/monochrome_led.h"
+#include "pico/stdlib.h"
+#include "pw_channel/rp2_stdio_channel.h"
+#include "pw_multibuf/simple_allocator.h"
+#include "pw_system/system.h"
 
 namespace am::system {
+
+void Init() {
+  // PICO_SDK inits.
+  stdio_init_all();
+  setup_default_uart();
+  stdio_usb_init();
+  adc_init();
+}
+
+void Start() {
+  static std::byte channel_buffer[1024];
+  static pw::multibuf::SimpleAllocator multibuf_alloc(channel_buffer, pw::System().allocator());
+  pw::SystemStart(pw::channel::Rp2StdioChannelInit(multibuf_alloc));
+  PW_UNREACHABLE;
+}
 
 am::Board& Board() {
   static ::am::Board board;

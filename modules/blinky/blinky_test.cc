@@ -15,7 +15,7 @@
 #include "modules/blinky/blinky.h"
 
 #include "modules/led/monochrome_led_fake.h"
-#include "modules/testing/work_queue.h"
+#include "modules/worker/test_worker.h"
 #include "pw_thread/sleep.h"
 #include "pw_unit_test/framework.h"
 
@@ -23,7 +23,7 @@ namespace am {
 
 // Test fixtures.
 
-class BlinkyTest : public TestWithWorkQueue<> {
+class BlinkyTest : public ::testing::Test {
  protected:
   MonochromeLedFake led_;
 };
@@ -31,8 +31,9 @@ class BlinkyTest : public TestWithWorkQueue<> {
 // Unit tests.
 
 TEST_F(BlinkyTest, Toggle) {
+  TestWorker<> worker;
   Blinky blinky;
-  blinky.Init(work_queue(), led_);
+  blinky.Init(worker, led_);
 
   blinky.Toggle();
   pw::this_thread::sleep_for(led_.interval() * 1);
@@ -41,7 +42,7 @@ TEST_F(BlinkyTest, Toggle) {
   blinky.Toggle();
   pw::this_thread::sleep_for(led_.interval() * 3);
   blinky.Toggle();
-  StopWorkQueue();
+  worker.Stop();
 
   pw::Vector<uint8_t, 3> expected;
   expected.push_back(MonochromeLedFake::Encode(true, 1));
@@ -51,13 +52,14 @@ TEST_F(BlinkyTest, Toggle) {
 }
 
 TEST_F(BlinkyTest, BlinkTwice) {
+  TestWorker worker;
   Blinky blinky;
-  blinky.Init(work_queue(), led_);
+  blinky.Init(worker, led_);
   EXPECT_EQ(blinky.Blink(2, 1), pw::OkStatus());
   while (!blinky.IsIdle()) {
     pw::this_thread::sleep_for(led_.interval());
   }
-  StopWorkQueue();
+  worker.Stop();
 
   // Since the fake LED only records completed intervals, we need to blink twice
   // to see both "on" and "off".
@@ -69,26 +71,28 @@ TEST_F(BlinkyTest, BlinkTwice) {
 }
 
 TEST_F(BlinkyTest, BlinkMany) {
+  TestWorker<> worker;
   Blinky blinky;
-  blinky.Init(work_queue(), led_);
+  blinky.Init(worker, led_);
   EXPECT_EQ(blinky.Blink(100, 1), pw::OkStatus());
   while (!blinky.IsIdle()) {
     pw::this_thread::sleep_for(led_.interval());
   }
-  StopWorkQueue();
+  worker.Stop();
 
   // Every "on" and "off" is recorded, except the final one.
   EXPECT_EQ(led_.GetOutput().size(), 199U);
 }
 
 TEST_F(BlinkyTest, BlinkSlow) {
+  TestWorker<> worker;
   Blinky blinky;
-  blinky.Init(work_queue(), led_);
+  blinky.Init(worker, led_);
   EXPECT_EQ(blinky.Blink(2, 32), pw::OkStatus());
   while (!blinky.IsIdle()) {
     pw::this_thread::sleep_for(led_.interval());
   }
-  StopWorkQueue();
+  worker.Stop();
 
   pw::Vector<uint8_t, 3> expected;
   expected.push_back(MonochromeLedFake::Encode(true, 32));

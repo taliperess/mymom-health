@@ -13,6 +13,10 @@
 // the License.
 #pragma once
 
+#include "modules/worker/worker.h"
+#include "pw_function/function.h"
+#include "pw_log/log.h"
+
 #include <cstddef>
 
 #include "pw_thread/test_thread_context.h"
@@ -23,24 +27,25 @@
 namespace am {
 namespace internal {
 
-/// Provides a test fixture with a work queue running on a dedicated test
-/// thread. Callers should use ``TestWithWorkQueue`` instead.
-class GenericTestWithWorkQueue : public ::testing::Test {
- protected:
-  GenericTestWithWorkQueue(pw::work_queue::WorkQueue& work_queue);
+/// A worker which delegates to a work queue running on a dedicated test
+/// thread. Callers should use ``TestWorker`` instead.
+class GenericTestWorker : public Worker {
+ public:
+  GenericTestWorker(pw::work_queue::WorkQueue& work_queue);
+  GenericTestWorker(const GenericTestWorker&) = delete;
+  GenericTestWorker& operator=(const GenericTestWorker&) = delete;
+  GenericTestWorker(GenericTestWorker&&) = delete;
+  GenericTestWorker& operator=(GenericTestWorker&&) = delete;
 
-  // Starts the work queue.
-  void SetUp() override;
-
-  pw::work_queue::WorkQueue& work_queue() { return *work_queue_; }
+  void RunOnce(pw::Function<void()>&& work) final;
 
   // Stops the work queue. This method MUST be called before leaving the test
   // body. Otherwise, the work queue may reference objects that have gone out of
   // scope.
-  void StopWorkQueue();
+  void Stop();
 
-  // Joins the work queue thread.
-  void TearDown() override;
+ protected:
+  ~GenericTestWorker();
 
  private:
   pw::work_queue::WorkQueue* work_queue_ = nullptr;
@@ -50,13 +55,12 @@ class GenericTestWithWorkQueue : public ::testing::Test {
 
 }  // namespace internal
 
-/// Provides a test fixture with a work queue running on a dedicated test
+/// A worker which delegates to a work queue running on a dedicated test
 /// thread.
 template <size_t kBufferSize = 10>
-class TestWithWorkQueue : public internal::GenericTestWithWorkQueue {
+class TestWorker final : public internal::GenericTestWorker {
  public:
-  TestWithWorkQueue() : GenericTestWithWorkQueue(work_queue_) {}
-
+  TestWorker() : GenericTestWorker(work_queue_) {}
  private:
   pw::work_queue::WorkQueueWithBuffer<kBufferSize> work_queue_;
 };

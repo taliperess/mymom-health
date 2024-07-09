@@ -14,14 +14,13 @@
 
 #include "modules/blinky/blinky.h"
 #include "modules/blinky/blinky_pb/blinky.rpc.pb.h"
-#include "pw_system/rpc_server.h"
 
 namespace am {
 
 class BlinkyService final
     : public ::blinky::pw_rpc::nanopb::Blinky::Service<BlinkyService> {
  public:
-  void Init(pw::work_queue::WorkQueue& work_queue, MonochromeLed& led);
+  void Init(Worker& worker, MonochromeLed& led);
 
   pw::Status ToggleLed(const pw_protobuf_Empty&, pw_protobuf_Empty&);
 

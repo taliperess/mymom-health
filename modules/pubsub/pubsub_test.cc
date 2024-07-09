@@ -14,7 +14,7 @@
 
 #include "modules/pubsub/pubsub.h"
 
-#include "modules/testing/work_queue.h"
+#include "modules/worker/test_worker.h"
 #include "pw_sync/timed_thread_notification.h"
 #include "pw_unit_test/framework.h"
 
@@ -27,12 +27,9 @@ struct TestEvent {
 };
 using PubSub = am::GenericPubSub<TestEvent>;
 
-class PubSubTest : public am::TestWithWorkQueue<> {
+class PubSubTest : public ::testing::Test {
  public:
   PubSubTest() {}
-
-  void TearDown() { StopWorkQueue(); }
-
  protected:
   pw::InlineDeque<TestEvent, 4> event_queue_;
   std::array<PubSub::SubscribeCallback, 4> subscribers_buffer_;
@@ -43,7 +40,8 @@ class PubSubTest : public am::TestWithWorkQueue<> {
 };
 
 TEST_F(PubSubTest, Publish_OneSubscriber) {
-  PubSub pubsub(work_queue(), event_queue_, subscribers_buffer_);
+  am::TestWorker<> worker;
+  PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
   pubsub.Subscribe([this](TestEvent event) {
     result_ = event.value;
@@ -55,10 +53,12 @@ TEST_F(PubSubTest, Publish_OneSubscriber) {
   // TODO: pwbug.dev/352133474 - Eliminate race conditions from tests.
   EXPECT_TRUE(notification_.try_acquire_for(200ms));
   EXPECT_EQ(result_, 42);
+  worker.Stop();
 }
 
 TEST_F(PubSubTest, Publish_MultipleSubscribers) {
-  PubSub pubsub(work_queue(), event_queue_, subscribers_buffer_);
+  am::TestWorker<> worker;
+  PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
   for (size_t i = 0; i < subscribers_buffer_.size(); ++i) {
     struct {
@@ -82,10 +82,12 @@ TEST_F(PubSubTest, Publish_MultipleSubscribers) {
 
   EXPECT_TRUE(notification_.try_acquire_for(200ms));
   EXPECT_EQ(result_, static_cast<int>(4 * subscribers_buffer_.size()));
+  worker.Stop();
 }
 
 TEST_F(PubSubTest, Publish_MultipleEvents) {
-  PubSub pubsub(work_queue(), event_queue_, subscribers_buffer_);
+  am::TestWorker<> worker;
+  PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
   pubsub.Subscribe([this](TestEvent event) {
     result_ += event.value;
@@ -113,12 +115,14 @@ TEST_F(PubSubTest, Publish_MultipleEvents) {
   EXPECT_TRUE(notification_.try_acquire_for(200ms));
   EXPECT_EQ(result_, 36);
   EXPECT_EQ(events_processed_, 8);
+  worker.Stop();
 }
 
 TEST_F(PubSubTest, Publish_MultipleEvents_QueueFull) {
-  PubSub pubsub(work_queue(), event_queue_, subscribers_buffer_);
+  am::TestWorker<> worker;
+  PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
-  work_queue().PushWork([this]() {
+  worker.RunOnce([this]() {
     // Block the work queue until all events are published.
     PW_ASSERT(work_queue_start_notification_.try_acquire_for(1s));
   });
@@ -143,10 +147,12 @@ TEST_F(PubSubTest, Publish_MultipleEvents_QueueFull) {
   EXPECT_FALSE(notification_.try_acquire_for(200ms));
   EXPECT_EQ(events_processed_, 4);
   EXPECT_EQ(result_, 46);
+  worker.Stop();
 }
 
 TEST_F(PubSubTest, Subscribe_Full) {
-  PubSub pubsub(work_queue(), event_queue_, subscribers_buffer_);
+  am::TestWorker<> worker;
+  PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
   EXPECT_TRUE(pubsub.Subscribe([this](TestEvent) { notification_.release(); })
                   .has_value());
@@ -164,10 +170,12 @@ TEST_F(PubSubTest, Subscribe_Full) {
   EXPECT_FALSE(pubsub.Subscribe([this](TestEvent) { notification_.release(); })
                    .has_value());
   EXPECT_EQ(pubsub.subscriber_count(), 4u);
+  worker.Stop();
 }
 
 TEST_F(PubSubTest, Subscribe_Unsubscribe) {
-  PubSub pubsub(work_queue(), event_queue_, subscribers_buffer_);
+  am::TestWorker<> worker;
+  PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
   auto token1 =
       pubsub.Subscribe([this](TestEvent) { notification_.release(); });
@@ -197,6 +205,7 @@ TEST_F(PubSubTest, Subscribe_Unsubscribe) {
   EXPECT_TRUE(pubsub.Unsubscribe(*token3));
   EXPECT_TRUE(pubsub.Unsubscribe(*token4));
   EXPECT_EQ(pubsub.subscriber_count(), 1u);
+  worker.Stop();
 }
 
 }  // namespace

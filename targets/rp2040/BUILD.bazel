@@ -34,7 +34,6 @@ platform(
 cc_library(
     name = "extra_platform_libs",
     deps = [
-        "//targets/rp2040:pre_init",
         "@pico-sdk//src/common/pico_stdlib:pico_stdlib",
         "@pigweed//pw_tokenizer:linker_script",
     ],
@@ -51,27 +50,17 @@ cc_library(
 )
 
 cc_library(
-    name = "pre_init",
-    srcs = [
-        "boot.cc",
-    ],
-    deps = [
-        ":system",
-        "//modules/board:service",
-        "@freertos",
-        "@pigweed//pw_assert",
-        "@pigweed//pw_string",
-        "@pigweed//pw_system:init",
-    ],
-    alwayslink = 1,
-)
-
-cc_library(
     name = "system",
     srcs = ["system.cc"],
     deps = [
         "//device:pico_board",
         "//device:pico_led",
         "//system:headers",
+        "@pigweed//pw_channel",
+        "@pigweed//pw_channel:rp2_stdio_channel",
+        "@pigweed//pw_multibuf:simple_allocator",
+        "@pigweed//pw_system:async",
+        "@pigweed//third_party/freertos:support",
     ],
+    alwayslink = 1,
 )

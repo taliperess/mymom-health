@@ -18,11 +18,12 @@
 #include <optional>
 #include <type_traits>
 
+#include "modules/worker/worker.h"
+#include "pw_bytes/span.h"
 #include "pw_containers/inline_deque.h"
 #include "pw_function/function.h"
 #include "pw_sync/interrupt_spin_lock.h"
 #include "pw_sync/lock_annotations.h"
-#include "pw_work_queue/work_queue.h"
 
 namespace am {
 
@@ -35,10 +36,10 @@ class GenericPubSub {
   template <
       typename = std::enable_if_t<std::is_trivially_copyable_v<Event> &&
                                   std::is_trivially_destructible_v<Event>>>
-  GenericPubSub(pw::work_queue::WorkQueue& work_queue,
-                pw::InlineDeque<Event>& event_queue,
-                pw::span<SubscribeCallback> subscribers)
-      : work_queue_(&work_queue),
+  GenericPubSub(Worker& worker,
+             pw::InlineDeque<Event>& event_queue,
+             pw::span<SubscribeCallback> subscribers)
+      : worker_(&worker),
         event_queue_(&event_queue),
         subscribers_(subscribers),
         subscriber_count_(0) {}
@@ -102,7 +103,7 @@ class GenericPubSub {
     }
 
     event_queue_->push_back(event);
-    work_queue_->PushWork([this]() { NotifySubscribers(); });
+    worker_->RunOnce([this]() { NotifySubscribers(); });
     return true;
   }
 
@@ -129,7 +130,7 @@ class GenericPubSub {
     subscribers_lock_.unlock();
   }
 
-  pw::work_queue::WorkQueue* work_queue_;
+  Worker* worker_;
 
   pw::sync::InterruptSpinLock event_lock_;
   pw::InlineDeque<Event>* event_queue_ PW_GUARDED_BY(event_lock_);
@@ -145,8 +146,8 @@ class GenericPubSubBuffer : public GenericPubSub<Event> {
   using SubscribeCallback = typename GenericPubSub<Event>::SubscribeCallback;
   using SubscribeToken = typename GenericPubSub<Event>::SubscribeToken;
 
-  constexpr GenericPubSubBuffer(pw::work_queue::WorkQueue& work_queue)
-      : GenericPubSub<Event>(work_queue, event_queue_, subscribers_) {}
+  constexpr GenericPubSubBuffer(Worker& worker)
+      : GenericPubSub<Event>(worker, event_queue_, subscribers_) {}
 
  private:
   pw::InlineDeque<Event, kMaxEvents> event_queue_;

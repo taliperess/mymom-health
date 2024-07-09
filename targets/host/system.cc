@@ -16,8 +16,15 @@
 
 #include "modules/board/board_fake.h"
 #include "modules/led/monochrome_led_fake.h"
+#include "pw_assert/check.h"
 
 namespace am::system {
+
+void Init() {}
+
+void Start() {
+  PW_CHECK(false, "Host system startup has not been implemented.");
+}
 
 am::Board& Board() {
   static BoardFake board;

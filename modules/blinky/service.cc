@@ -17,9 +17,8 @@
 
 namespace am {
 
-void BlinkyService::Init(pw::work_queue::WorkQueue& work_queue,
-                         MonochromeLed& led) {
-  blinky_.Init(work_queue, led);
+void BlinkyService::Init(Worker& worker, MonochromeLed& led) {
+  blinky_.Init(worker, led);
 }
 
 pw::Status BlinkyService::ToggleLed(const pw_protobuf_Empty&,

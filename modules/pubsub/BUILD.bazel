@@ -27,7 +27,7 @@ cc_library(
         "@pigweed//pw_function",
         "@pigweed//pw_sync:interrupt_spin_lock",
         "@pigweed//pw_sync:lock_annotations",
-        "@pigweed//pw_work_queue",
+        "//modules/worker",
     ],
 )
 
@@ -36,7 +36,7 @@ pw_cc_test(
     srcs = ["pubsub_test.cc"],
     deps = [
         ":pubsub",
-        "//modules/testing:work_queue",
+        "//modules/worker:test_worker",
         "@pigweed//pw_sync:timed_thread_notification",
     ],
 )

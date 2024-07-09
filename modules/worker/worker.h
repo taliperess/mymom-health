@@ -13,22 +13,19 @@
 // the License.
 #pragma once
 
-#include "modules/board/board.h"
-#include "modules/led/monochrome_led.h"
+#include "pw_function/function.h"
 
-// The functions in this file return specific implementations of singleton types
-// provided by the system.
+namespace am {
 
-namespace am::system {
+/// Interface for a worker that can ambiently execute functions.
+///
+/// Current implementations delegate to work queues.
+class Worker {
+ public:
+  /// Ambiently execute a function.
+  virtual void RunOnce(pw::Function<void()>&& work) = 0;
+ protected:
+  ~Worker() = default;
+};
 
-/// Initializes the system. This must be called before anything else in `main`.
-void Init();
-
-/// Starts the main system scheduler. This function never returns.
-void Start();
-
-Board& Board();
-
-MonochromeLed& MonochromeLed();
-
-}  // namespace am::system
+}  // namespace am

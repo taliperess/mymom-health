@@ -12,30 +12,29 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-#include "modules/testing/work_queue.h"
-
+#include "modules/worker/test_worker.h"
 #include "pw_assert/check.h"
 
 namespace am::internal {
 
-GenericTestWithWorkQueue::GenericTestWithWorkQueue(
+GenericTestWorker::GenericTestWorker(
     pw::work_queue::WorkQueue& work_queue)
-    : work_queue_(&work_queue) {}
+    : work_queue_(&work_queue), work_thread_(pw::thread::Thread(context_.options(), work_queue)) {}
 
-void GenericTestWithWorkQueue::SetUp() {
-  work_thread_ = pw::thread::Thread(context_.options(), *work_queue_);
+void GenericTestWorker::RunOnce(pw::Function<void()>&& work) {
+    work_queue_->PushWork(std::move(work));
 }
 
-void GenericTestWithWorkQueue::StopWorkQueue() {
+GenericTestWorker::~GenericTestWorker() {
+  PW_CHECK_PTR_EQ(work_queue_,
+                  nullptr,
+                  "`TestWorker::Stop` must be called before the test completes.");
+}
+
+void GenericTestWorker::Stop() {
   work_queue_->RequestStop();
   work_thread_.join();
   work_queue_ = nullptr;
-}
-
-void GenericTestWithWorkQueue::TearDown() {
-  PW_CHECK_PTR_EQ(work_queue_,
-                  nullptr,
-                  "StopWorkQueue must be called before the test completes.");
 }
 
 }  // namespace am::internal

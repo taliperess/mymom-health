@@ -15,9 +15,9 @@
 
 #include "modules/board/board.h"
 #include "modules/board/board.rpc.pb.h"
+#include "modules/worker/worker.h"
 #include "pw_chrono/system_timer.h"
 #include "pw_status/status.h"
-#include "pw_work_queue/work_queue.h"
 
 namespace am {
 
@@ -26,7 +26,7 @@ class BoardService final
  public:
   BoardService();
 
-  void Init(pw::work_queue::WorkQueue& work_queue, Board& board);
+  void Init(Worker& worker, Board& board);
 
   pw::Status Reboot(const board_RebootRequest& request,
                     pw_protobuf_Empty& /*response*/);
@@ -42,7 +42,7 @@ class BoardService final
 
   void ScheduleTempSample();
 
-  pw::work_queue::WorkQueue* work_queue_ = nullptr;
+  Worker* worker_ = nullptr;
   Board* board_ = nullptr;
   pw::chrono::SystemTimer temp_sample_timer_;
   pw::chrono::SystemClock::duration temp_sample_interval_;

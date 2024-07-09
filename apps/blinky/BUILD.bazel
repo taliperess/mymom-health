@@ -24,9 +24,17 @@ cc_binary(
     srcs = ["main.cc"],
     deps = [
         "//modules/blinky:service",
+        "//modules/board:service",
+        "//system:worker",
         "//system",
         "@pigweed//pw_log",
-        "@pigweed//pw_system",
+        "@pigweed//pw_system:async",
+
+        # These should be provided by pw_system:async.
+        "@pigweed//pw_assert:backend_impl",
+        "@pigweed//pw_log:backend_impl",
+        "@pigweed//pw_system:extra_platform_libs",
+        "@pigweed//pw_tokenizer:linker_script",
     ],
 )
 

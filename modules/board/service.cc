@@ -26,8 +26,8 @@ BoardService::BoardService()
         TempSampleCallback();
       }) {}
 
-void BoardService::Init(pw::work_queue::WorkQueue& work_queue, Board& board) {
-  work_queue_ = &work_queue;
+void BoardService::Init(Worker& worker, Board& board) {
+  worker_ = &worker;
   board_ = &board;
 }
 
@@ -69,10 +69,8 @@ void BoardService::TempSampleCallback() {
 }
 
 void BoardService::ScheduleTempSample() {
-  work_queue_
-      ->PushWork(
-          [this]() { temp_sample_timer_.InvokeAfter(temp_sample_interval_); })
-      .IgnoreError();
+  worker_->RunOnce(
+    [this]() { temp_sample_timer_.InvokeAfter(temp_sample_interval_); });
 }
 
 }  // namespace am
