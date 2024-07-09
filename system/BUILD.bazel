@@ -28,15 +28,24 @@ cc_library(
     ],
 )
 
-
 cc_library(
     name = "worker",
-    hdrs = ["worker.h"],
     srcs = ["worker.cc"],
+    hdrs = ["worker.h"],
     deps = [
-      "//modules/worker",
-      "@pigweed//pw_function",
-      "@pigweed//pw_log",
-      "@pigweed//pw_system:async",
+        "//modules/worker",
+        "@pigweed//pw_function",
+        "@pigweed//pw_log",
+        "@pigweed//pw_system:async",
+    ],
+)
+
+cc_library(
+    name = "pubsub",
+    srcs = ["pubsub.cc"],
+    hdrs = ["pubsub.h"],
+    deps = [
+        ":worker",
+        "//modules/pubsub",
     ],
 )
