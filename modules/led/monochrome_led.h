@@ -33,7 +33,7 @@ class MonochromeLed {
   void Toggle();
 
  protected:
-  MonochromeLed();
+  MonochromeLed() = default;
 
   /// Turns the LED on the board on or off.
   ///

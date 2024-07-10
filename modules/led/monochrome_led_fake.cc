@@ -20,8 +20,6 @@
 
 namespace am {
 
-MonochromeLed::MonochromeLed() {}
-
 void MonochromeLed::Set(bool enable) {
   if (enable) {
     PW_LOG_INFO("[*]");

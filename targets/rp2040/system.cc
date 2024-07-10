@@ -15,6 +15,7 @@
 #include "system/system.h"
 
 #include "device/pico_led.h"
+#include "hardware/adc.h"
 #include "modules/board/board.h"
 #include "modules/led/monochrome_led.h"
 #include "pico/stdlib.h"
