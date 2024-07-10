@@ -24,6 +24,7 @@ class Worker {
  public:
   /// Ambiently execute a function.
   virtual void RunOnce(pw::Function<void()>&& work) = 0;
+
  protected:
   ~Worker() = default;
 };

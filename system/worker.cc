@@ -14,27 +14,27 @@
 
 #include "system/worker.h"
 
-#include "pw_system/system.h"
 #include "pw_log/log.h"
+#include "pw_system/system.h"
 
 namespace am::system {
 namespace internal {
 
 /// A worker which delegates work to `pw::System`.
-class SystemWorker final: public Worker {
+class SystemWorker final : public Worker {
  public:
   void RunOnce(pw::Function<void()>&& work) override {
     if (!pw::System().RunOnce(std::move(work))) {
       PW_LOG_ERROR("Unable to schedule work on system worker.");
-  }
+    }
   }
 };
 
 }  // namespace internal
 
 Worker& GetWorker() {
-    static internal::SystemWorker worker;
-    return worker;
+  static internal::SystemWorker worker;
+  return worker;
 }
 
 }  // namespace am::system

@@ -70,7 +70,7 @@ void BoardService::TempSampleCallback() {
 
 void BoardService::ScheduleTempSample() {
   worker_->RunOnce(
-    [this]() { temp_sample_timer_.InvokeAfter(temp_sample_interval_); });
+      [this]() { temp_sample_timer_.InvokeAfter(temp_sample_interval_); });
 }
 
 }  // namespace am

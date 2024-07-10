@@ -21,7 +21,10 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "pubsub",
-    hdrs = ["pubsub.h"],
+    hdrs = [
+        "pubsub.h",
+        "pubsub_events.h",
+    ],
     deps = [
         "//modules/worker",
         "@pigweed//pw_containers:inline_deque",

@@ -13,7 +13,7 @@
 // the License.
 #pragma once
 
-#include "modules/pubsub/pubsub.h"
+#include "modules/pubsub/pubsub_events.h"
 
 namespace am::system {
 

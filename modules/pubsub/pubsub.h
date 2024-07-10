@@ -17,6 +17,7 @@
 #include <mutex>
 #include <optional>
 #include <type_traits>
+#include <variant>
 
 #include "modules/worker/worker.h"
 #include "pw_bytes/span.h"
@@ -33,12 +34,9 @@ class GenericPubSub {
   using SubscribeCallback = pw::Function<void(Event)>;
   using SubscribeToken = size_t;
 
-  template <
-      typename = std::enable_if_t<std::is_trivially_copyable_v<Event> &&
-                                  std::is_trivially_destructible_v<Event>>>
   GenericPubSub(Worker& worker,
-             pw::InlineDeque<Event>& event_queue,
-             pw::span<SubscribeCallback> subscribers)
+                pw::InlineDeque<Event>& event_queue,
+                pw::span<SubscribeCallback> subscribers)
       : worker_(&worker),
         event_queue_(&event_queue),
         subscribers_(subscribers),
@@ -97,6 +95,25 @@ class GenericPubSub {
   constexpr size_t subscriber_count() const { return subscriber_count_; }
 
  private:
+  // Events (or their variant elements) must be standard layout and trivially
+  // copyable & destructible.
+  template <typename T>
+  static constexpr bool kValidEvent =
+      std::is_trivially_copyable_v<T> && std::is_trivially_destructible_v<T> &&
+      std::is_standard_layout_v<T>;
+
+  template <typename T>
+  struct EventsAreValid : std::bool_constant<kValidEvent<T>> {};
+
+  template <typename... Types>
+  struct EventsAreValid<std::variant<Types...>>
+      : std::bool_constant<(kValidEvent<Types> && ...)> {};
+
+  static_assert(
+      EventsAreValid<Event>(),
+      "Events or their std::variant elements must be standard layout, "
+      "trivially copyable, and trivially destructible");
+
   bool PublishLocked(Event event) PW_EXCLUSIVE_LOCKS_REQUIRED(event_lock_) {
     if (event_queue_->full()) {
       return false;
@@ -153,12 +170,5 @@ class GenericPubSubBuffer : public GenericPubSub<Event> {
   pw::InlineDeque<Event, kMaxEvents> event_queue_;
   std::array<SubscribeCallback, kMaxSubscribers> subscribers_;
 };
-
-// TODO
-struct Event {};
-
-// PubSub using Airmaranth events.
-// TODO: Does this belong here or alongside the event definition?
-using PubSub = GenericPubSub<Event>;
 
 }  // namespace am

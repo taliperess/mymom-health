@@ -13,22 +13,24 @@
 // the License.
 
 #include "modules/worker/test_worker.h"
+
 #include "pw_assert/check.h"
 
 namespace am::internal {
 
-GenericTestWorker::GenericTestWorker(
-    pw::work_queue::WorkQueue& work_queue)
-    : work_queue_(&work_queue), work_thread_(pw::thread::Thread(context_.options(), work_queue)) {}
+GenericTestWorker::GenericTestWorker(pw::work_queue::WorkQueue& work_queue)
+    : work_queue_(&work_queue),
+      work_thread_(pw::thread::Thread(context_.options(), work_queue)) {}
 
 void GenericTestWorker::RunOnce(pw::Function<void()>&& work) {
-    work_queue_->PushWork(std::move(work));
+  work_queue_->PushWork(std::move(work));
 }
 
 GenericTestWorker::~GenericTestWorker() {
-  PW_CHECK_PTR_EQ(work_queue_,
-                  nullptr,
-                  "`TestWorker::Stop` must be called before the test completes.");
+  PW_CHECK_PTR_EQ(
+      work_queue_,
+      nullptr,
+      "`TestWorker::Stop` must be called before the test completes.");
 }
 
 void GenericTestWorker::Stop() {

@@ -14,6 +14,7 @@
 
 #include "modules/pubsub/pubsub.h"
 
+#include "modules/pubsub/pubsub_events.h"
 #include "modules/worker/test_worker.h"
 #include "pw_sync/timed_thread_notification.h"
 #include "pw_unit_test/framework.h"
@@ -28,8 +29,6 @@ struct TestEvent {
 using PubSub = am::GenericPubSub<TestEvent>;
 
 class PubSubTest : public ::testing::Test {
- public:
-  PubSubTest() {}
  protected:
   pw::InlineDeque<TestEvent, 4> event_queue_;
   std::array<PubSub::SubscribeCallback, 4> subscribers_buffer_;
@@ -144,7 +143,7 @@ TEST_F(PubSubTest, Publish_MultipleEvents_QueueFull) {
   work_queue_start_notification_.release();
 
   // This should time out as the fifth event never gets sent.
-  EXPECT_FALSE(notification_.try_acquire_for(200ms));
+  EXPECT_FALSE(notification_.try_acquire_for(1ms));
   EXPECT_EQ(events_processed_, 4);
   EXPECT_EQ(result_, 46);
   worker.Stop();
@@ -205,6 +204,54 @@ TEST_F(PubSubTest, Subscribe_Unsubscribe) {
   EXPECT_TRUE(pubsub.Unsubscribe(*token3));
   EXPECT_TRUE(pubsub.Unsubscribe(*token4));
   EXPECT_EQ(pubsub.subscriber_count(), 1u);
+  worker.Stop();
+}
+
+class PubSubAmEventsTest : public ::testing::Test {
+ protected:
+  pw::InlineDeque<am::Event, 4> event_queue_;
+  std::array<am::PubSub::SubscribeCallback, 4> subscribers_buffer_;
+  float total_voc_ = 0;
+  int events_processed_ = 0;
+  pw::sync::TimedThreadNotification notification_;
+  pw::sync::TimedThreadNotification work_queue_start_notification_;
+};
+
+TEST_F(PubSubAmEventsTest, AmPubSub_PublishEvent) {
+  am::TestWorker<> worker;
+  am::PubSub pubsub(worker, event_queue_, subscribers_buffer_);
+
+  worker.RunOnce([this]() {
+    // Block the work queue until all events are published.
+    PW_ASSERT(work_queue_start_notification_.try_acquire_for(1s));
+  });
+
+  pubsub.Subscribe([this](am::Event event) {
+    if (std::holds_alternative<am::VocSample>(event)) {
+      total_voc_ += std::get<am::VocSample>(event).voc_level;
+    } else if (std::holds_alternative<am::ButtonA>(event)) {
+      EXPECT_TRUE(std::get<am::ButtonA>(event).pressed());
+    } else {
+      FAIL() << "Unexpected event type";
+    }
+
+    events_processed_++;
+
+    if (events_processed_ == 5) {
+      notification_.release();
+    }
+  });
+
+  EXPECT_TRUE(pubsub.Publish(am::VocSample{.voc_level = 0.25f}));
+  EXPECT_TRUE(pubsub.Publish(am::VocSample{.voc_level = 0.50f}));
+  EXPECT_TRUE(pubsub.Publish(am::ButtonA(true)));
+  EXPECT_TRUE(pubsub.Publish(am::VocSample{.voc_level = 0.25}));
+  work_queue_start_notification_.release();
+
+  // This should time out as the fifth event never gets sent.
+  EXPECT_FALSE(notification_.try_acquire_for(1ms));
+  EXPECT_EQ(events_processed_, 4);
+  EXPECT_EQ(total_voc_, 1.0f);
   worker.Stop();
 }
 

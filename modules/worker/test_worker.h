@@ -13,12 +13,11 @@
 // the License.
 #pragma once
 
+#include <cstddef>
+
 #include "modules/worker/worker.h"
 #include "pw_function/function.h"
 #include "pw_log/log.h"
-
-#include <cstddef>
-
 #include "pw_thread/test_thread_context.h"
 #include "pw_thread/thread.h"
 #include "pw_unit_test/framework.h"
@@ -61,6 +60,7 @@ template <size_t kBufferSize = 10>
 class TestWorker final : public internal::GenericTestWorker {
  public:
   TestWorker() : GenericTestWorker(work_queue_) {}
+
  private:
   pw::work_queue::WorkQueueWithBuffer<kBufferSize> work_queue_;
 };
