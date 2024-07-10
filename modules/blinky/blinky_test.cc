@@ -25,7 +25,21 @@ namespace am {
 
 class BlinkyTest : public ::testing::Test {
  protected:
+  // TODO(b/352327457): Ideally this would use simulated time, but no
+  // simulated system timer exists yet. For now, relax the constraint by
+  // checking that the LED was in the right state for _at least_ the expected
+  // number of intervals. On some platforms, the fake LED is implemented using
+  // threads, and may sleep a bit longer.
+  void Expect(bool is_on, size_t num_intervals) {
+    const pw::Vector<uint8_t>& actual = led_.GetOutput();
+    ASSERT_LT(offset_, actual.size());
+    uint8_t encoded = MonochromeLedFake::Encode(is_on, num_intervals);
+    EXPECT_GE(actual[offset_], encoded);
+    ++offset_;
+  }
+
   MonochromeLedFake led_;
+  size_t offset_ = 0;
 };
 
 // Unit tests.
@@ -44,11 +58,9 @@ TEST_F(BlinkyTest, Toggle) {
   blinky.Toggle();
   worker.Stop();
 
-  pw::Vector<uint8_t, 3> expected;
-  expected.push_back(MonochromeLedFake::Encode(true, 1));
-  expected.push_back(MonochromeLedFake::Encode(false, 2));
-  expected.push_back(MonochromeLedFake::Encode(true, 3));
-  EXPECT_EQ(led_.GetOutput(), expected);
+  Expect(true, 1);
+  Expect(false, 2);
+  Expect(true, 3);
 }
 
 TEST_F(BlinkyTest, BlinkTwice) {
@@ -63,11 +75,9 @@ TEST_F(BlinkyTest, BlinkTwice) {
 
   // Since the fake LED only records completed intervals, we need to blink twice
   // to see both "on" and "off".
-  pw::Vector<uint8_t, 3> expected;
-  expected.push_back(MonochromeLedFake::Encode(true, 1));
-  expected.push_back(MonochromeLedFake::Encode(false, 1));
-  expected.push_back(MonochromeLedFake::Encode(true, 1));
-  EXPECT_EQ(led_.GetOutput(), expected);
+  Expect(true, 1);
+  Expect(false, 1);
+  Expect(true, 1);
 }
 
 TEST_F(BlinkyTest, BlinkMany) {
@@ -94,11 +104,9 @@ TEST_F(BlinkyTest, BlinkSlow) {
   }
   worker.Stop();
 
-  pw::Vector<uint8_t, 3> expected;
-  expected.push_back(MonochromeLedFake::Encode(true, 32));
-  expected.push_back(MonochromeLedFake::Encode(false, 32));
-  expected.push_back(MonochromeLedFake::Encode(true, 32));
-  EXPECT_EQ(led_.GetOutput(), expected);
+  Expect(true, 32);
+  Expect(false, 32);
+  Expect(true, 32);
 }
 
 }  // namespace am
