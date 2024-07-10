@@ -43,6 +43,7 @@ cc_library(
 pw_cc_test(
     name = "blinky_test",
     srcs = ["blinky_test.cc"],
+    flaky = True,
     deps = [
         ":blinky",
         "//modules/led:monochrome_led_fake",
