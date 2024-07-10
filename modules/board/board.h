@@ -22,11 +22,10 @@ namespace am {
 /// component.
 class Board {
  public:
-  Board();
   virtual ~Board() = default;
 
   /// Returns the CPU core temperature, in degress Celsius.
-  virtual float ReadInternalTemperature();
+  virtual float ReadInternalTemperature() = 0;
 
   /// Reboot the board.
   ///
@@ -35,7 +34,10 @@ class Board {
   ///
   /// @param  reboot_types  Indicates whether to disable the picoboot interface,
   /// mass storage interface, or neither (cold boot) upon reboot.
-  virtual pw::Status Reboot(board_RebootType_Enum reboot_type);
+  virtual pw::Status Reboot(board_RebootType_Enum reboot_type) = 0;
+
+ protected:
+  Board() = default;
 };
 
 }  // namespace am

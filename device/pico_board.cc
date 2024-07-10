@@ -12,16 +12,17 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+#include "device/pico_board.h"
+
 #include "hardware/adc.h"
-#include "modules/board/board.h"
 #include "pico/bootrom.h"
 
 namespace am {
 
-Board::Board() { adc_init(); }
+PicoBoard::PicoBoard() { adc_init(); }
 
 // See raspberry-pi-pico-c-sdk.pdf, Section '4.1.1. hardware_adc'
-float Board::ReadInternalTemperature() {
+float PicoBoard::ReadInternalTemperature() {
   adc_set_temp_sensor_enabled(true);
   adc_select_input(4);  // 4 is the on board temp sensor.
 
@@ -31,7 +32,7 @@ float Board::ReadInternalTemperature() {
 }
 
 // See raspberry-pi-pico-c-sdk.pdf, Section '4.5.5. hardware_bootrom'
-pw::Status Board::Reboot(board_RebootType_Enum reboot_type) {
+pw::Status PicoBoard::Reboot(board_RebootType_Enum reboot_type) {
   uint32_t disable_interface_mask = 0;
 
   if (reboot_type == board_RebootType_Enum_BOTH_MASS_STORAGE_AND_PICOBOOT) {

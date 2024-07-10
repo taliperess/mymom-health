@@ -11,15 +11,18 @@
 // WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 // License for the specific language governing permissions and limitations under
 // the License.
+#pragma once
 
 #include "modules/board/board.h"
+#include "pw_status/status.h"
 
 namespace am {
 
-Board::Board() {}
-
-float Board::ReadInternalTemperature() { return 20.0f; }
-
-pw::Status Board::Reboot(board_RebootType_Enum) { return pw::OkStatus(); }
+class PicoBoard : public Board {
+ public:
+  PicoBoard();
+  float ReadInternalTemperature() override;
+  pw::Status Reboot(board_RebootType_Enum reboot_type) override;
+};
 
 }  // namespace am

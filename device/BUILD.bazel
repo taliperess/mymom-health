@@ -17,6 +17,7 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "pico_board",
     srcs = ["pico_board.cc"],
+    hdrs = ["pico_board.h"],
     deps = [
         "//modules/board",
         "@pico-sdk//src/common/pico_stdlib:pico_stdlib",

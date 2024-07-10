@@ -32,7 +32,6 @@ cc_library(
 
 cc_library(
     name = "board_fake",
-    srcs = ["board_fake.cc"],
     hdrs = ["board_fake.h"],
     deps = [
         ":board",
