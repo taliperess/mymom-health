@@ -12,49 +12,9 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-"""Bazel transitions for Rp2040_System.
+"""Bazel rules for Rp2040_System."""
 
-TODO:  b/301334234 - Use platform-based flags and retire these transitions.
-"""
+load("@rules_platform//platform_data:defs.bzl", "platform_data")
 
-load("@pigweed//pw_build:merge_flags.bzl", "merge_flags_for_transition_impl", "merge_flags_for_transition_outputs")
-load("@pigweed//targets/rp2040:transition.bzl", "RP2040_SYSTEM_FLAGS")
-
-_overrides = {
-    "//system:system": "//targets/rp2040:system",
-    "//command_line_option:platforms": "//targets/rp2040:platform",
-    "@freertos//:freertos_config": "//targets/rp2040:freertos_config",
-    "@pigweed//pw_system:extra_platform_libs": "//targets/rp2040:extra_platform_libs",
-}
-
-def _rp2040_transition_impl(settings, attr):
-    # buildifier: disable=unused-variable
-    _ignore = settings, attr
-    return merge_flags_for_transition_impl(base = RP2040_SYSTEM_FLAGS, override = _overrides)
-
-_rp2040_transition = transition(
-    implementation = _rp2040_transition_impl,
-    inputs = [],
-    outputs = merge_flags_for_transition_outputs(base = RP2040_SYSTEM_FLAGS, override = _overrides),
-)
-
-def _rp2040_binary_impl(ctx):
-    out = ctx.actions.declare_file(ctx.label.name)
-    ctx.actions.symlink(output = out, target_file = ctx.executable.binary)
-    return [DefaultInfo(files = depset([out]), executable = out)]
-
-rp2040_binary = rule(
-    _rp2040_binary_impl,
-    attrs = {
-        "binary": attr.label(
-            doc = "cc_binary to build for rp2040 using pico-sdk.",
-            cfg = _rp2040_transition,
-            executable = True,
-            mandatory = True,
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
-        ),
-    },
-    doc = "Builds the specified binary for the pico-sdk rp2040 platform.",
-)
+def rp2040_binary(name = "", binary = ""):
+    return platform_data(name = name, target = binary, platform = "//targets/rp2040:platform")
