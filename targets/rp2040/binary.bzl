@@ -21,10 +21,11 @@ load("@pigweed//pw_build:merge_flags.bzl", "merge_flags_for_transition_impl", "m
 load("@pigweed//targets/rp2040:transition.bzl", "RP2040_SYSTEM_FLAGS")
 
 _overrides = {
-    "//system:system": "//targets/rp2040:system",
     "//command_line_option:platforms": "//targets/rp2040:platform",
+    "//system:system": "//targets/rp2040:system",
     "@freertos//:freertos_config": "//targets/rp2040:freertos_config",
     "@pigweed//pw_system:extra_platform_libs": "//targets/rp2040:extra_platform_libs",
+    "@pigweed//pw_system:io_backend": "@pigweed//pw_system:sys_io_target_io",
 }
 
 def _rp2040_transition_impl(settings, attr):

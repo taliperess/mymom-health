@@ -18,8 +18,25 @@ cc_library(
     name = "system",
     srcs = ["system.cc"],
     deps = [
+        ":stream_channel",
         "//modules/board:board_fake",
         "//modules/led:monochrome_led_fake",
         "//system:headers",
+        "@pigweed//pw_channel",
+        "@pigweed//pw_multibuf:simple_allocator",
+        "@pigweed//pw_system:async",
+        "@pigweed//pw_system:io",
+    ],
+)
+
+cc_library(
+    name = "stream_channel",
+    srcs = ["stream_channel.cc"],
+    hdrs = ["stream_channel.h"],
+    deps = [
+        "@pigweed//pw_channel",
+        "@pigweed//pw_stream",
+        "@pigweed//pw_sync:interrupt_spin_lock",
+        "@pigweed//pw_sync:thread_notification",
     ],
 )

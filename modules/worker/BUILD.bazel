@@ -18,8 +18,8 @@ cc_library(
     name = "worker",
     hdrs = ["worker.h"],
     deps = [
-      "@pigweed//pw_function",
-    ]
+        "@pigweed//pw_function",
+    ],
 )
 
 cc_library(
@@ -28,10 +28,10 @@ cc_library(
     srcs = ["test_worker.cc"],
     hdrs = ["test_worker.h"],
     deps = [
-      ":worker",
-      "@pigweed//pw_thread:test_thread_context",
-      "@pigweed//pw_thread:thread",
-      "@pigweed//pw_unit_test",
-      "@pigweed//pw_work_queue",
+        ":worker",
+        "@pigweed//pw_thread:test_thread_context",
+        "@pigweed//pw_thread:thread",
+        "@pigweed//pw_unit_test",
+        "@pigweed//pw_work_queue",
     ],
 )

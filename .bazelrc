@@ -25,6 +25,13 @@ common --host_per_file_copt=external/.*@-w
 
 common --custom_malloc=//targets:malloc
 
+# Default host backends.
+common --@pigweed//pw_log:backend=@pigweed//pw_log_string
+common --@pigweed//pw_log:backend_impl=@pigweed//pw_log_string:impl
+common --@pigweed//pw_log_string:handler_backend=@pigweed//pw_system:log_backend
+common --@pigweed//pw_sys_io:backend=@pigweed//pw_sys_io_stdio
+common --@pigweed//pw_system:io_backend=@pigweed//pw_system:socket_target_io
+
 # Required for new toolchain resolution API.
 build --incompatible_enable_cc_toolchain_resolution
 
