@@ -20,7 +20,6 @@
 #include <variant>
 
 #include "modules/worker/worker.h"
-#include "pw_bytes/span.h"
 #include "pw_containers/inline_deque.h"
 #include "pw_function/function.h"
 #include "pw_sync/interrupt_spin_lock.h"
