@@ -20,9 +20,11 @@ refresh_compile_commands(
     target_file_names = {
         "//apps/blinky:rp2040_blinky.elf": "blinky_rp2040",
         "//apps/blinky:simulator_blinky": "blinky_host_simulator",
+        "//modules/blinky:blinky_test": "blinky_test",
     },
-    targets = {
-        "//apps/blinky:rp2040_blinky.elf": "",
-        "//apps/blinky:simulator_blinky": "",
-    },
+    targets = [
+        "//apps/blinky:rp2040_blinky.elf",
+        "//apps/blinky:simulator_blinky",
+        "//modules/blinky:blinky_test",
+    ],
 )
