@@ -1,0 +1,78 @@
+# Copyright 2024 The Pigweed Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations under
+# the License.
+
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+load("@pigweed//targets/host_device_simulator:transition.bzl", "host_device_simulator_binary")
+load("@pigweed//targets/rp2040:flash.bzl", "flash_rp2040")
+load("//targets/rp2040:binary.bzl", "rp2040_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_binary(
+    name = "production",
+    srcs = ["main.cc"],
+    deps = [
+        "//modules/board:service",
+        "//system:worker",
+        "//system",
+        "@pigweed//pw_log",
+        "@pigweed//pw_system:async",
+
+        # These should be provided by pw_system:async.
+        "@pigweed//pw_assert:backend_impl",
+        "@pigweed//pw_log:backend_impl",
+        "@pigweed//pw_system:extra_platform_libs",
+    ],
+)
+
+# Create an rp2040 flashable ELF
+rp2040_binary(
+    name = "rp2040.elf",
+    binary = ":production",
+)
+
+# Create a host binary using the Pigweed upstream pw_system host_device_simulator.
+host_device_simulator_binary(
+    name = "simulator",
+    binary = ":production",
+)
+
+# Connect to a running host_device_simulator_binary with:
+#   bazel run //apps/production:simulator_console
+native_binary(
+    name = "simulator_console",
+    src = "//tools:console",
+    # This arg lets us skip manual port selection.
+    args = [
+        "--socket",
+        "default",
+    ],
+)
+
+native_binary(
+    name = "rp2040_console",
+    src = "//tools:console",
+    args = [
+        "-b",
+        "115200",
+        "--token-databases",
+        "$(rootpath //apps/production:rp2040.elf)",
+    ],
+    data = [":rp2040.elf"],
+)
+
+flash_rp2040(
+    name = "flash",
+    rp2040_binary = "rp2040.elf",
+)
