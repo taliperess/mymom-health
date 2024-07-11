@@ -12,9 +12,6 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-load("@pigweed//pw_build:merge_flags.bzl", "flags_from_dict")
-load("@pigweed//targets/rp2040:transition.bzl", "RP2040_SYSTEM_FLAGS")
-
 package(default_visibility = ["//visibility:public"])
 
 platform(
@@ -32,11 +29,6 @@ platform(
         "@platforms//cpu:armv6-m",
         "@pw_toolchain//constraints/arm_mcpu:cortex-m0",
     ],
-    flags = flags_from_dict(RP2040_SYSTEM_FLAGS | {
-        "//system:system": "//targets/rp2040:system",
-        "@freertos//:freertos_config": "//targets/rp2040:freertos_config",
-        "@pigweed//pw_system:extra_platform_libs": "//targets/rp2040:extra_platform_libs",
-    }),
 )
 
 cc_library(
