@@ -35,12 +35,12 @@ class MonochromeLed {
  protected:
   MonochromeLed() = default;
 
+ private:
   /// Turns the LED on the board on or off.
   ///
   /// @param  enable  True turns the LED on; false turns it off.
-  virtual void Set(bool enable);
+  virtual void Set(bool enable) = 0;
 
- private:
   bool led_is_on_ = false;
 };
 

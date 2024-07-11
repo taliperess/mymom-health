@@ -20,21 +20,21 @@
 
 namespace am {
 
-void MonochromeLed::Set(bool enable) {
+void MonochromeLedFake::Set(bool enable) {
+  // Log the LED state instead of toggling a physical LED. On host, there is no
+  // LED to blink, so this is a portable alternative.
   if (enable) {
     PW_LOG_INFO("[*]");
   } else {
     PW_LOG_INFO("[ ]");
   }
-}
 
-void MonochromeLedFake::Set(bool enable) {
-  // Skip the first "TurnOff" that occurs as part of initialization.
+  // Track the LED state for testing. Skip the first "TurnOff" that occurs as
+  // part of initialization.
   if (IsOn() || !output_.empty()) {
     size_t num_intervals = (pw::chrono::SystemClock::now() - last_) / interval_;
     output_.push_back(Encode(IsOn(), num_intervals));
   }
-  MonochromeLed::Set(enable);
   last_ = pw::chrono::SystemClock::now();
 }
 

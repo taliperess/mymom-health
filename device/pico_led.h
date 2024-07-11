@@ -22,7 +22,8 @@ namespace am {
 class PicoMonochromeLed : public MonochromeLed {
  public:
   PicoMonochromeLed();
-  virtual void Set(bool) override;
+
+  void Set(bool enable) override;
 };
 
 }  // namespace am
