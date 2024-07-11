@@ -12,8 +12,6 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-load("@local_config_platform//:constraints.bzl", "HOST_CONSTRAINTS")
-
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
@@ -23,14 +21,5 @@ cc_library(
         "//modules/board:board_fake",
         "//modules/led:monochrome_led_fake",
         "//system:headers",
-    ],
-)
-
-platform(
-    name = "platform",
-    # The HOST_CONSTRAINTS contain the autodetected OS and CPU for the host.
-    constraint_values = HOST_CONSTRAINTS,
-    flags = [
-        "--//system:system=//targets/host:system",
     ],
 )
