@@ -35,7 +35,7 @@ void Init() {
 }
 
 void Start() {
-  static std::byte channel_buffer[1024];
+  static std::byte channel_buffer[2048];
   static pw::multibuf::SimpleAllocator multibuf_alloc(channel_buffer,
                                                       pw::System().allocator());
   pw::SystemStart(pw::channel::Rp2StdioChannelInit(multibuf_alloc));
