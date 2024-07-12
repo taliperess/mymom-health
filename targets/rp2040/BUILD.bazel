@@ -58,7 +58,10 @@ cc_library(
 
 cc_library(
     name = "system",
-    srcs = ["system.cc"],
+    srcs = [
+        "enviro_pins.h",
+        "system.cc",
+    ],
     deps = [
         "//device:pico_board",
         "//device:pico_led",
