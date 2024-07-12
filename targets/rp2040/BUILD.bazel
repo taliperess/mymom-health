@@ -62,6 +62,7 @@ cc_library(
     deps = [
         "//device:pico_board",
         "//device:pico_led",
+        "//device:rgb_led",
         "//system:headers",
         "@pico-sdk//src/common/pico_stdlib:pico_stdlib",
         "@pico-sdk//src/rp2_common/hardware_adc",

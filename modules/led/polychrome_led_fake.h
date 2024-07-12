@@ -13,25 +13,19 @@
 // the License.
 #pragma once
 
-#include "modules/board/board.h"
-#include "modules/led/monochrome_led.h"
 #include "modules/led/polychrome_led.h"
 
-// The functions in this file return specific implementations of singleton types
-// provided by the system.
+namespace am {
 
-namespace am::system {
+/// Interface for a simple LED.
+class PolychromeLedFake : public PolychromeLed {
+ public:
+  PolychromeLedFake() = default;
 
-/// Initializes the system. This must be called before anything else in `main`.
-void Init();
+ protected:
+  void SetEnabled(bool) override {}
+  void Update() override {}
+  void SetCallback(Callback, uint16_t, uint32_t) override {}
+};
 
-/// Starts the main system scheduler. This function never returns.
-void Start();
-
-Board& Board();
-
-MonochromeLed& MonochromeLed();
-
-PolychromeLed& PolychromeLed();
-
-}  // namespace am::system
+}  // namespace am

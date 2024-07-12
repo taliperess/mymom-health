@@ -32,6 +32,7 @@ cc_library(
     deps = [
         "//modules/board",
         "//modules/led:monochrome_led",
+        "//modules/led:polychrome_led",
     ],
 )
 

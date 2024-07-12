@@ -26,13 +26,14 @@ int main() {
   auto& rpc_server = pw::System().rpc_server();
   auto& worker = am::system::GetWorker();
   auto& monochrome_led = am::system::MonochromeLed();
+  auto& polychrome_led = am::system::PolychromeLed();
 
   static am::BoardService board_service;
   board_service.Init(worker, am::system::Board());
   rpc_server.RegisterService(board_service);
 
   static am::BlinkyService blinky_service;
-  blinky_service.Init(worker, monochrome_led);
+  blinky_service.Init(worker, monochrome_led, polychrome_led);
   rpc_server.RegisterService(blinky_service);
 
   static am::MorseCodeService morse_code_service;

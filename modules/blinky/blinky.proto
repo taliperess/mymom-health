@@ -27,6 +27,13 @@ service Blinky {
 
   // Fades the board LED on and off. `blink_count` is ignored.
   rpc Pulse(CycleRequest) returns (pw.protobuf.Empty);
+
+  // Sets the color of RGB LED
+  rpc SetRgb(RgbRequest) returns (pw.protobuf.Empty);
+
+  // Cycles the RGB LED through all colors. `blink_count` is ignored.
+  rpc Rainbow(CycleRequest) returns (pw.protobuf.Empty);
+
 }
 
 message BlinkRequest {
@@ -42,4 +49,10 @@ message BlinkRequest {
 message CycleRequest {
   // The interval of the LED cycle, in milliseconds.
   uint32 interval_ms = 1;
+}
+
+message RgbRequest {
+  // TODO
+  uint32 hex = 1;
+  uint32 brightness = 2;
 }

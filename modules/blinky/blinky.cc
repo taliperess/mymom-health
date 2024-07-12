@@ -28,9 +28,10 @@ namespace am {
 
 Blinky::Blinky() : timer_(pw::bind_member<&Blinky::ToggleCallback>(this)) {}
 
-void Blinky::Init(Worker& worker, MonochromeLed& monochrome_led) {
+void Blinky::Init(Worker& worker, MonochromeLed& monochrome_led, PolychromeLed& polychrome_led) {
   worker_ = &worker;
   monochrome_led_ = &monochrome_led;
+  polychrome_led_ = &polychrome_led;
 }
 
 Blinky::~Blinky() { timer_.Cancel(); }
@@ -86,6 +87,20 @@ pw::Status Blinky::Blink(uint32_t blink_count, uint32_t interval_ms) {
 void Blinky::Pulse(uint32_t interval_ms) {
   std::lock_guard lock(lock_);
   monochrome_led_->Pulse(interval_ms);
+}
+
+void Blinky::SetRgb(uint8_t red, uint8_t green, uint8_t blue, uint8_t brightness) {
+  std::lock_guard lock(lock_);
+  polychrome_led_->TurnOff();
+  polychrome_led_->SetColor(red, green, blue);
+  polychrome_led_->SetBrightness(brightness);
+  polychrome_led_->TurnOn();
+}
+
+void Blinky::Rainbow(uint32_t interval_ms) {
+  PW_LOG_INFO("Cycling through rainbow at a %ums interval", interval_ms);
+  std::lock_guard lock(lock_);
+  polychrome_led_->Rainbow(interval_ms);
 }
 
 bool Blinky::IsIdle() const {

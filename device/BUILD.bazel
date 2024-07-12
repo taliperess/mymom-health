@@ -39,6 +39,18 @@ cc_library(
     ],
 )
 
+
+cc_library(
+    name = "rgb_led",
+    srcs = ["rgb_led.cc"],
+    hdrs = ["rgb_led.h"],
+    deps = [
+        ":pwm_gpio",
+        "//modules/led:polychrome_led",
+        "@pigweed//pw_log",
+    ],
+)
+
 cc_library(
     name = "pwm_gpio",
     srcs = ["pwm_gpio.cc"],

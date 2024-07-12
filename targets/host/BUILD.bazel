@@ -21,6 +21,7 @@ cc_library(
         ":stream_channel",
         "//modules/board:board_fake",
         "//modules/led:monochrome_led_fake",
+        "//modules/led:polychrome_led_fake",
         "//system:headers",
         "@pigweed//pw_channel",
         "@pigweed//pw_multibuf:simple_allocator",

@@ -16,6 +16,7 @@
 
 #include "modules/board/board_fake.h"
 #include "modules/led/monochrome_led_fake.h"
+#include "modules/led/polychrome_led_fake.h"
 #include "pw_assert/check.h"
 #include "pw_multibuf/simple_allocator.h"
 #include "pw_system/io.h"
@@ -44,6 +45,11 @@ am::Board& Board() {
 am::MonochromeLed& MonochromeLed() {
   static MonochromeLedFake monochrome_led;
   return monochrome_led;
+}
+
+am::PolychromeLed& PolychromeLed() {
+  static PolychromeLedFake polychrome_led;
+  return polychrome_led;
 }
 
 }  // namespace am::system

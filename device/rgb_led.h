@@ -13,25 +13,33 @@
 // the License.
 #pragma once
 
-#include "modules/board/board.h"
-#include "modules/led/monochrome_led.h"
 #include "modules/led/polychrome_led.h"
 
-// The functions in this file return specific implementations of singleton types
-// provided by the system.
+#include <cstdint>
 
-namespace am::system {
+#include "device/pwm_gpio.h"
 
-/// Initializes the system. This must be called before anything else in `main`.
-void Init();
+namespace am {
 
-/// Starts the main system scheduler. This function never returns.
-void Start();
+class RgbLed : public PolychromeLed {
+ public:
+  RgbLed();
 
-Board& Board();
+ private:
+  // TODO
+  void SetEnabled(bool enable) override;
 
-MonochromeLed& MonochromeLed();
+  // TODO
+  void Update() override;
 
-PolychromeLed& PolychromeLed();
+  // TODO
+  void SetCallback(Callback callback, uint16_t per_interval, uint32_t interval_ms) override;
 
-}  // namespace am::system
+  PwmGpio pwm_gpio_red_;
+  PwmGpio pwm_gpio_green_;
+  PwmGpio pwm_gpio_blue_;
+};
+
+
+
+}  // namespace am

@@ -34,3 +34,20 @@ cc_library(
         "@pigweed//pw_log",
     ],
 )
+
+cc_library(
+    name = "polychrome_led",
+    srcs = ["polychrome_led.cc"],
+    hdrs = ["polychrome_led.h"],
+    deps = [
+        ":monochrome_led",
+    ],
+)
+
+cc_library(
+    name = "polychrome_led_fake",
+    hdrs = ["polychrome_led_fake.h"],
+    deps = [
+        ":polychrome_led",
+    ],
+)
