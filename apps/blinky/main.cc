@@ -15,6 +15,7 @@
 
 #include "modules/blinky/service.h"
 #include "modules/board/service.h"
+#include "modules/morse_code/service.h"
 #include "pw_log/log.h"
 #include "pw_system/system.h"
 #include "system/system.h"
@@ -22,14 +23,21 @@
 
 int main() {
   am::system::Init();
+  auto& rpc_server = pw::System().rpc_server();
+  auto& worker = am::system::GetWorker();
+  auto& monochrome_led = am::system::MonochromeLed();
 
   static am::BoardService board_service;
-  board_service.Init(am::system::GetWorker(), am::system::Board());
-  pw::System().rpc_server().RegisterService(board_service);
+  board_service.Init(worker, am::system::Board());
+  rpc_server.RegisterService(board_service);
 
   static am::BlinkyService blinky_service;
-  blinky_service.Init(am::system::GetWorker(), am::system::MonochromeLed());
-  pw::System().rpc_server().RegisterService(blinky_service);
+  blinky_service.Init(worker, monochrome_led);
+  rpc_server.RegisterService(blinky_service);
+
+  static am::MorseCodeService morse_code_service;
+  morse_code_service.Init(worker, monochrome_led);
+  rpc_server.RegisterService(morse_code_service);
 
   PW_LOG_INFO("Started blinky app; waiting for RPCs...");
   am::system::Start();

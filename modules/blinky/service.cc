@@ -28,7 +28,8 @@ pw::Status BlinkyService::ToggleLed(const pw_protobuf_Empty&,
 
 pw::Status BlinkyService::Blink(const blinky_BlinkRequest& request,
                                 pw_protobuf_Empty&) {
-  uint32_t interval_ms = request.interval_ms == 0 ? 1000 : request.interval_ms;
+  uint32_t interval_ms = request.interval_ms == 0 ? Blinky::kDefaultIntervalMs
+                                                  : request.interval_ms;
   uint32_t blink_count = request.has_blink_count ? request.blink_count : 0;
   return blinky_.Blink(blink_count, interval_ms);
 }

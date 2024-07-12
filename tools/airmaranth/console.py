@@ -17,10 +17,11 @@ import argparse
 import sys
 from typing import Optional
 
-from blinky_pb import blinky_pb2
 from pw_protobuf_protos import common_pb2
 import pw_system.console
+from blinky_pb import blinky_pb2
 from modules.board import board_pb2
+import morse_code_pb2
 from pw_rpc import echo_pb2
 
 
@@ -30,6 +31,7 @@ def main(args: Optional[argparse.Namespace] = None) -> int:
         echo_pb2,
         board_pb2,
         blinky_pb2,
+        morse_code_pb2,
     ]
     return pw_system.console.main_with_compiled_protos(compiled_protos, args)
 

@@ -33,18 +33,26 @@ class MonochromeLedFake : public MonochromeLed {
 
   pw::chrono::SystemClock::duration interval() const { return interval_; }
 
+  uint32_t interval_ms() const {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(interval_)
+        .count();
+  }
+
   void set_interval_ms(uint32_t interval_ms) {
     interval_ = pw::chrono::SystemClock::for_at_least(
         std::chrono::milliseconds(interval_ms));
   }
 
-  /// Returns on/off intervals encoded as follows: the top bit indicates whether
+  /// Encodes the parameters as follows: the top bit indicates whether
   /// the LED was on or off, and the lower 7 bits indicate for how many
   /// intervals, up to a max of 127.
+  static uint8_t Encode(bool is_on, size_t num_intervals);
+
+  /// Returns on/off intervals encoded by ``Encode``.
   const pw::Vector<uint8_t>& GetOutput() { return output_; }
 
-  /// Encodes the parameters in the same manner as ``GetOutput``.
-  static uint8_t Encode(bool is_on, size_t num_intervals);
+  /// Clears the saved output.
+  void ResetOutput() { output_.clear(); }
 
  protected:
   /// @copydoc ``MonochromeLed::Set``.

@@ -17,41 +17,43 @@ load(
     "@pigweed//pw_protobuf_compiler:pw_proto_library.bzl",
     "nanopb_proto_library",
     "nanopb_rpc_proto_library",
+    "pw_proto_filegroup",
 )
 load("@rules_python//python:proto.bzl", "py_proto_library")
 
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "blinky",
-    srcs = ["blinky.cc"],
-    hdrs = ["blinky.h"],
+    name = "encoder",
+    srcs = ["encoder.cc"],
+    hdrs = ["encoder.h"],
     implementation_deps = [
         "@pigweed//pw_log",
-        "@pigweed//pw_preprocessor",
     ],
     deps = [
         "//modules/led:monochrome_led",
         "//modules/worker",
-        "//system",
         "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_chrono:system_timer",
-        "@pigweed//pw_function",
         "@pigweed//pw_sync:interrupt_spin_lock",
         "@pigweed//pw_sync:lock_annotations",
-        "@pigweed//pw_system:async",
+        "@pigweed//pw_work_queue",
     ],
 )
 
 pw_cc_test(
-    name = "blinky_test",
-    srcs = ["blinky_test.cc"],
-    flaky = True,
+    name = "encoder_test",
+    srcs = ["encoder_test.cc"],
     deps = [
-        ":blinky",
+        ":encoder",
         "//modules/led:monochrome_led_fake",
         "//modules/worker:test_worker",
+        "@pigweed//pw_containers:vector",
+        "@pigweed//pw_function",
+        "@pigweed//pw_status",
         "@pigweed//pw_thread:sleep",
+        "@pigweed//pw_thread:test_thread_context",
+        "@pigweed//pw_thread:thread",
         "@pigweed//pw_unit_test",
     ],
 )
@@ -61,16 +63,23 @@ cc_library(
     srcs = ["service.cc"],
     hdrs = ["service.h"],
     deps = [
-        ":blinky",
+        ":encoder",
         ":nanopb_rpc",
+        "@pigweed//pw_rpc",
+        "@pigweed//pw_string",
     ],
+)
+
+pw_proto_filegroup(
+    name = "proto_and_options",
+    srcs = ["morse_code.proto"],
+    options_files = ["morse_code.options"],
 )
 
 proto_library(
     name = "proto",
-    srcs = ["blinky.proto"],
-    import_prefix = "blinky_pb",
-    strip_import_prefix = "/modules/blinky",
+    srcs = [":proto_and_options"],
+    strip_import_prefix = "/modules/morse_code",
     deps = [
         "@pigweed//pw_protobuf:common_proto",
     ],

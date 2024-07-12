@@ -29,8 +29,10 @@ namespace am {
 /// Simple component that blink the on-board LED.
 class Blinky final {
  public:
-  constexpr static pw::chrono::SystemClock::duration kDefaultInterval =
-      std::chrono::seconds(1);
+  static constexpr uint32_t kDefaultIntervalMs = 1000;
+  static constexpr pw::chrono::SystemClock::duration kDefaultInterval =
+      pw::chrono::SystemClock::for_at_least(
+          std::chrono::milliseconds(kDefaultIntervalMs));
 
   Blinky();
 
@@ -38,7 +40,7 @@ class Blinky final {
 
   /// Injects this object's dependencies.
   ///
-  /// This method MUST be called befire using any other method.
+  /// This method MUST be called before using any other method.
   void Init(Worker& worker, MonochromeLed& led);
 
   /// Returns the currently configured interval for one blink.
