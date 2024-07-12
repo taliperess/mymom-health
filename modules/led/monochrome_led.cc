@@ -13,6 +13,7 @@
 // the License.
 
 #include "modules/led/monochrome_led.h"
+
 #include "pw_assert/check.h"
 
 namespace am {
@@ -23,7 +24,11 @@ namespace am {
 /// reference is used to access the LED. This imposes the restriction that unit
 /// tests that may create multiple ``MonochromeLed`` instances MUST NOT run
 /// concurrently.
+///
+/// TODO(b/352801898): Move this to //targets.
 static MonochromeLed* singleton = nullptr;
+
+MonochromeLed::MonochromeLed() { singleton = this; }
 
 static void DoPulse() {
   static uint16_t counter = 0;
@@ -38,11 +43,8 @@ static void DoPulse() {
 }
 
 void MonochromeLed::Pulse(uint32_t interval_ms) {
-  PW_CHECK_PTR_EQ(singleton, nullptr);
-  singleton = this;
   SetCallback(DoPulse, 0x200, interval_ms);
   SetState(State::kPwm);
-  singleton = nullptr;
 }
 
 }  // namespace am

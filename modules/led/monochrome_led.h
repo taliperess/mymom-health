@@ -25,7 +25,10 @@ class MonochromeLed {
   virtual ~MonochromeLed() = default;
 
   /// Returns whether the LED is on.
-  bool IsOn() { return GetState() == State::kOn;; };
+  bool IsOn() {
+    return GetState() == State::kOn;
+    ;
+  };
 
   /// Turns on the LED.
   void TurnOn() { SetState(State::kOn); }
@@ -53,7 +56,7 @@ class MonochromeLed {
   void Pulse(uint32_t interval_ms);
 
  protected:
-  MonochromeLed() = default;
+  MonochromeLed();
 
   /// Indicates whether the LED is on, off, or pulse-width-modulated.
   enum class State {
@@ -80,7 +83,9 @@ class MonochromeLed {
   /// @param  per_interval  Number of time the function should be invoked per
   ///                       elaped interval.
   /// @param  interval_ms   The dureation of each interval, in milliseconds.
-  virtual void SetCallback(Callback callback, uint16_t per_interval, uint32_t interval_ms) = 0;
+  virtual void SetCallback(Callback callback,
+                           uint16_t per_interval,
+                           uint32_t interval_ms) = 0;
 };
 
 }  // namespace am

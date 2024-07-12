@@ -16,20 +16,23 @@
 
 namespace am {
 
-// TODO
-PolychromeLed* singleton = nullptr;
+/// Reference to the ``PolychromeLed`` instance returned by the system.
+///
+/// Since the PWM callbacks must be free functions that take no argument, this
+/// reference is used to access the LED. This imposes the restriction that unit
+/// tests that may create multiple ``PolychromeLed`` instances MUST NOT run
+/// concurrently.
+///
+/// TODO(b/352801898): Move this to //targets.
+static PolychromeLed* singleton = nullptr;
 
-PolychromeLed::PolychromeLed() {
-  singleton = this;
-}
+PolychromeLed::PolychromeLed() { singleton = this; }
 
-// TODO
 void PolychromeLed::SetBrightness(uint8_t brightness) {
   brightness_ = brightness;
   Update();
 }
 
-// TODO
 void PolychromeLed::SetColor(uint8_t red, uint8_t green, uint8_t blue) {
   hex_ = 0;
   hex_ |= uint32_t(red) << kRedShift;
@@ -38,7 +41,6 @@ void PolychromeLed::SetColor(uint8_t red, uint8_t green, uint8_t blue) {
   Update();
 }
 
-// TODO
 void PolychromeLed::SetColor(uint32_t hex) {
   hex_ = hex;
   Update();
@@ -77,7 +79,9 @@ static void DoPulseBetween() {
   counter %= 0x200;
 }
 
-void PolychromeLed::PulseBetween(uint32_t hex1, uint32_t hex2, uint32_t interval_ms) {
+void PolychromeLed::PulseBetween(uint32_t hex1,
+                                 uint32_t hex2,
+                                 uint32_t interval_ms) {
   brightness_ = 0;
   hex_ = hex1;
   alternate_hex_ = hex2;

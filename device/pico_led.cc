@@ -25,8 +25,7 @@ static constexpr uint16_t kPin = PICO_DEFAULT_LED_PIN;
 static constexpr pw::digital_io::Polarity kPolarity =
     pw::digital_io::Polarity::kActiveHigh;
 
-PicoLed::PicoLed()
-    : led_({kPin, kPolarity}), pwm_gpio_(kPin, kPolarity) {
+PicoLed::PicoLed() : led_({kPin, kPolarity}), pwm_gpio_(kPin, kPolarity) {
   led_.Enable();
   led_.SetState(pw::digital_io::State::kInactive);
 }
@@ -73,7 +72,9 @@ void PicoLed::DoSetBrightness(uint16_t level) {
   pwm_gpio_.SetLevel(level);
 }
 
-void PicoLed::SetCallback(Callback callback, uint16_t per_interval, uint32_t interval_ms) {
+void PicoLed::SetCallback(Callback callback,
+                          uint16_t per_interval,
+                          uint32_t interval_ms) {
   pwm_gpio_.SetCallback(callback, per_interval, interval_ms);
 }
 
