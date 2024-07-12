@@ -16,13 +16,13 @@ workspace(name = "showcase-rp2")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-http_archive(
-    name = "rules_cc",
-    integrity = "sha256-NddP6xi6LzsIHT8bMSVJ2NtoURbN+l3xpjvmIgB6aSg=",
-    strip_prefix = "rules_cc-1acf5213b6170f1f0133e273cb85ede0e732048f",
-    urls = [
-        "https://github.com/bazelbuild/rules_cc/archive/1acf5213b6170f1f0133e273cb85ede0e732048f.zip",
-    ],
+git_repository(
+    name = "pigweed",
+    # ROLL: Warning: this entry is automatically updated.
+    # ROLL: Last updated 2024-07-12.
+    # ROLL: By https://cr-buildbucket.appspot.com/build/8742662295697214097.
+    commit = "b71abe8012cb8ce40865c37a51c8c4e5ecb932a4",
+    remote = "https://pigweed.googlesource.com/pigweed/pigweed",
 )
 
 # Load Pigweed's own dependencies that we'll need.
@@ -38,61 +38,12 @@ http_archive(
 )
 
 http_archive(
-    name = "bazel_skylib",
-    sha256 = "aede1b60709ac12b3461ee0bb3fa097b58a86fbfdb88ef7e9f90424a69043167",
-    strip_prefix = "bazel-skylib-1.6.1",  # 2024-04-24
-    urls = ["https://github.com/bazelbuild/bazel-skylib/archive/refs/tags/1.6.1.tar.gz"],
-)
-
-http_archive(
-    name = "rules_proto",
-    sha256 = "dc3fb206a2cb3441b485eb1e423165b231235a1ea9b031b4433cf7bc1fa460dd",
-    strip_prefix = "rules_proto-5.3.0-21.7",
+    name = "rules_cc",
+    integrity = "sha256-NddP6xi6LzsIHT8bMSVJ2NtoURbN+l3xpjvmIgB6aSg=",
+    strip_prefix = "rules_cc-1acf5213b6170f1f0133e273cb85ede0e732048f",
     urls = [
-        "https://github.com/bazelbuild/rules_proto/archive/refs/tags/5.3.0-21.7.tar.gz",
+        "https://github.com/bazelbuild/rules_cc/archive/1acf5213b6170f1f0133e273cb85ede0e732048f.zip",
     ],
-)
-
-http_archive(
-    name = "rules_python",
-    sha256 = "9acc0944c94adb23fba1c9988b48768b1bacc6583b52a2586895c5b7491e2e31",
-    strip_prefix = "rules_python-0.27.0",
-    url = "https://github.com/bazelbuild/rules_python/releases/download/0.27.0/rules_python-0.27.0.tar.gz",
-)
-
-load("@rules_python//python:repositories.bzl", "py_repositories", "python_register_toolchains")
-
-py_repositories()
-
-http_archive(
-    name = "com_google_protobuf",
-    sha256 = "616bb3536ac1fff3fb1a141450fa28b875e985712170ea7f1bfe5e5fc41e2cd8",
-    strip_prefix = "protobuf-24.4",
-    url = "https://github.com/protocolbuffers/protobuf/releases/download/v24.4/protobuf-24.4.tar.gz",
-)
-
-load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-
-protobuf_deps()
-
-http_archive(
-    name = "rules_fuzzing",
-    sha256 = "d9002dd3cd6437017f08593124fdd1b13b3473c7b929ceb0e60d317cb9346118",
-    strip_prefix = "rules_fuzzing-0.3.2",
-    urls = ["https://github.com/bazelbuild/rules_fuzzing/archive/v0.3.2.zip"],
-)
-
-load("@rules_fuzzing//fuzzing:repositories.bzl", "rules_fuzzing_dependencies")
-
-rules_fuzzing_dependencies()
-
-git_repository(
-    name = "pigweed",
-    # ROLL: Warning: this entry is automatically updated.
-    # ROLL: Last updated 2024-07-12.
-    # ROLL: By https://cr-buildbucket.appspot.com/build/8742662295697214097.
-    commit = "b71abe8012cb8ce40865c37a51c8c4e5ecb932a4",
-    remote = "https://pigweed.googlesource.com/pigweed/pigweed",
 )
 
 git_repository(
@@ -126,6 +77,70 @@ cipd_repository(
     tag = "version:2@0.11.0-3",
 )
 
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "aede1b60709ac12b3461ee0bb3fa097b58a86fbfdb88ef7e9f90424a69043167",
+    strip_prefix = "bazel-skylib-1.6.1",  # 2024-04-24
+    urls = ["https://github.com/bazelbuild/bazel-skylib/archive/refs/tags/1.6.1.tar.gz"],
+)
+
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+
+bazel_skylib_workspace()
+
+# Used in modules: //pw_grpc
+#
+# TODO: b/345806988 - remove this fork and update to upstream HEAD.
+git_repository(
+    name = "io_bazel_rules_go",
+    commit = "d5ba42f3ca0b8510526ed5df2cf5807bdba43856",
+    remote = "https://github.com/cramertj/rules_go.git",
+)
+
+# Used in modules: //pw_grpc
+http_archive(
+    name = "bazel_gazelle",
+    sha256 = "32938bda16e6700063035479063d9d24c60eda8d79fd4739563f50d331cb3209",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.35.0/bazel-gazelle-v0.35.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.35.0/bazel-gazelle-v0.35.0.tar.gz",
+    ],
+)
+
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
+load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+
+go_rules_dependencies()
+
+go_register_toolchains(version = "1.21.5")
+
+gazelle_dependencies()
+
+# load("@pigweed//pw_grpc:deps.bzl", "pw_grpc_deps")
+
+# DISABLE gazelle:repository_macro @pigweed//pw_grpc/deps.bzl%pw_grpc_deps
+# pw_grpc_deps()
+
+http_archive(
+    name = "rules_proto",
+    sha256 = "dc3fb206a2cb3441b485eb1e423165b231235a1ea9b031b4433cf7bc1fa460dd",
+    strip_prefix = "rules_proto-5.3.0-21.7",
+    urls = [
+        "https://github.com/bazelbuild/rules_proto/archive/refs/tags/5.3.0-21.7.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "rules_python",
+    sha256 = "9acc0944c94adb23fba1c9988b48768b1bacc6583b52a2586895c5b7491e2e31",
+    strip_prefix = "rules_python-0.27.0",
+    url = "https://github.com/bazelbuild/rules_python/releases/download/0.27.0/rules_python-0.27.0.tar.gz",
+)
+
+load("@rules_python//python:repositories.bzl", "py_repositories", "python_register_toolchains")
+
+py_repositories()
+
 # Set up the Python interpreter we'll need.
 python_register_toolchains(
     name = "python3",
@@ -146,6 +161,17 @@ pip_parse(
 load("@python_packages//:requirements.bzl", "install_deps")
 
 install_deps()
+
+http_archive(
+    name = "com_google_protobuf",
+    sha256 = "616bb3536ac1fff3fb1a141450fa28b875e985712170ea7f1bfe5e5fc41e2cd8",
+    strip_prefix = "protobuf-24.4",
+    url = "https://github.com/protocolbuffers/protobuf/releases/download/v24.4/protobuf-24.4.tar.gz",
+)
+
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+
+protobuf_deps()
 
 # Setup Nanopb protoc plugin.
 # Required by: Pigweed.
@@ -168,6 +194,17 @@ nanopb_python_deps(interpreter)
 load("@com_github_nanopb_nanopb//extra/bazel:nanopb_workspace.bzl", "nanopb_workspace")
 
 nanopb_workspace()
+
+http_archive(
+    name = "rules_fuzzing",
+    sha256 = "d9002dd3cd6437017f08593124fdd1b13b3473c7b929ceb0e60d317cb9346118",
+    strip_prefix = "rules_fuzzing-0.3.2",
+    urls = ["https://github.com/bazelbuild/rules_fuzzing/archive/v0.3.2.zip"],
+)
+
+load("@rules_fuzzing//fuzzing:repositories.bzl", "rules_fuzzing_dependencies")
+
+rules_fuzzing_dependencies()
 
 http_archive(
     name = "freertos",

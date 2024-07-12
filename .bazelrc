@@ -35,6 +35,7 @@ common --@pigweed//pw_system:io_backend=@pigweed//pw_system:socket_target_io
 # Required for new toolchain resolution API.
 build --incompatible_enable_cc_toolchain_resolution
 
+# Keep debugging symbols, but don't send them when flashing.
 build --strip=never
 
 build --@pico-sdk//bazel/config:PICO_STDIO_USB=True
@@ -78,6 +79,34 @@ common:remote_cache --remote_upload_local_results=false
 # cache invalidated when your host C++ config changes.
 common --experimental_exclude_defines_from_exec_config
 common --experimental_exclude_starlark_flags_from_exec_config
+
+# Allow running unit tests directly on hardware.
+build:rp2040 --platforms=//targets/rp2040:platform
+build:rp2040 --//system:system=//targets/rp2040:system
+build:rp2040 --@pigweed//pw_assert:check_backend=@pigweed//pw_assert_basic
+build:rp2040 --@pigweed//pw_assert:check_backend_impl=@pigweed//pw_assert_basic:impl
+build:rp2040 --@pigweed//pw_interrupt:backend=@pigweed//pw_interrupt_cortex_m:context
+build:rp2040 --@pigweed//pw_log:backend=@pigweed//pw_log_tokenized
+build:rp2040 --@pigweed//pw_log:backend_impl=@pigweed//pw_log_tokenized:impl
+build:rp2040 --@pigweed//pw_log_tokenized:handler_backend=@pigweed//pw_system:log_backend
+build:rp2040 --@pigweed//pw_sync:binary_semaphore_backend=@pigweed//pw_sync_freertos:binary_semaphore
+build:rp2040 --@pigweed//pw_sync:interrupt_spin_lock_backend=@pigweed//pw_sync_freertos:interrupt_spin_lock
+build:rp2040 --@pigweed//pw_sync:mutex_backend=@pigweed//pw_sync_freertos:mutex
+build:rp2040 --@pigweed//pw_sync:thread_notification_backend=@pigweed//pw_sync_freertos:thread_notification
+build:rp2040 --@pigweed//pw_sync:timed_thread_notification_backend=@pigweed//pw_sync_freertos:timed_thread_notification
+build:rp2040 --@pigweed//pw_sys_io:backend=@pigweed//pw_sys_io_rp2040
+build:rp2040 --@pigweed//pw_system:extra_platform_libs=//targets/rp2040:extra_platform_libs
+build:rp2040 --@pigweed//pw_thread_freertos:config_override=//targets/rp2040:thread_config_overrides
+build:rp2040 --@pigweed//pw_thread:id_backend=@pigweed//pw_thread_freertos:id
+build:rp2040 --@pigweed//pw_thread:iteration_backend=@pigweed//pw_thread_freertos:thread_iteration
+build:rp2040 --@pigweed//pw_thread:sleep_backend=@pigweed//pw_thread_freertos:sleep
+build:rp2040 --@pigweed//pw_thread:thread_backend=@pigweed//pw_thread_freertos:thread
+build:rp2040 --@pigweed//pw_thread:test_thread_context_backend=@pigweed//pw_thread_freertos:test_thread_context
+build:rp2040 --@pigweed//pw_unit_test:main=//targets/rp2040:unit_test_rpc_main
+build:rp2040 --@freertos//:freertos_config=//targets/rp2040:freertos_config
+build:rp2040 --@pico-sdk//bazel/config:PICO_STDIO_USB=True
+build:rp2040 --@pico-sdk//bazel/config:PICO_STDIO_UART=True
+test:rp2040 --run_under=@pigweed//targets/rp2040/py:unit_test_client
 
 # User bazelrc file; see
 # https://bazel.build/configure/best-practices#bazelrc-file

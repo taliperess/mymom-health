@@ -50,6 +50,13 @@ cc_library(
 )
 
 cc_library(
+    name = "thread_config_overrides",
+    defines = [
+        "PW_THREAD_FREERTOS_CONFIG_JOINING_ENABLED=1",
+    ],
+)
+
+cc_library(
     name = "system",
     srcs = ["system.cc"],
     deps = [
@@ -65,4 +72,22 @@ cc_library(
         "@pigweed//third_party/freertos:support",
     ],
     alwayslink = 1,
+)
+
+cc_library(
+    name = "unit_test_rpc_main",
+    testonly = True,
+    srcs = ["unit_test_rpc_main.cc"],
+    deps = [
+        "//system:worker",
+        "//system",
+        "@pigweed//pw_log",
+        "@pigweed//pw_system:async",
+        "@pigweed//pw_unit_test:rpc_service",
+
+        # These should be provided by pw_system:async.
+        "@pigweed//pw_assert:backend_impl",
+        "@pigweed//pw_log:backend_impl",
+        "@pigweed//pw_system:extra_platform_libs",
+    ],
 )
