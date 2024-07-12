@@ -28,9 +28,9 @@ namespace am {
 
 Blinky::Blinky() : timer_(pw::bind_member<&Blinky::ToggleCallback>(this)) {}
 
-void Blinky::Init(Worker& worker, MonochromeLed& led) {
+void Blinky::Init(Worker& worker, MonochromeLed& monochrome_led) {
   worker_ = &worker;
-  led_ = &led;
+  monochrome_led_ = &monochrome_led;
 }
 
 Blinky::~Blinky() { timer_.Cancel(); }
@@ -45,7 +45,7 @@ pw::Status Blinky::Toggle() {
   PW_LOG_INFO("Toggling LED");
   {
     std::lock_guard lock(lock_);
-    led_->Toggle();
+    monochrome_led_->Toggle();
     if (num_toggles_ > 0) {
       --num_toggles_;
     }
@@ -76,11 +76,16 @@ pw::Status Blinky::Blink(uint32_t blink_count, uint32_t interval_ms) {
   timer_.Cancel();
   {
     std::lock_guard lock(lock_);
-    led_->TurnOff();
+    monochrome_led_->TurnOff();
     num_toggles_ = num_toggles;
     interval_ = interval;
   }
   return ScheduleToggle();
+}
+
+void Blinky::Pulse(uint32_t interval_ms) {
+  std::lock_guard lock(lock_);
+  monochrome_led_->Pulse(interval_ms);
 }
 
 bool Blinky::IsIdle() const {

@@ -17,8 +17,8 @@
 
 namespace am {
 
-void BlinkyService::Init(Worker& worker, MonochromeLed& led) {
-  blinky_.Init(worker, led);
+void BlinkyService::Init(Worker& worker, MonochromeLed& monochrome_led) {
+  blinky_.Init(worker, monochrome_led);
 }
 
 pw::Status BlinkyService::ToggleLed(const pw_protobuf_Empty&,
@@ -32,6 +32,13 @@ pw::Status BlinkyService::Blink(const blinky_BlinkRequest& request,
                                                   : request.interval_ms;
   uint32_t blink_count = request.has_blink_count ? request.blink_count : 0;
   return blinky_.Blink(blink_count, interval_ms);
+}
+
+pw::Status BlinkyService::Pulse(const blinky_CycleRequest& request,
+                                pw_protobuf_Empty&) {
+  uint32_t interval_ms = request.interval_ms == 0 ? 1000 : request.interval_ms;
+  blinky_.Pulse(interval_ms);
+  return pw::OkStatus();
 }
 
 }  // namespace am

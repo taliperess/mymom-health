@@ -41,7 +41,7 @@ class Blinky final {
   /// Injects this object's dependencies.
   ///
   /// This method MUST be called before using any other method.
-  void Init(Worker& worker, MonochromeLed& led);
+  void Init(Worker& worker, MonochromeLed& monochrome_led);
 
   /// Returns the currently configured interval for one blink.
   pw::chrono::SystemClock::duration interval() const;
@@ -56,6 +56,11 @@ class Blinky final {
   pw::Status Blink(uint32_t blink_count, uint32_t interval_ms)
       PW_LOCKS_EXCLUDED(lock_);
 
+  /// Fades the LED on and off continuously.
+  ///
+  /// @param  interval_ms   The duration of a fade cycle, in milliseconds.
+  void Pulse(uint32_t interval_ms) PW_LOCKS_EXCLUDED(lock_);
+
   /// Returns whether this instance is currently blinking or not.
   bool IsIdle() const PW_LOCKS_EXCLUDED(lock_);
 
@@ -67,7 +72,7 @@ class Blinky final {
   void ToggleCallback(pw::chrono::SystemClock::time_point);
 
   Worker* worker_ = nullptr;
-  MonochromeLed* led_ = nullptr;
+  MonochromeLed* monochrome_led_ = nullptr;
   pw::chrono::SystemTimer timer_;
 
   mutable pw::sync::InterruptSpinLock lock_;

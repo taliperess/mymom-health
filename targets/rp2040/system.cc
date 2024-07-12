@@ -47,7 +47,7 @@ am::Board& Board() {
 }
 
 am::MonochromeLed& MonochromeLed() {
-  static ::am::PicoMonochromeLed monochrome_led;
+  static ::am::PicoLed monochrome_led;
   return monochrome_led;
 }
 

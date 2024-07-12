@@ -13,35 +13,74 @@
 // the License.
 #pragma once
 
+#include <cstdint>
+
 namespace am {
 
 /// Interface for a simple LED.
 class MonochromeLed {
  public:
+  using Callback = void (*)();
+
   virtual ~MonochromeLed() = default;
 
   /// Returns whether the LED is on.
-  bool IsOn() const { return led_is_on_; };
+  bool IsOn() { return GetState() == State::kOn;; };
 
   /// Turns on the LED.
-  void TurnOn();
+  void TurnOn() { SetState(State::kOn); }
 
   /// Turns off the LED.
-  void TurnOff();
+  void TurnOff() { SetState(State::kOff); }
 
-  // Turns the LED on if it is off, or off if it is on.
-  void Toggle();
+  /// Sets the brightness of the LED.
+  ///
+  /// This method will automatically swith the LED to PWM mode.
+  ///
+  /// @param  level   Relative brightness of the LED
+  void SetBrightness(uint16_t level) { DoSetBrightness(level); }
+
+  /// Turns the LED on if it is off, or off otherwise.
+  void Toggle() {
+    SetState(GetState() == State::kOff ? State::kOn : State::kOff);
+  }
+
+  /// Fades the LED on and off continuously.
+  ///
+  /// This method will automatically swith the LED to PWM mode.
+  ///
+  /// @param  interval_ms   The duration of a fade cycle, in milliseconds.
+  void Pulse(uint32_t interval_ms);
 
  protected:
   MonochromeLed() = default;
 
- private:
-  /// Turns the LED on the board on or off.
-  ///
-  /// @param  enable  True turns the LED on; false turns it off.
-  virtual void Set(bool enable) = 0;
+  /// Indicates whether the LED is on, off, or pulse-width-modulated.
+  enum class State {
+    kOn,
+    kOff,
+    kPwm,
+  };
 
-  bool led_is_on_ = false;
+  virtual State GetState() = 0;
+  virtual void SetState(State state) = 0;
+
+  /// @copydoc ``MonochromeLed::SetBrightness``
+  virtual void DoSetBrightness(uint16_t level) = 0;
+
+  /// Sets a callback to invoke periodically.
+  ///
+  /// The behavior of the callback may vary cyclically, i.e. fading the LED on
+  /// and off. The callback will invoked the correct number of times in each
+  /// interval of time.
+  ///
+  /// This method will automatically swith the LED to PWM mode.
+  ///
+  /// @param  callback      Function to invoke repeatedly.
+  /// @param  per_interval  Number of time the function should be invoked per
+  ///                       elaped interval.
+  /// @param  interval_ms   The dureation of each interval, in milliseconds.
+  virtual void SetCallback(Callback callback, uint16_t per_interval, uint32_t interval_ms) = 0;
 };
 
 }  // namespace am

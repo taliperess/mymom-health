@@ -18,6 +18,9 @@ cc_library(
     name = "monochrome_led",
     srcs = ["monochrome_led.cc"],
     hdrs = ["monochrome_led.h"],
+    deps = [
+        "@pigweed//pw_assert",
+    ],
 )
 
 cc_library(

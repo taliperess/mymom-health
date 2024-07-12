@@ -13,25 +13,36 @@
 // the License.
 
 #include "modules/led/monochrome_led.h"
+#include "pw_assert/check.h"
 
 namespace am {
 
-void MonochromeLed::TurnOn() {
-  Set(true);
-  led_is_on_ = true;
-}
+/// Reference to the ``MonochromeLed`` instance returned by the system.
+///
+/// Since the PWM callbacks must be free functions that take no argument, this
+/// reference is used to access the LED. This imposes the restriction that unit
+/// tests that may create multiple ``MonochromeLed`` instances MUST NOT run
+/// concurrently.
+static MonochromeLed* singleton = nullptr;
 
-void MonochromeLed::TurnOff() {
-  Set(false);
-  led_is_on_ = false;
-}
-
-void MonochromeLed::Toggle() {
-  if (IsOn()) {
-    TurnOff();
+static void DoPulse() {
+  static uint16_t counter = 0;
+  uint16_t brightness = 0;
+  if (counter < 0x100) {
+    brightness = counter;
   } else {
-    TurnOn();
+    brightness = 0x200 - counter;
   }
+  singleton->SetBrightness(brightness * brightness);
+  counter = (counter + 1) % 0x200;
+}
+
+void MonochromeLed::Pulse(uint32_t interval_ms) {
+  PW_CHECK_PTR_EQ(singleton, nullptr);
+  singleton = this;
+  SetCallback(DoPulse, 0x200, interval_ms);
+  SetState(State::kPwm);
+  singleton = nullptr;
 }
 
 }  // namespace am

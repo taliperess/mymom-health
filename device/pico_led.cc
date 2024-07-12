@@ -18,23 +18,63 @@
 
 #include "modules/led/monochrome_led.h"
 #include "pico/stdlib.h"
-#include "pw_digital_io_rp2040/digital_io.h"
 
 namespace am {
 
-static pw::digital_io::Rp2040DigitalInOut led({
-    .pin = PICO_DEFAULT_LED_PIN,
-    .polarity = pw::digital_io::Polarity::kActiveHigh,
-});
+static constexpr uint16_t kPin = PICO_DEFAULT_LED_PIN;
+static constexpr pw::digital_io::Polarity kPolarity =
+    pw::digital_io::Polarity::kActiveHigh;
 
-PicoMonochromeLed::PicoMonochromeLed() {
-  led.Enable();
-  Set(false);
+PicoLed::PicoLed()
+    : led_({kPin, kPolarity}), pwm_gpio_(kPin, kPolarity) {
+  led_.Enable();
+  led_.SetState(pw::digital_io::State::kInactive);
 }
 
-void PicoMonochromeLed::Set(bool enable) {
-  led.SetState(enable ? pw::digital_io::State::kActive
-                      : pw::digital_io::State::kInactive);
+MonochromeLed::State PicoLed::GetState() {
+  if (gpio_get_function(kPin) == GPIO_FUNC_PWM) {
+    return State::kPwm;
+  } else {
+    return *(led_.IsStateActive()) ? State::kOn : State::kOff;
+  }
+}
+
+void PicoLed::SetState(State state) {
+  if (state_ == state) {
+    return;
+  }
+  switch (state_) {
+    case State::kOff:
+    case State::kOn:
+      led_.Disable();
+      break;
+    case State::kPwm:
+      pwm_gpio_.Disable();
+      break;
+  }
+  switch (state) {
+    case State::kOff:
+      led_.Enable();
+      led_.SetState(pw::digital_io::State::kInactive);
+      break;
+    case State::kOn:
+      led_.Enable();
+      led_.SetState(pw::digital_io::State::kActive);
+      break;
+    case State::kPwm:
+      pwm_gpio_.Enable();
+      break;
+  }
+  state_ = state;
+}
+
+void PicoLed::DoSetBrightness(uint16_t level) {
+  SetState(State::kPwm);
+  pwm_gpio_.SetLevel(level);
+}
+
+void PicoLed::SetCallback(Callback callback, uint16_t per_interval, uint32_t interval_ms) {
+  pwm_gpio_.SetCallback(callback, per_interval, interval_ms);
 }
 
 }  // namespace am

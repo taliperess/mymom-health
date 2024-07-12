@@ -24,14 +24,22 @@ service Blinky {
 
   // Continuously blinks the board LED a specified number of times.
   rpc Blink(BlinkRequest) returns (pw.protobuf.Empty);
+
+  // Fades the board LED on and off. `blink_count` is ignored.
+  rpc Pulse(CycleRequest) returns (pw.protobuf.Empty);
 }
 
 message BlinkRequest {
-  // The interval at which to blink the LED, in milliseconds.
+  // The interval at which to blink or pulse the LED, in milliseconds.
   uint32 interval_ms = 1;
 
   // The number of times to blink the LED.
   // If unset, blinks forever.
   // If 0, stops blinking.
   optional uint32 blink_count = 2;
+}
+
+message CycleRequest {
+  // The interval of the LED cycle, in milliseconds.
+  uint32 interval_ms = 1;
 }

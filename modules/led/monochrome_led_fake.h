@@ -55,10 +55,20 @@ class MonochromeLedFake : public MonochromeLed {
   void ResetOutput() { output_.clear(); }
 
  protected:
-  /// @copydoc ``MonochromeLed::Set``.
-  void Set(bool enable) override;
+  /// @copydoc ``MonochromeLed::GetState``.
+  State GetState() override { return state_; }
+
+  /// @copydoc ``MonochromeLed::SetState``.
+  void SetState(State state) override;
+
+  /// @copydoc ``MonochromeLed::SetBrightness``
+  void DoSetBrightness(uint16_t level) override;
+
+  /// @copydoc ``MonochromeLed::SetCallback``
+  void SetCallback(Callback callback, uint16_t per_interval, uint32_t interval_ms) override;
 
  private:
+  State state_ = State::kOff;
   pw::chrono::SystemClock::duration interval_;
   pw::chrono::SystemClock::time_point last_;
   pw::Vector<uint8_t, kCapacity> output_;

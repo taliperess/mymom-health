@@ -20,11 +20,13 @@ namespace am {
 class BlinkyService final
     : public ::blinky::pw_rpc::nanopb::Blinky::Service<BlinkyService> {
  public:
-  void Init(Worker& worker, MonochromeLed& led);
+  void Init(Worker& worker, MonochromeLed& monochrome_led);
 
   pw::Status ToggleLed(const pw_protobuf_Empty&, pw_protobuf_Empty&);
 
   pw::Status Blink(const blinky_BlinkRequest& request, pw_protobuf_Empty&);
+
+  pw::Status Pulse(const blinky_CycleRequest& request, pw_protobuf_Empty&);
 
  private:
   Blinky blinky_;
