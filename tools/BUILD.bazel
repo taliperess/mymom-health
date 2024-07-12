@@ -49,3 +49,9 @@ py_binary(
     srcs = ["airmaranth/example_script.py"],
     deps = [":airmaranth_lib"],
 )
+
+py_binary(
+    name = "toggle_blinky",
+    srcs = ["airmaranth/toggle_blinky.py"],
+    deps = [":airmaranth_lib"],
+)

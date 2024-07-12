@@ -34,6 +34,12 @@ service Blinky {
   // Cycles the RGB LED through all colors. `blink_count` is ignored.
   rpc Rainbow(CycleRequest) returns (pw.protobuf.Empty);
 
+  // Returns true or false if LED blinking is idle.
+  rpc IsIdle(pw.protobuf.Empty) returns (BlinkIdleResponse);
+}
+
+message BlinkIdleResponse {
+  bool is_idle = 1;
 }
 
 message BlinkRequest {

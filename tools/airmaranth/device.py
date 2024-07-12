@@ -47,7 +47,7 @@ class DeviceWithTracing(PwSystemDeviceWithTracing):
 
 
 def get_device_connection() -> DeviceConnection:
-    pw_cli.log.install(level=logging.INFO)
+    pw_cli.log.install(level=logging.DEBUG)
 
     parser = argparse.ArgumentParser(
         prog='airmaranth',
