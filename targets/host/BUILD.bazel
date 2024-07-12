@@ -35,6 +35,7 @@ cc_library(
     hdrs = ["stream_channel.h"],
     deps = [
         "@pigweed//pw_channel",
+        "@pigweed//pw_log",
         "@pigweed//pw_stream",
         "@pigweed//pw_sync:interrupt_spin_lock",
         "@pigweed//pw_sync:thread_notification",
