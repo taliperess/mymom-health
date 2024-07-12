@@ -47,7 +47,8 @@ build:presubmit -- \
   //apps/blinky:blinky \
   //apps/blinky:rp2040_blinky.elf \
   //apps/blinky:simulator_blinky \
-  //tools:console
+  //tools:console \
+  //tools:example_script
 
 # Don't automatically create __init__.py files.
 #

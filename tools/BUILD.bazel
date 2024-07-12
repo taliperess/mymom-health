@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -26,4 +26,25 @@ py_binary(
         "@pigweed//pw_rpc:echo_py_pb2",
         "@pigweed//pw_system/py:pw_system_lib",
     ],
+)
+
+py_library(
+    name = "airmaranth_lib",
+    srcs = [
+        "airmaranth/device.py",
+    ],
+    imports = ["."],
+    deps = [
+        "//modules/blinky:py_pb2",
+        "//modules/board:py_pb2",
+        "@pigweed//pw_protobuf:common_py_pb2",
+        "@pigweed//pw_rpc:echo_py_pb2",
+        "@pigweed//pw_system/py:pw_system_lib",
+    ],
+)
+
+py_binary(
+    name = "example_script",
+    srcs = ["airmaranth/example_script.py"],
+    deps = [":airmaranth_lib"],
 )
