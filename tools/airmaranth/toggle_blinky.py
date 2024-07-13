@@ -31,26 +31,29 @@ def main():
         # Toggle blinking.
         blinky_service = device.rpcs.blinky.Blinky
 
+        _LOG.info('Calling Blinky.IsIdle()')
         status, response = blinky_service.IsIdle()
         if not status.ok():
-            _LOG.error('IsIdle() request failed.')
+            _LOG.error('Blinky.IsIdle() request failed.')
 
         if response.is_idle:
             _LOG.info('Blinking is idle, start blinking.')
             # Start blinking once every 1000ms forever.
+            _LOG.info('Calling Blinky.Blink()')
             status, response = blinky_service.Blink(
                 interval_ms=1000, blink_count=0
             )
             if not status.ok():
-                _LOG.error('Blink() request failed.')
+                _LOG.error('Blinky.Blink() request failed.')
         else:
             _LOG.info('Blinking is active, stop blinking.')
             # Stop blinking by requesting a single blink.
+            _LOG.info('Calling Blinky.Blink()')
             status, response = blinky_service.Blink(
                 interval_ms=0, blink_count=1
             )
             if not status.ok():
-                _LOG.error('Blink() request failed.')
+                _LOG.error('Blinky.Blink() request failed.')
 
 
 if __name__ == '__main__':

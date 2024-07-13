@@ -74,6 +74,30 @@ native_binary(
     data = [":rp2040_blinky.elf"],
 )
 
+native_binary(
+    name = "rp2040_example_script",
+    src = "//tools:example_script",
+    args = [
+        "--token-databases",
+        "$(rootpath //apps/blinky:rp2040_blinky.elf)",
+    ],
+    data = [
+        ":rp2040_blinky.elf",
+    ],
+)
+
+native_binary(
+    name = "rp2040_toggle_blinky",
+    src = "//tools:toggle_blinky",
+    args = [
+        "--token-databases",
+        "$(rootpath //apps/blinky:rp2040_blinky.elf)",
+    ],
+    data = [
+        ":rp2040_blinky.elf",
+    ],
+)
+
 flash_rp2040(
     name = "flash",
     rp2040_binary = "rp2040_blinky.elf",

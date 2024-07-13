@@ -32,6 +32,7 @@ py_binary(
 py_library(
     name = "airmaranth_lib",
     srcs = [
+        "airmaranth/__init__.py",
         "airmaranth/device.py",
     ],
     imports = ["."],

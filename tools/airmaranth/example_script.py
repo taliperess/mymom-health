@@ -13,10 +13,14 @@
 # the License.
 """Simple example script to call device RPCs."""
 
+import logging
+
 from airmaranth.device import (
     Device,
     get_device_connection,
 )
+
+_LOG = logging.getLogger(__file__)
 
 
 def example_script(device: Device) -> None:
@@ -24,6 +28,7 @@ def example_script(device: Device) -> None:
     echo_service = device.rpcs.pw.rpc.EchoService
 
     # Call some RPCs and check the results.
+    _LOG.info('Calling Echo(msg="Hello")')
     result = echo_service.Echo(msg='Hello')
 
     if result.status.ok():
@@ -32,10 +37,11 @@ def example_script(device: Device) -> None:
     else:
         print('Uh oh, this RPC returned', result.status)
 
-    # The result object can be split into status and payload when assigned.
-    status, payload = echo_service.Echo(msg='Goodbye!')
+    # The result object can be split into status and response when assigned.
+    _LOG.info('Calling Echo(msg="Goodbye!")')
+    status, response = echo_service.Echo(msg='Goodbye!')
 
-    print(f'{status}: {payload}')
+    print(f'{status}: {response}')
 
 
 def main():

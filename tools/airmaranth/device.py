@@ -74,7 +74,8 @@ def get_device_connection() -> DeviceConnection:
         rpc_logging=args.rpc_logging,
         hdlc_encoding=args.hdlc_encoding,
         channel_id=args.channel_id,
-        device_tracing=args.device_tracing,
+        # Device tracing is not hooked up yet for Airmaranth.
+        device_tracing=False,
         device_class=Device,
         device_tracing_class=DeviceWithTracing,
     )
