@@ -53,10 +53,15 @@ host_device_simulator_binary(
 native_binary(
     name = "simulator_console",
     src = "//tools:console",
-    # This arg lets us skip manual port selection.
     args = [
+        # This arg lets us skip manual port selection.
         "--socket",
         "default",
+        "--config-file",
+        "$(rootpath //:pw_console_config)",
+    ],
+    data = [
+        "//:pw_console_config",
     ],
 )
 
@@ -68,8 +73,13 @@ native_binary(
         "115200",
         "--token-databases",
         "$(rootpath //apps/production:rp2040.elf)",
+        "--config-file",
+        "$(rootpath //:pw_console_config)",
     ],
-    data = [":rp2040.elf"],
+    data = [
+        ":rp2040.elf",
+        "//:pw_console_config",
+    ],
 )
 
 flash_rp2040(

@@ -55,10 +55,15 @@ host_device_simulator_binary(
 native_binary(
     name = "simulator_console",
     src = "//tools:console",
-    # This arg lets us skip manual port selection.
     args = [
+        # This arg lets us skip manual port selection.
         "--socket",
         "default",
+        "--config-file",
+        "$(rootpath //:pw_console_config)",
+    ],
+    data = [
+        "//:pw_console_config",
     ],
 )
 
@@ -70,8 +75,13 @@ native_binary(
         "115200",
         "--token-databases",
         "$(rootpath //apps/blinky:rp2040_blinky.elf)",
+        "--config-file",
+        "$(rootpath //:pw_console_config)",
     ],
-    data = [":rp2040_blinky.elf"],
+    data = [
+        ":rp2040_blinky.elf",
+        "//:pw_console_config",
+    ],
 )
 
 native_binary(

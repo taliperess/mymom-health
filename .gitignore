@@ -56,3 +56,4 @@ __pycache__/
 # Other
 logfile.txt
 pw_console-*logs.txt
+.pw_console.user.yaml
