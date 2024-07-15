@@ -19,9 +19,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 git_repository(
     name = "pigweed",
     # ROLL: Warning: this entry is automatically updated.
-    # ROLL: Last updated 2024-07-14.
-    # ROLL: By https://cr-buildbucket.appspot.com/build/8742473096566174257.
-    commit = "f816945205834677d7be80bcf7f5b1ed16097792",
+    # ROLL: Last updated 2024-07-15.
+    # ROLL: By https://cr-buildbucket.appspot.com/build/8742319408131654545.
+    commit = "a02745cb13e02e484475d6d746d7bb20cd66138e",
     remote = "https://pigweed.googlesource.com/pigweed/pigweed",
 )
 
@@ -49,9 +49,9 @@ http_archive(
 git_repository(
     name = "pw_toolchain",
     # ROLL: Warning: this entry is automatically updated.
-    # ROLL: Last updated 2024-07-14.
-    # ROLL: By https://cr-buildbucket.appspot.com/build/8742473096566174257.
-    commit = "f816945205834677d7be80bcf7f5b1ed16097792",
+    # ROLL: Last updated 2024-07-15.
+    # ROLL: By https://cr-buildbucket.appspot.com/build/8742319408131654545.
+    commit = "a02745cb13e02e484475d6d746d7bb20cd66138e",
     remote = "https://pigweed.googlesource.com/pigweed/pigweed",
     strip_prefix = "pw_toolchain_bazel",
 )
