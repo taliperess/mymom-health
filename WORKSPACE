@@ -21,8 +21,8 @@ git_repository(
     # ROLL: Warning: this entry is automatically updated.
     # ROLL: Last updated 2024-07-15.
     # ROLL: By https://cr-buildbucket.appspot.com/build/8742319408131654545.
-    commit = "a02745cb13e02e484475d6d746d7bb20cd66138e",
-    remote = "https://pigweed.googlesource.com/pigweed/pigweed",
+    commit = "7aa0ab7ecfae509fdf6173b4903960d3567d4508",
+    remote = "https://pigweed-internal.googlesource.com/pigweed/pigweed",
 )
 
 # Load Pigweed's own dependencies that we'll need.
@@ -51,8 +51,8 @@ git_repository(
     # ROLL: Warning: this entry is automatically updated.
     # ROLL: Last updated 2024-07-15.
     # ROLL: By https://cr-buildbucket.appspot.com/build/8742319408131654545.
-    commit = "a02745cb13e02e484475d6d746d7bb20cd66138e",
-    remote = "https://pigweed.googlesource.com/pigweed/pigweed",
+    commit = "7aa0ab7ecfae509fdf6173b4903960d3567d4508",
+    remote = "https://pigweed-internal.googlesource.com/pigweed/pigweed",
     strip_prefix = "pw_toolchain_bazel",
 )
 
@@ -236,6 +236,14 @@ http_archive(
     sha256 = "f711074a546bce04426c35e681446d69bc177435cd8f2f1395a52db64f52d100",
     strip_prefix = "cmsis_core-5.4.0_cm4",
     urls = ["https://github.com/STMicroelectronics/cmsis_core/archive/refs/tags/v5.4.0_cm4.tar.gz"],
+)
+
+git_repository(
+    name = "mbedtls",
+    build_file = "@pigweed//:third_party/mbedtls/mbedtls.BUILD.bazel",
+    # TODO: b/352601694 - This pin is dictated by picotool.
+    commit = "36e6bd6926560933583dc04a7f92f69bdbafe8bd",
+    remote = "https://github.com/Mbed-TLS/mbedtls.git",
 )
 
 load("@pigweed//targets/rp2040:deps.bzl", "pigweed_rp2_deps")

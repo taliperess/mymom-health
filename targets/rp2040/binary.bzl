@@ -18,7 +18,7 @@ TODO:  b/301334234 - Use platform-based flags and retire these transitions.
 """
 
 load("@pigweed//pw_build:merge_flags.bzl", "merge_flags_for_transition_impl", "merge_flags_for_transition_outputs")
-load("@pigweed//targets/rp2040:transition.bzl", "RP2040_SYSTEM_FLAGS")
+load("@pigweed//targets/rp2040:transition.bzl", "RP2_SYSTEM_FLAGS")
 
 _overrides = {
     "//command_line_option:platforms": "//targets/rp2040:platform",
@@ -31,12 +31,12 @@ _overrides = {
 def _rp2040_transition_impl(settings, attr):
     # buildifier: disable=unused-variable
     _ignore = settings, attr
-    return merge_flags_for_transition_impl(base = RP2040_SYSTEM_FLAGS, override = _overrides)
+    return merge_flags_for_transition_impl(base = RP2_SYSTEM_FLAGS, override = _overrides)
 
 _rp2040_transition = transition(
     implementation = _rp2040_transition_impl,
     inputs = [],
-    outputs = merge_flags_for_transition_outputs(base = RP2040_SYSTEM_FLAGS, override = _overrides),
+    outputs = merge_flags_for_transition_outputs(base = RP2_SYSTEM_FLAGS, override = _overrides),
 )
 
 def _rp2040_binary_impl(ctx):

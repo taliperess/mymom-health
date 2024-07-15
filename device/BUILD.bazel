@@ -18,6 +18,14 @@ cc_library(
     name = "bme688",
     srcs = ["bme688.cc"],
     hdrs = ["bme688.h"],
+    implementation_deps = [
+        "@pigweed//pw_assert",
+        "@pigweed//pw_bytes",
+        "@pigweed//pw_function",
+        "@pigweed//pw_log",
+        "@pigweed//pw_span",
+        "@pigweed//pw_thread:sleep",
+    ],
     deps = [
         "//modules/air_sensor",
         "//modules/worker",
@@ -29,14 +37,6 @@ cc_library(
         "@pigweed//pw_log",
         "@pigweed//pw_status",
     ],
-    implementation_deps = [
-        "@pigweed//pw_assert",
-        "@pigweed//pw_bytes",
-        "@pigweed//pw_function",
-        "@pigweed//pw_log",
-        "@pigweed//pw_span",
-        "@pigweed//pw_thread:sleep",
-    ],
 )
 
 cc_library(
@@ -45,9 +45,9 @@ cc_library(
     hdrs = ["pico_board.h"],
     deps = [
         "//modules/board",
-        "@pico-sdk//src/common/pico_stdlib:pico_stdlib",
         "@pico-sdk//src/rp2_common/hardware_adc",
         "@pico-sdk//src/rp2_common/pico_bootrom",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
     ],
 )
 
@@ -58,8 +58,8 @@ cc_library(
     deps = [
         ":pwm_gpio",
         "//modules/led:monochrome_led",
-        "@pico-sdk//src/common/pico_stdlib:pico_stdlib",
-        "@pico-sdk//src/rp2_common/hardware_gpio",
+        "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
         "@pigweed//pw_digital_io_rp2040",
     ],
 )
@@ -70,10 +70,10 @@ cc_library(
     hdrs = ["pwm_gpio.h"],
     deps = [
         "//modules/led:monochrome_led",
-        "@pico-sdk//src/common/pico_stdlib:pico_stdlib",
         "@pico-sdk//src/rp2_common/hardware_gpio",
         "@pico-sdk//src/rp2_common/hardware_irq",
         "@pico-sdk//src/rp2_common/hardware_pwm",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
         "@pigweed//pw_assert",
         "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_digital_io",

@@ -32,6 +32,10 @@ common --@pigweed//pw_log_string:handler_backend=@pigweed//pw_system:log_backend
 common --@pigweed//pw_sys_io:backend=@pigweed//pw_sys_io_stdio
 common --@pigweed//pw_system:io_backend=@pigweed//pw_system:socket_target_io
 
+# Picotool needs to build with exceptions and RTTI enabled.
+common --per_file_copt=external.*picotool.*@-fexceptions,-frtti
+common --host_per_file_copt=external.*picotool.*@-fexceptions,-frtti
+
 # Required for new toolchain resolution API.
 build --incompatible_enable_cc_toolchain_resolution
 
