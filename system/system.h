@@ -15,6 +15,7 @@
 
 #include "modules/air_sensor/air_sensor.h"
 #include "modules/board/board.h"
+#include "modules/buttons/manager.h"
 #include "modules/led/monochrome_led.h"
 #include "modules/led/polychrome_led.h"
 #include "pw_i2c/initiator.h"
@@ -30,14 +31,16 @@ void Init();
 /// Starts the main system scheduler. This function never returns.
 void Start();
 
-AirSensor& AirSensor();
+AirSensor &AirSensor();
 
-Board& Board();
+Board &Board();
 
-pw::i2c::Initiator& I2cInitiator();
+ButtonManager &ButtonManager();
 
-MonochromeLed& MonochromeLed();
+pw::i2c::Initiator &I2cInitiator();
 
-PolychromeLed& PolychromeLed();
+MonochromeLed &MonochromeLed();
 
-}  // namespace am::system
+PolychromeLed &PolychromeLed();
+
+} // namespace am::system

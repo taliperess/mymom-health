@@ -12,41 +12,44 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+load("@pigweed//pw_build:pigweed.bzl", "pw_cc_test")
 load(
-    "@@pigweed//pw_build:pigweed.bzl",
-    "pw_cc_test",
+    "@pigweed//pw_protobuf_compiler:pw_proto_library.bzl",
+    "nanopb_proto_library",
+    "nanopb_rpc_proto_library",
 )
+load("@rules_python//python:proto.bzl", "py_proto_library")
 
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "pubsub",
-    hdrs = ["pubsub.h"],
+    name = "manager",
+    srcs = ["manager.cc"],
+    hdrs = ["manager.h"],
     deps = [
-        "//modules/worker",
-        "@pigweed//pw_containers:inline_deque",
+        "//modules/pubsub:events",
+        "@pigweed//pw_assert",
+        "@pigweed//pw_chrono:system_clock",
+        "@pigweed//pw_chrono:system_timer",
+        "@pigweed//pw_digital_io",
         "@pigweed//pw_function",
+        "@pigweed//pw_log",
+        "@pigweed//pw_preprocessor",
         "@pigweed//pw_sync:interrupt_spin_lock",
         "@pigweed//pw_sync:lock_annotations",
+        "@pigweed//pw_work_queue",
     ],
 )
 
-cc_library(
-    name = "events",
-    hdrs = ["pubsub_events.h"],
-    deps = [":pubsub"],
-)
-
 pw_cc_test(
-    name = "pubsub_test",
-    srcs = ["pubsub_test.cc"],
-    # TODO: https://pwbug.dev/352163490 - Fails in CI
-    tags = ["manual"],
+    name = "manager_test",
+    srcs = ["manager_test.cc"],
     deps = [
-        ":events",
-        ":pubsub",
-        ":pubsub_test_harness",
+        ":manager",
         "//modules/worker:test_worker",
+        "@pigweed//pw_digital_io",
         "@pigweed//pw_sync:timed_thread_notification",
+        "@pigweed//pw_thread:sleep",
+        "@pigweed//pw_unit_test",
     ],
 )

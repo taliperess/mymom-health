@@ -26,6 +26,7 @@ cc_binary(
         "//modules/blinky:service",
         "//modules/board:service",
         "//modules/morse_code:service",
+        "//system:pubsub",
         "//system:worker",
         "//system",
         "@pigweed//pw_log",

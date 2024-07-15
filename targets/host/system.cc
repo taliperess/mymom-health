@@ -19,10 +19,33 @@
 #include "modules/led/monochrome_led_fake.h"
 #include "modules/led/polychrome_led_fake.h"
 #include "pw_assert/check.h"
+#include "pw_digital_io/digital_io.h"
 #include "pw_multibuf/simple_allocator.h"
 #include "pw_system/io.h"
 #include "pw_system/system.h"
 #include "targets/host/stream_channel.h"
+
+using pw::digital_io::DigitalIn;
+using pw::digital_io::State;
+
+namespace {
+class VirtualInput : public DigitalIn {
+ public:
+  VirtualInput(State state) : state_(state) {}
+
+ private:
+  pw::Status DoEnable(bool) override { return pw::OkStatus(); }
+  pw::Result<State> DoGetState() override { return state_; }
+
+  State state_;
+};
+
+VirtualInput io_sw_a(State::kInactive);
+VirtualInput io_sw_b(State::kInactive);
+VirtualInput io_sw_x(State::kInactive);
+VirtualInput io_sw_y(State::kInactive);
+
+}  // namespace
 
 namespace am::system {
 
@@ -46,6 +69,11 @@ am::AirSensor& AirSensor() {
 am::Board& Board() {
   static BoardFake board;
   return board;
+}
+
+am::ButtonManager& ButtonManager() {
+  static ::am::ButtonManager manager(io_sw_a, io_sw_b, io_sw_x, io_sw_y);
+  return manager;
 }
 
 am::MonochromeLed& MonochromeLed() {

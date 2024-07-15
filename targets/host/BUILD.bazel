@@ -25,6 +25,7 @@ cc_library(
         "//modules/led:polychrome_led_fake",
         "//system:headers",
         "@pigweed//pw_channel",
+        "@pigweed//pw_digital_io",
         "@pigweed//pw_multibuf:simple_allocator",
         "@pigweed//pw_system:async",
         "@pigweed//pw_system:io",

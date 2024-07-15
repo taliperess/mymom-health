@@ -20,16 +20,48 @@
 #include "device/rgb_led.h"
 #include "hardware/adc.h"
 #include "modules/air_sensor/air_sensor.h"
+#include "modules/buttons/manager.h"
 #include "modules/led/monochrome_led.h"
 #include "modules/led/polychrome_led.h"
 #include "pico/stdlib.h"
 #include "pw_channel/rp2_stdio_channel.h"
+#include "pw_digital_io_rp2040/digital_io.h"
 #include "pw_i2c_rp2040/initiator.h"
 #include "pw_multibuf/simple_allocator.h"
 #include "pw_system/system.h"
+#include "system/pubsub.h"
 #include "system/worker.h"
+#include "targets/rp2040/enviro_pins.h"
+
+using pw::digital_io::Rp2040DigitalInOut;
 
 namespace am::system {
+
+namespace {
+Rp2040DigitalInOut io_sw_a({
+    .pin = board::kEnviroPinSwA,
+    .polarity = pw::digital_io::Polarity::kActiveLow,
+    .enable_pull_up = true,
+});
+
+Rp2040DigitalInOut io_sw_b({
+    .pin = board::kEnviroPinSwB,
+    .polarity = pw::digital_io::Polarity::kActiveLow,
+    .enable_pull_up = true,
+});
+
+Rp2040DigitalInOut io_sw_x({
+    .pin = board::kEnviroPinSwX,
+    .polarity = pw::digital_io::Polarity::kActiveLow,
+    .enable_pull_up = true,
+});
+
+Rp2040DigitalInOut io_sw_y({
+    .pin = board::kEnviroPinSwY,
+    .polarity = pw::digital_io::Polarity::kActiveLow,
+    .enable_pull_up = true,
+});
+}  // namespace
 
 void Init() {
   // PICO_SDK inits.
@@ -65,6 +97,11 @@ am::AirSensor& AirSensor() {
 am::Board& Board() {
   static ::am::PicoBoard board;
   return board;
+}
+
+am::ButtonManager& ButtonManager() {
+  static ::am::ButtonManager manager(io_sw_a, io_sw_b, io_sw_x, io_sw_y);
+  return manager;
 }
 
 pw::i2c::Initiator& I2cInitiator() {
