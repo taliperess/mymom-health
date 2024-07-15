@@ -217,7 +217,7 @@ class PubSubAmEventsTest : public ::testing::Test {
   pw::sync::TimedThreadNotification work_queue_start_notification_;
 };
 
-TEST_F(PubSubAmEventsTest, AmPubSub_PublishEvent) {
+TEST_F(PubSubAmEventsTest, PublishEvent) {
   am::TestWorker<> worker;
   am::PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
@@ -235,9 +235,7 @@ TEST_F(PubSubAmEventsTest, AmPubSub_PublishEvent) {
       FAIL() << "Unexpected event type";
     }
 
-    events_processed_++;
-
-    if (events_processed_ == 5) {
+    if (++events_processed_ > 4) {
       notification_.release();
     }
   });
@@ -251,6 +249,35 @@ TEST_F(PubSubAmEventsTest, AmPubSub_PublishEvent) {
   // This should time out as the fifth event never gets sent.
   EXPECT_FALSE(notification_.try_acquire_for(1ms));
   EXPECT_EQ(events_processed_, 4);
+  EXPECT_EQ(total_voc_, 1.0f);
+  worker.Stop();
+}
+
+TEST_F(PubSubAmEventsTest, SubscribeTo) {
+  am::TestWorker<> worker;
+  am::PubSub pubsub(worker, event_queue_, subscribers_buffer_);
+
+  worker.RunOnce([this]() {
+    // Block the work queue until all events are published.
+    PW_ASSERT(work_queue_start_notification_.try_acquire_for(1s));
+  });
+
+  pubsub.SubscribeTo<am::VocSample>([this](am::VocSample sample) {
+    total_voc_ += sample.voc_level;
+    if (++events_processed_ > 2) {
+      notification_.release();
+    }
+  });
+
+  EXPECT_TRUE(pubsub.Publish(am::ButtonA(true)));
+  EXPECT_TRUE(pubsub.Publish(am::VocSample{.voc_level = 0.75f}));
+  EXPECT_TRUE(pubsub.Publish(am::ButtonA(true)));
+  EXPECT_TRUE(pubsub.Publish(am::VocSample{.voc_level = 0.25}));
+  work_queue_start_notification_.release();
+
+  // This should time out as the fifth event never gets sent.
+  EXPECT_FALSE(notification_.try_acquire_for(1ms));
+  EXPECT_EQ(events_processed_, 2) << "Only voc events are processed";
   EXPECT_EQ(total_voc_, 1.0f);
   worker.Stop();
 }

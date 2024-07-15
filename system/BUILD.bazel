@@ -54,6 +54,6 @@ cc_library(
     hdrs = ["pubsub.h"],
     deps = [
         ":worker",
-        "//modules/pubsub",
+        "//modules/pubsub:events",
     ],
 )

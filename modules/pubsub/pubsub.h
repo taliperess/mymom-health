@@ -27,9 +27,10 @@
 
 namespace am {
 
-template <typename Event>
+template <typename EventType>
 class GenericPubSub {
  public:
+  using Event = EventType;
   using SubscribeCallback = pw::Function<void(Event)>;
   using SubscribeToken = size_t;
 
@@ -74,6 +75,22 @@ class GenericPubSub {
     return SubscribeToken(slot - subscribers_.begin());
   }
 
+  /// If the Event is a std::variant, subscribes to only events of one type.
+  ///
+  /// This is currently equivalent to checking std::holds_alternative before
+  /// invoking the callback, buy may be optimized later.
+  template <typename VariantType, typename Function>
+  std::optional<SubscribeToken> SubscribeTo(Function&& function) {
+    static_assert(
+        IsVariant<Event>(),
+        "SubscribeTo may only be called when the event type is a std::variant");
+    return Subscribe([f = std::forward<Function>(function)](Event event) {
+      if (std::holds_alternative<VariantType>(event)) {
+        f(std::get<VariantType>(event));
+      }
+    });
+  }
+
   /// Unregisters a previously registered subscriber.
   bool Unsubscribe(SubscribeToken token) {
     std::lock_guard lock(subscribers_lock_);
@@ -94,6 +111,12 @@ class GenericPubSub {
   constexpr size_t subscriber_count() const { return subscriber_count_; }
 
  private:
+  template <typename T>
+  struct IsVariant : std::false_type {};
+
+  template <typename... Types>
+  struct IsVariant<std::variant<Types...>> : std::true_type{};
+
   // Events (or their variant elements) must be standard layout and trivially
   // copyable & destructible.
   template <typename T>
