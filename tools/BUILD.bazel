@@ -16,20 +16,6 @@ load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 
 package(default_visibility = ["//visibility:public"])
 
-py_binary(
-    name = "console",
-    srcs = ["airmaranth/console.py"],
-    deps = [
-        "//modules/blinky:py_pb2",
-        "//modules/air_sensor:py_pb2",
-        "//modules/board:py_pb2",
-        "//modules/morse_code:py_pb2",
-        "@pigweed//pw_protobuf:common_py_pb2",
-        "@pigweed//pw_rpc:echo_py_pb2",
-        "@pigweed//pw_system/py:pw_system_lib",
-    ],
-)
-
 py_library(
     name = "airmaranth_lib",
     srcs = [
@@ -38,12 +24,20 @@ py_library(
     ],
     imports = ["."],
     deps = [
+        "//modules/air_sensor:py_pb2",
         "//modules/blinky:py_pb2",
         "//modules/board:py_pb2",
+        "//modules/morse_code:py_pb2",
         "@pigweed//pw_protobuf:common_py_pb2",
         "@pigweed//pw_rpc:echo_py_pb2",
         "@pigweed//pw_system/py:pw_system_lib",
     ],
+)
+
+py_binary(
+    name = "console",
+    srcs = ["airmaranth/console.py"],
+    deps = [":airmaranth_lib"],
 )
 
 py_binary(

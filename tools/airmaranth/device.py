@@ -15,8 +15,11 @@
 
 import argparse
 import logging
+from types import ModuleType
 
 import pw_cli.log
+from pw_protobuf_protos import common_pb2
+from pw_rpc import echo_pb2
 from pw_system.device import Device as PwSystemDevice
 from pw_system.device_tracing import (
     DeviceWithTracing as PwSystemDeviceWithTracing,
@@ -28,9 +31,9 @@ from pw_system.device_connection import (
 )
 
 from blinky_pb import blinky_pb2
+from modules.air_sensor import air_sensor_pb2
 from modules.board import board_pb2
-from pw_protobuf_protos import common_pb2
-from pw_rpc import echo_pb2
+import morse_code_pb2
 
 
 # Airmaranth specific device classes, new functions can be added here
@@ -46,6 +49,16 @@ class DeviceWithTracing(PwSystemDeviceWithTracing):
         super().__init__(*args, **kwargs)
 
 
+def get_all_protos() -> list[ModuleType]:
+    return [
+        common_pb2,
+        echo_pb2,
+        board_pb2,
+        blinky_pb2,
+        morse_code_pb2,
+    ]
+
+
 def get_device_connection() -> DeviceConnection:
     pw_cli.log.install(level=logging.DEBUG)
 
@@ -54,14 +67,9 @@ def get_device_connection() -> DeviceConnection:
         description=__doc__,
     )
     parser = add_device_args(parser)
-    args = parser.parse_args()
+    args, _remaning_args = parser.parse_known_args()
 
-    compiled_protos = [
-        common_pb2,
-        echo_pb2,
-        board_pb2,
-        blinky_pb2,
-    ]
+    compiled_protos = get_all_protos()
 
     device_context = create_device_serial_or_socket_connection(
         device=args.device,

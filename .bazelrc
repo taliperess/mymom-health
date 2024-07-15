@@ -53,6 +53,8 @@ build:presubmit -- \
   //apps/blinky:blinky \
   //apps/blinky:rp2040_blinky.elf \
   //apps/blinky:simulator_blinky \
+  //apps/production:rp2040.elf \
+  //apps/production:simulator \
   //tools:console \
   //tools:example_script \
   //tools:toggle_blinky

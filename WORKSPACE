@@ -21,7 +21,7 @@ git_repository(
     # ROLL: Warning: this entry is automatically updated.
     # ROLL: Last updated 2024-07-15.
     # ROLL: By https://cr-buildbucket.appspot.com/build/8742319408131654545.
-    commit = "7aa0ab7ecfae509fdf6173b4903960d3567d4508",
+    commit = "7de8022941470f5aeb5f30540bad6669b78db5b3",
     remote = "https://pigweed-internal.googlesource.com/pigweed/pigweed",
 )
 

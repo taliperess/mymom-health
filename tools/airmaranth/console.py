@@ -15,27 +15,20 @@
 
 import argparse
 import sys
-from typing import Optional
 
-from pw_protobuf_protos import common_pb2
 import pw_system.console
-from blinky_pb import blinky_pb2
-from modules.air_sensor import air_sensor_pb2
-from modules.board import board_pb2
-import morse_code_pb2
-from pw_rpc import echo_pb2
+
+from airmaranth.device import (
+    get_all_protos,
+    get_device_connection,
+)
 
 
-def main(args: Optional[argparse.Namespace] = None) -> int:
-    compiled_protos = [
-        common_pb2,
-        echo_pb2,
-        air_sensor_pb2,
-        board_pb2,
-        blinky_pb2,
-        morse_code_pb2,
-    ]
-    return pw_system.console.main_with_compiled_protos(compiled_protos, args)
+def main() -> int:
+    return pw_system.console.main(
+        compiled_protos=get_all_protos(),
+        device_connection=get_device_connection(),
+    )
 
 
 if __name__ == '__main__':
