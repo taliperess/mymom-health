@@ -14,6 +14,7 @@
 
 #include "system/system.h"
 
+#include "modules/air_sensor/air_sensor_fake.h"
 #include "modules/board/board_fake.h"
 #include "modules/led/monochrome_led_fake.h"
 #include "modules/led/polychrome_led_fake.h"
@@ -35,6 +36,11 @@ void Start() {
       multibuf_alloc, pw::system::GetReader(), pw::system::GetWriter());
   pw::SystemStart(channel);
   PW_UNREACHABLE;
+}
+
+am::AirSensor& AirSensor() {
+  static AirSensorFake air_sensor;
+  return air_sensor;
 }
 
 am::Board& Board() {

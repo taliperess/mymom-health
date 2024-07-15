@@ -21,6 +21,7 @@ py_binary(
     srcs = ["airmaranth/console.py"],
     deps = [
         "//modules/blinky:py_pb2",
+        "//modules/air_sensor:py_pb2",
         "//modules/board:py_pb2",
         "//modules/morse_code:py_pb2",
         "@pigweed//pw_protobuf:common_py_pb2",

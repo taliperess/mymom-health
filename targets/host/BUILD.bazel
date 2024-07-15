@@ -19,6 +19,7 @@ cc_library(
     srcs = ["system.cc"],
     deps = [
         ":stream_channel",
+        "//modules/air_sensor:air_sensor_fake",
         "//modules/board:board_fake",
         "//modules/led:monochrome_led_fake",
         "//modules/led:polychrome_led_fake",

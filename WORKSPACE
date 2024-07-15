@@ -249,3 +249,11 @@ pw_ide_deps()
 load("@hedron_compile_commands//:workspace_setup.bzl", "hedron_compile_commands_setup")
 
 hedron_compile_commands_setup()
+
+http_archive(
+    name = "bme68x_sensor_api",
+    build_file = "@showcase-rp2//device:bme68x.BUILD.bazel",
+    sha256 = "af505a1021989ad619ac9a422cbb55110629fdf5625e96b89e2257d7a089d151",
+    strip_prefix = "BME68x_SensorAPI-4.4.8",
+    urls = ["https://github.com/boschsensortec/BME68x_SensorAPI/archive/refs/tags/v4.4.8.tar.gz"],
+)

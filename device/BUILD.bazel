@@ -15,6 +15,31 @@
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
+    name = "bme688",
+    srcs = ["bme688.cc"],
+    hdrs = ["bme688.h"],
+    deps = [
+        "//modules/air_sensor",
+        "//modules/worker",
+        "@bme68x_sensor_api//:bme68x",
+        "@pigweed//pw_chrono:system_clock",
+        "@pigweed//pw_chrono:system_timer",
+        "@pigweed//pw_i2c:initiator",
+        "@pigweed//pw_i2c:register_device",
+        "@pigweed//pw_log",
+        "@pigweed//pw_status",
+    ],
+    implementation_deps = [
+        "@pigweed//pw_assert",
+        "@pigweed//pw_bytes",
+        "@pigweed//pw_function",
+        "@pigweed//pw_log",
+        "@pigweed//pw_span",
+        "@pigweed//pw_thread:sleep",
+    ],
+)
+
+cc_library(
     name = "pico_board",
     srcs = ["pico_board.cc"],
     hdrs = ["pico_board.h"],
@@ -39,18 +64,6 @@ cc_library(
     ],
 )
 
-
-cc_library(
-    name = "rgb_led",
-    srcs = ["rgb_led.cc"],
-    hdrs = ["rgb_led.h"],
-    deps = [
-        ":pwm_gpio",
-        "//modules/led:polychrome_led",
-        "@pigweed//pw_log",
-    ],
-)
-
 cc_library(
     name = "pwm_gpio",
     srcs = ["pwm_gpio.cc"],
@@ -64,6 +77,17 @@ cc_library(
         "@pigweed//pw_assert",
         "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_digital_io",
+        "@pigweed//pw_log",
+    ],
+)
+
+cc_library(
+    name = "rgb_led",
+    srcs = ["rgb_led.cc"],
+    hdrs = ["rgb_led.h"],
+    deps = [
+        ":pwm_gpio",
+        "//modules/led:polychrome_led",
         "@pigweed//pw_log",
     ],
 )

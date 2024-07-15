@@ -14,30 +14,22 @@
 #pragma once
 
 #include "modules/air_sensor/air_sensor.h"
-#include "modules/board/board.h"
-#include "modules/led/monochrome_led.h"
-#include "modules/led/polychrome_led.h"
-#include "pw_i2c/initiator.h"
+#include "modules/air_sensor/air_sensor.rpc.pb.h"
+#include "pw_sync/thread_notification.h"
 
-// The functions in this file return specific implementations of singleton types
-// provided by the system.
+namespace am {
 
-namespace am::system {
+class AirSensorService final
+    : public ::air_sensor::pw_rpc::nanopb::AirSensor::Service<AirSensorService> {
+ public:
+  void Init(AirSensor& air_sensor);
 
-/// Initializes the system. This must be called before anything else in `main`.
-void Init();
+  pw::Status Init2(const pw_protobuf_Empty&, pw_protobuf_Empty&);
+  pw::Status Measure(const pw_protobuf_Empty&, air_sensor_Measurement& response);
 
-/// Starts the main system scheduler. This function never returns.
-void Start();
+ private:
+  AirSensor* air_sensor_ = nullptr;
+  pw::sync::ThreadNotification notification_;
+};
 
-AirSensor& AirSensor();
-
-Board& Board();
-
-pw::i2c::Initiator& I2cInitiator();
-
-MonochromeLed& MonochromeLed();
-
-PolychromeLed& PolychromeLed();
-
-}  // namespace am::system
+}  // namespace am

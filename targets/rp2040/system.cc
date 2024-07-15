@@ -14,16 +14,20 @@
 
 #include "system/system.h"
 
+#include "device/bme688.h"
 #include "device/pico_board.h"
 #include "device/pico_led.h"
 #include "device/rgb_led.h"
 #include "hardware/adc.h"
+#include "modules/air_sensor/air_sensor.h"
 #include "modules/led/monochrome_led.h"
 #include "modules/led/polychrome_led.h"
 #include "pico/stdlib.h"
 #include "pw_channel/rp2_stdio_channel.h"
+#include "pw_i2c_rp2040/initiator.h"
 #include "pw_multibuf/simple_allocator.h"
 #include "pw_system/system.h"
+#include "system/worker.h"
 
 namespace am::system {
 
@@ -43,9 +47,34 @@ void Start() {
   PW_UNREACHABLE;
 }
 
+constexpr pw::i2c::Rp2040Initiator::Config ki2c0Config{
+    .clock_frequency = 400'000,
+    .sda_pin = 4,
+    .scl_pin = 5,
+};
+
+am::AirSensor& AirSensor() {
+  static bool initialized = false;
+  static Bme688 air_sensor(I2cInitiator(), am::system::GetWorker());
+  if (!initialized) {
+    PW_CHECK_OK(air_sensor.Init());
+  }
+  return air_sensor;
+}
+
 am::Board& Board() {
   static ::am::PicoBoard board;
   return board;
+}
+
+pw::i2c::Initiator& I2cInitiator() {
+  static bool enabled = false;
+  static pw::i2c::Rp2040Initiator i2c0_bus(ki2c0Config, i2c0);
+  if (!enabled) {
+    i2c0_bus.Enable();
+    enabled = true;
+  }
+  return i2c0_bus;
 }
 
 am::MonochromeLed& MonochromeLed() {
