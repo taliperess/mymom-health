@@ -42,13 +42,18 @@ class Blinky final {
   /// Injects this object's dependencies.
   ///
   /// This method MUST be called before using any other method.
-  void Init(Worker& worker, MonochromeLed& monochrome_led, PolychromeLed& polychrome_led);
+  void Init(Worker& worker,
+            MonochromeLed& monochrome_led,
+            PolychromeLed& polychrome_led);
 
   /// Returns the currently configured interval for one blink.
   pw::chrono::SystemClock::duration interval() const;
 
   /// Turns the LED on if it is off, and off if it is on.
-  pw::Status Toggle() PW_LOCKS_EXCLUDED(lock_);
+  void Toggle() PW_LOCKS_EXCLUDED(lock_);
+
+  /// Sets the state of the LED.
+  void SetLed(bool on) PW_LOCKS_EXCLUDED(lock_);
 
   /// Queues a sequence of call backs to blink the configured number of times.
   ///
@@ -63,7 +68,8 @@ class Blinky final {
   void Pulse(uint32_t interval_ms) PW_LOCKS_EXCLUDED(lock_);
 
   // TODO
-  void SetRgb(uint8_t red, uint8_t green, uint8_t blue, uint8_t brightness) PW_LOCKS_EXCLUDED(lock_);
+  void SetRgb(uint8_t red, uint8_t green, uint8_t blue, uint8_t brightness)
+      PW_LOCKS_EXCLUDED(lock_);
 
   // TODO
   void Rainbow(uint32_t interval_ms) PW_LOCKS_EXCLUDED(lock_);

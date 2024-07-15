@@ -26,6 +26,8 @@ class BlinkyService final
 
   pw::Status ToggleLed(const pw_protobuf_Empty&, pw_protobuf_Empty&);
 
+  pw::Status SetLed(const blinky_SetLedRequest& request, pw_protobuf_Empty&);
+
   pw::Status Blink(const blinky_BlinkRequest& request, pw_protobuf_Empty&);
 
   pw::Status Pulse(const blinky_CycleRequest& request, pw_protobuf_Empty&);

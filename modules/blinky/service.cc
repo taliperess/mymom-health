@@ -27,7 +27,14 @@ void BlinkyService::Init(Worker& worker,
 
 pw::Status BlinkyService::ToggleLed(const pw_protobuf_Empty&,
                                     pw_protobuf_Empty&) {
-  return blinky_.Toggle();
+  blinky_.Toggle();
+  return pw::OkStatus();
+}
+
+pw::Status BlinkyService::SetLed(const blinky_SetLedRequest& request,
+                                 pw_protobuf_Empty&) {
+  blinky_.SetLed(request.on);
+  return pw::OkStatus();
 }
 
 pw::Status BlinkyService::IsIdle(const pw_protobuf_Empty&,

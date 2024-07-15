@@ -43,7 +43,7 @@ pw::chrono::SystemClock::duration Blinky::interval() const {
   return interval_;
 }
 
-pw::Status Blinky::Toggle() {
+void Blinky::Toggle() {
   timer_.Cancel();
   PW_LOG_INFO("Toggling LED");
   {
@@ -53,11 +53,23 @@ pw::Status Blinky::Toggle() {
       --num_toggles_;
     }
   }
-  return ScheduleToggle();
+}
+
+void Blinky::SetLed(bool on) {
+  timer_.Cancel();
+  std::lock_guard lock(lock_);
+  if (on) {
+    PW_LOG_INFO("Setting LED on");
+    monochrome_led_->TurnOn();
+  } else {
+    PW_LOG_INFO("Setting LED off");
+    monochrome_led_->TurnOff();
+  }
 }
 
 void Blinky::ToggleCallback(pw::chrono::SystemClock::time_point) {
-  Toggle().IgnoreError();
+  Toggle();
+  return ScheduleToggle().IgnoreError();
 }
 
 pw::Status Blinky::Blink(uint32_t blink_count, uint32_t interval_ms) {

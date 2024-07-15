@@ -22,6 +22,9 @@ service Blinky {
   // If a previous `Blink` request is still running, stops it before toggling.
   rpc ToggleLed(pw.protobuf.Empty) returns (pw.protobuf.Empty);
 
+  // Sets the LED on or off.
+  rpc SetLed(SetLedRequest) returns (pw.protobuf.Empty);
+
   // Continuously blinks the board LED a specified number of times.
   rpc Blink(BlinkRequest) returns (pw.protobuf.Empty);
 
@@ -36,6 +39,10 @@ service Blinky {
 
   // Returns true or false if LED blinking is idle.
   rpc IsIdle(pw.protobuf.Empty) returns (BlinkIdleResponse);
+}
+
+message SetLedRequest {
+  bool on = 1;
 }
 
 message BlinkIdleResponse {
