@@ -16,7 +16,10 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "system",
-    srcs = ["system.cc"],
+    srcs = [
+        "led.cc",
+        "system.cc",
+    ],
     deps = [
         ":stream_channel",
         "//modules/air_sensor:air_sensor_fake",

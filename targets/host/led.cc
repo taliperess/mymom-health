@@ -11,35 +11,21 @@
 // WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 // License for the specific language governing permissions and limitations under
 // the License.
-#pragma once
 
-#include "modules/led/polychrome_led.h"
+#include "modules/led/monochrome_led_fake.h"
+#include "modules/led/polychrome_led_fake.h"
+#include "system/system.h"
 
-#include <cstdint>
+namespace am::system {
 
-#include "device/pwm_gpio.h"
+am::MonochromeLed& MonochromeLed() {
+  static MonochromeLedFake monochrome_led;
+  return monochrome_led;
+}
 
-namespace am {
+am::PolychromeLed& PolychromeLed() {
+  static PolychromeLedFake polychrome_led;
+  return polychrome_led;
+}
 
-class RgbLed : public PolychromeLed {
- public:
-  RgbLed();
-
- private:
-  // TODO
-  void SetEnabled(bool enable) override;
-
-  // TODO
-  void Update() override;
-
-  // TODO
-  void SetCallback(Callback callback, uint16_t per_interval, uint32_t interval_ms) override;
-
-  PwmGpio pwm_gpio_red_;
-  PwmGpio pwm_gpio_green_;
-  PwmGpio pwm_gpio_blue_;
-};
-
-
-
-}  // namespace am
+}  // namespace am::system

@@ -59,14 +59,16 @@ cc_library(
 cc_library(
     name = "system",
     srcs = [
-        "enviro_pins.h",
+        "led.cc",
         "system.cc",
+    ],
+    hdrs = [
+        "enviro_pins.h",
     ],
     deps = [
         "//device:bme688",
         "//device:pico_board",
-        "//device:pico_led",
-        "//device:rgb_led",
+        "//device:pico_pwm_gpio",
         "//modules/buttons:manager",
         "//system:headers",
         "//system:worker",

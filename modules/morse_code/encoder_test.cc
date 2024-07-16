@@ -31,21 +31,38 @@ namespace am {
 
 class MorseCodeEncoderTest : public ::testing::Test {
  protected:
+  using Event = ::am::MonochromeLedFake::Event;
+  using State = ::am::MonochromeLedFake::State;
+
+  static constexpr uint32_t kIntervalMs = 10;
+
   // TODO(b/352327457): Ideally this would use simulated time, but no
   // simulated system timer exists yet. For now, relax the constraint by
   // checking that the LED was in the right state for _at least_ the expected
   // number of intervals. On some platforms, the fake LED is implemented using
   // threads, and may sleep a bit longer.
-  void Expect(bool is_on, size_t num_intervals) {
-    const pw::Vector<uint8_t>& actual = led_.GetOutput();
-    ASSERT_LT(offset_, actual.size());
-    uint8_t encoded = MonochromeLedFake::Encode(is_on, num_intervals);
-    EXPECT_GE(actual[offset_], encoded);
-    ++offset_;
-  }
+  MorseCodeEncoderTest()
+      : clock_(pw::chrono::VirtualSystemClock::RealClock()) {}
 
   void Expect(std::string_view msg) {
-    offset_ = 0;
+    auto& events = led_.events();
+    auto event = events.begin();
+
+    // Skip until the first "turn on" event is seen, and use it as the starting
+    // point.
+    while (true) {
+      if (event == events.end()) {
+        EXPECT_TRUE(msg.empty());
+        return;
+      }
+      if (event->state == State::kActive) {
+        break;
+      }
+      ++event;
+    }
+    auto start = event->timestamp;
+    ++event;
+
     while (!msg.empty()) {
       size_t off_intervals;
       size_t offset;
@@ -65,35 +82,53 @@ class MorseCodeEncoderTest : public ::testing::Test {
         offset = 1;
       }
 
+      // Check that the LED turns off after the roght amount of time, implying
+      /// it was on.
+      ASSERT_NE(event, events.end());
+      EXPECT_EQ(event->state, State::kInactive);
       if (msg[0] == '.') {
-        Expect(true, 1);
+        EXPECT_GE(ToMs(event->timestamp - start), interval_ms_);
       } else if (msg[0] == '-') {
-        Expect(true, 3);
+        EXPECT_GE(ToMs(event->timestamp - start), interval_ms_ * 3);
       } else {
         FAIL();
       }
+      start = event->timestamp;
+      ++event;
+
       msg = msg.substr(offset);
       if (msg.empty()) {
         break;
       }
-      Expect(false, off_intervals);
+
+      // Check that the LED turns on after the roght amount of time, implying
+      /// it was off.
+      ASSERT_NE(event, events.end());
+      EXPECT_EQ(event->state, State::kActive);
+      EXPECT_GE(ToMs(event->timestamp - start), interval_ms_ * off_intervals);
+      start = event->timestamp;
+      ++event;
     }
-    led_.ResetOutput();
+    events.clear();
   }
 
+  uint32_t ToMs(pw::chrono::SystemClock::duration interval) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(interval)
+        .count();
+  }
   /// Waits until the given encoder is idle.
   void SleepUntilDone() {
+    auto interval = pw::chrono::SystemClock::for_at_least(
+        std::chrono::milliseconds(interval_ms_));
     while (!encoder_.IsIdle()) {
-      pw::this_thread::sleep_for(led_.interval());
+      pw::this_thread::sleep_for(interval);
     }
   }
 
+  pw::chrono::VirtualSystemClock& clock_;
   Encoder encoder_;
   MonochromeLedFake led_;
-  size_t offset_ = 0;
-
- private:
-  pw::Vector<char, MonochromeLedFake::kCapacity> output_;
+  uint32_t interval_ms_ = kIntervalMs;
 };
 
 // Unit tests.
@@ -101,27 +136,47 @@ class MorseCodeEncoderTest : public ::testing::Test {
 TEST_F(MorseCodeEncoderTest, EncodeEmpty) {
   TestWorker<> worker;
   encoder_.Init(worker, led_);
-  EXPECT_EQ(encoder_.Encode("", 1, led_.interval_ms()), pw::OkStatus());
+  EXPECT_EQ(encoder_.Encode("", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
   Expect("");
 }
 
+TEST_F(MorseCodeEncoderTest, EncodeOneLetter) {
+  TestWorker<> worker;
+  encoder_.Init(worker, led_);
+  EXPECT_EQ(encoder_.Encode("E", 1, interval_ms_), pw::OkStatus());
+  SleepUntilDone();
+  worker.Stop();
+  Expect(".");
+}
+
+TEST_F(MorseCodeEncoderTest, EncodeOneWord) {
+  TestWorker<> worker;
+  encoder_.Init(worker, led_);
+  EXPECT_EQ(encoder_.Encode("PARIS", 1, interval_ms_), pw::OkStatus());
+  SleepUntilDone();
+  worker.Stop();
+  Expect(".--. .- .-. .. ...");
+}
+
 TEST_F(MorseCodeEncoderTest, EncodeHelloWorld) {
   TestWorker<> worker;
   encoder_.Init(worker, led_);
-  EXPECT_EQ(encoder_.Encode("hello world", 1, led_.interval_ms()),
-            pw::OkStatus());
+  EXPECT_EQ(encoder_.Encode("hello world", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
 
   Expect(".... . .-.. .-.. ---  .-- --- .-. .-.. -..");
 }
 
+// TODO(b/352327457): Without simulated time, this test is too slow to run every
+// case on device.
+#ifdef AM_MORSE_CODE_ENCODER_TEST_FULL
 TEST_F(MorseCodeEncoderTest, EncodeRepeated) {
   TestWorker<> worker;
   encoder_.Init(worker, led_);
-  EXPECT_EQ(encoder_.Encode("hello", 2, led_.interval_ms()), pw::OkStatus());
+  EXPECT_EQ(encoder_.Encode("hello", 2, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
   Expect(".... . .-.. .-.. ---  .... . .-.. .-.. ---");
@@ -130,8 +185,8 @@ TEST_F(MorseCodeEncoderTest, EncodeRepeated) {
 TEST_F(MorseCodeEncoderTest, EncodeSlow) {
   TestWorker<> worker;
   encoder_.Init(worker, led_);
-  led_.set_interval_ms(20);
-  EXPECT_EQ(encoder_.Encode("hello", 1, led_.interval_ms()), pw::OkStatus());
+  interval_ms_ = 25;
+  EXPECT_EQ(encoder_.Encode("hello", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
   Expect(".... . .-.. .-.. ---");
@@ -140,8 +195,7 @@ TEST_F(MorseCodeEncoderTest, EncodeSlow) {
 TEST_F(MorseCodeEncoderTest, EncodeConsecutiveWhitespace) {
   TestWorker<> worker;
   encoder_.Init(worker, led_);
-  EXPECT_EQ(encoder_.Encode("hello    world", 1, led_.interval_ms()),
-            pw::OkStatus());
+  EXPECT_EQ(encoder_.Encode("hello    world", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
   Expect(".... . .-.. .-.. ---  .-- --- .-. .-.. -..");
@@ -157,11 +211,12 @@ TEST_F(MorseCodeEncoderTest, EncodeInvalidChars) {
       continue;
     }
     s[0] = c;
-    EXPECT_EQ(encoder_.Encode(s, 1, led_.interval_ms()), pw::OkStatus());
+    EXPECT_EQ(encoder_.Encode(s, 1, interval_ms_), pw::OkStatus());
     SleepUntilDone();
     Expect("..--..");
   }
   worker.Stop();
 }
+#endif  // AM_MORSE_CODE_ENCODER_TEST_FULL
 
 }  // namespace am

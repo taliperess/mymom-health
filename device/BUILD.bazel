@@ -52,42 +52,22 @@ cc_library(
 )
 
 cc_library(
-    name = "pico_led",
-    srcs = ["pico_led.cc"],
-    hdrs = ["pico_led.h"],
-    deps = [
-        ":pwm_gpio",
-        "//modules/led:monochrome_led",
-        "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
-        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-        "@pigweed//pw_digital_io_rp2040",
-    ],
-)
-
-cc_library(
-    name = "pwm_gpio",
-    srcs = ["pwm_gpio.cc"],
-    hdrs = ["pwm_gpio.h"],
-    deps = [
-        "//modules/led:monochrome_led",
+    name = "pico_pwm_gpio",
+    srcs = ["pico_pwm_gpio.cc"],
+    hdrs = ["pico_pwm_gpio.h"],
+    implementation_deps = [
         "@pico-sdk//src/rp2_common/hardware_gpio",
         "@pico-sdk//src/rp2_common/hardware_irq",
-        "@pico-sdk//src/rp2_common/hardware_pwm",
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
         "@pigweed//pw_assert",
-        "@pigweed//pw_chrono:system_clock",
-        "@pigweed//pw_digital_io",
         "@pigweed//pw_log",
     ],
-)
-
-cc_library(
-    name = "rgb_led",
-    srcs = ["rgb_led.cc"],
-    hdrs = ["rgb_led.h"],
     deps = [
-        ":pwm_gpio",
-        "//modules/led:polychrome_led",
-        "@pigweed//pw_log",
+        "//modules/pwm:digital_out",
+        "@pico-sdk//src/rp2_common/hardware_pwm",
+        "@pigweed//pw_chrono:system_clock",
+        "@pigweed//pw_digital_io",
+        "@pigweed//pw_digital_io_rp2040",
+        "@pigweed//pw_function",
     ],
 )

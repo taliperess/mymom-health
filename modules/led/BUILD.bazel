@@ -19,19 +19,33 @@ cc_library(
     srcs = ["monochrome_led.cc"],
     hdrs = ["monochrome_led.h"],
     deps = [
-        "@pigweed//pw_assert",
+        "//modules/pwm:digital_out",
+        "@pigweed//pw_digital_io",
     ],
 )
 
 cc_library(
     name = "monochrome_led_fake",
-    srcs = ["monochrome_led_fake.cc"],
     hdrs = ["monochrome_led_fake.h"],
     deps = [
+        ":digital_io_fake",
         ":monochrome_led",
-        "@pigweed//pw_chrono:system_clock",
-        "@pigweed//pw_containers:vector",
+        "//modules/pwm:digital_out_fake",
+    ],
+)
+
+cc_library(
+    name = "digital_io_fake",
+    srcs = ["digital_io_fake.cc"],
+    hdrs = ["digital_io_fake.h"],
+    implementation_deps = [
         "@pigweed//pw_log",
+    ],
+    deps = [
+        "@pigweed//pw_chrono:system_clock",
+        "@pigweed//pw_containers:inline_deque",
+        "@pigweed//pw_digital_io",
+        "@pigweed//pw_result",
     ],
 )
 
@@ -40,7 +54,7 @@ cc_library(
     srcs = ["polychrome_led.cc"],
     hdrs = ["polychrome_led.h"],
     deps = [
-        ":monochrome_led",
+        "//modules/pwm:digital_out",
     ],
 )
 

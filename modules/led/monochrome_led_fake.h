@@ -13,65 +13,33 @@
 // the License.
 #pragma once
 
-#include <chrono>
-#include <cstddef>
-#include <cstdint>
-
+#include "modules/led/digital_io_fake.h"
 #include "modules/led/monochrome_led.h"
+#include "modules/pwm/digital_out_fake.h"
 #include "pw_chrono/system_clock.h"
-#include "pw_containers/vector.h"
 
 namespace am {
 
-// This class is a fake implementation of ``MonochromeLed`` that allows
-// capturing sequences of on/off toggles.
 class MonochromeLedFake : public MonochromeLed {
  public:
   static constexpr size_t kCapacity = 256;
 
-  MonochromeLedFake() { set_interval_ms(1); }
+  using Clock = ::am::DigitalInOutFakeImpl::Clock;
+  using Event = ::am::DigitalInOutFakeImpl::Event;
+  using State = ::am::DigitalInOutFakeImpl::State;
 
-  pw::chrono::SystemClock::duration interval() const { return interval_; }
+  MonochromeLedFake() : MonochromeLedFake(Clock::RealClock()) {}
 
-  uint32_t interval_ms() const {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(interval_)
-        .count();
+  explicit MonochromeLedFake(Clock& clock)
+      : MonochromeLed(led_sio_, led_pwm_), led_sio_(clock) {
+    TurnOff();
   }
 
-  void set_interval_ms(uint32_t interval_ms) {
-    interval_ = pw::chrono::SystemClock::for_at_least(
-        std::chrono::milliseconds(interval_ms));
-  }
-
-  /// Encodes the parameters as follows: the top bit indicates whether
-  /// the LED was on or off, and the lower 7 bits indicate for how many
-  /// intervals, up to a max of 127.
-  static uint8_t Encode(bool is_on, size_t num_intervals);
-
-  /// Returns on/off intervals encoded by ``Encode``.
-  const pw::Vector<uint8_t>& GetOutput() { return output_; }
-
-  /// Clears the saved output.
-  void ResetOutput() { output_.clear(); }
-
- protected:
-  /// @copydoc ``MonochromeLed::GetState``.
-  State GetState() override { return state_; }
-
-  /// @copydoc ``MonochromeLed::SetState``.
-  void SetState(State state) override;
-
-  /// @copydoc ``MonochromeLed::SetBrightness``
-  void DoSetBrightness(uint16_t level) override;
-
-  /// @copydoc ``MonochromeLed::SetCallback``
-  void SetCallback(Callback callback, uint16_t per_interval, uint32_t interval_ms) override;
+  pw::InlineDeque<Event>& events() { return led_sio_.events(); }
 
  private:
-  State state_ = State::kOff;
-  pw::chrono::SystemClock::duration interval_;
-  pw::chrono::SystemClock::time_point last_;
-  pw::Vector<uint8_t, kCapacity> output_;
+  DigitalInOutFake<kCapacity> led_sio_;
+  PwmDigitalOutFake led_pwm_;
 };
 
 }  // namespace am

@@ -67,11 +67,11 @@ class Blinky final {
   /// @param  interval_ms   The duration of a fade cycle, in milliseconds.
   void Pulse(uint32_t interval_ms) PW_LOCKS_EXCLUDED(lock_);
 
-  // TODO
+  /// Sets the color of the RGB LED>
   void SetRgb(uint8_t red, uint8_t green, uint8_t blue, uint8_t brightness)
       PW_LOCKS_EXCLUDED(lock_);
 
-  // TODO
+  /// Cycles the RGB LED through all the colors.
   void Rainbow(uint32_t interval_ms) PW_LOCKS_EXCLUDED(lock_);
 
   /// Returns whether this instance is currently blinking or not.

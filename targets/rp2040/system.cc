@@ -16,13 +16,9 @@
 
 #include "device/bme688.h"
 #include "device/pico_board.h"
-#include "device/pico_led.h"
-#include "device/rgb_led.h"
 #include "hardware/adc.h"
 #include "modules/air_sensor/air_sensor.h"
 #include "modules/buttons/manager.h"
-#include "modules/led/monochrome_led.h"
-#include "modules/led/polychrome_led.h"
 #include "pico/stdlib.h"
 #include "pw_channel/rp2_stdio_channel.h"
 #include "pw_digital_io_rp2040/digital_io.h"
@@ -112,16 +108,6 @@ pw::i2c::Initiator& I2cInitiator() {
     enabled = true;
   }
   return i2c0_bus;
-}
-
-am::MonochromeLed& MonochromeLed() {
-  static ::am::PicoLed monochrome_led;
-  return monochrome_led;
-}
-
-am::PolychromeLed& PolychromeLed() {
-  static ::am::RgbLed polychrome_led;
-  return polychrome_led;
 }
 
 }  // namespace am::system

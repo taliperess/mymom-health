@@ -28,7 +28,9 @@ Encoder::~Encoder() { timer_.Cancel(); }
 
 void Encoder::Init(Worker& worker, MonochromeLed& led) {
   worker_ = &worker;
+
   led_ = &led;
+  led_->TurnOff();
 }
 
 pw::Status Encoder::Encode(std::string_view msg,

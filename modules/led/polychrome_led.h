@@ -15,70 +15,63 @@
 
 #include <cstdint>
 
-#include "modules/led/monochrome_led.h"
+#include "modules/pwm/digital_out.h"
 
 namespace am {
 
-/// Interface for a simple LED.
+/// Interface for a multi-color LED.
 class PolychromeLed {
  public:
-  using Callback = MonochromeLed::Callback;
-
   static constexpr uint32_t kRedShift = 16;
   static constexpr uint32_t kGreenShift = 8;
   static constexpr uint32_t kBlueShift = 0;
 
-  virtual ~PolychromeLed() = default;
-
-  uint32_t hex() const { return hex_; }
-  uint8_t red() const { return static_cast<uint8_t>(hex_ >> kRedShift); }
-  uint8_t green() const { return static_cast<uint8_t>(hex_ >> kGreenShift); }
-  uint8_t blue() const { return static_cast<uint8_t>(hex_ >> kBlueShift); }
-
-  uint32_t alternate_hex() const { return alternate_hex_; };
-  void set_alternate_hex(uint32_t hex) { alternate_hex_ = hex; }
-
-  uint16_t brightness() const { return brightness_; }
+  PolychromeLed(PwmDigitalOut& red, PwmDigitalOut& green, PwmDigitalOut& blue)
+      : red_(red), green_(green), blue_(blue) {}
+  ~PolychromeLed() = default;
 
   /// Turns off the LED.
-  void TurnOff() { SetEnabled(false); }
+  void TurnOff();
 
   // Turns the LED on.
-  void TurnOn()  { SetEnabled(true); }
+  void TurnOn();
 
-  // TODO
+  /// Sets the brightness of the LED.
+  ///
+  /// @param  level   Relative brightness of the LED
   void SetBrightness(uint8_t level);
 
-  // TODO
+  /// Sets the RGB LED using individual red, green, and blue components.
   void SetColor(uint8_t red, uint8_t green, uint8_t blue);
 
-  // TODO
+  /// Sets the RGB LED using a 24-bit hex color code.
   void SetColor(uint32_t hex);
 
-  // TODO
+  /// Fades the LED on and off continuously.
+  ///
+  /// @param  interval_ms   The duration of a fade cycle, in milliseconds.
   void Pulse(uint32_t hex, uint32_t interval_ms);
 
+  /// Cycles back and forth between two colors.
   void PulseBetween(uint32_t hex1, uint32_t hex2, uint32_t interval_ms);
 
+  /// Cycles thorugh all the colors.
   void Rainbow(uint32_t interval_ms);
 
- protected:
-  PolychromeLed();
+ private:
+  /// Sets the levels of the red, green, and blue PWM slices.
+  void Update();
 
-  // TODO
-  virtual void SetEnabled(bool enable) = 0;
+  /// Adjusts the given 8-bit value using sRGB, and scales according to the
+  /// current brightness.
+  uint16_t GammaCorrect(uint32_t value) const;
 
-  // TODO
-  virtual void Update() = 0;
-
-  // TODO
-  virtual void SetCallback(Callback callback, uint16_t per_interval, uint32_t interval_ms) = 0;
-
+  PwmDigitalOut& red_;
+  PwmDigitalOut& green_;
+  PwmDigitalOut& blue_;
   uint32_t hex_ = 0;
   uint32_t alternate_hex_ = 0;
   uint16_t brightness_ = 0;
 };
-
-
 
 }  // namespace am

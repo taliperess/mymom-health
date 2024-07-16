@@ -32,8 +32,12 @@ void Blinky::Init(Worker& worker,
                   MonochromeLed& monochrome_led,
                   PolychromeLed& polychrome_led) {
   worker_ = &worker;
+
   monochrome_led_ = &monochrome_led;
+  monochrome_led_->TurnOff();
+
   polychrome_led_ = &polychrome_led;
+  polychrome_led_->TurnOff();
 }
 
 Blinky::~Blinky() { timer_.Cancel(); }
@@ -110,8 +114,11 @@ void Blinky::SetRgb(uint8_t red,
                     uint8_t blue,
                     uint8_t brightness) {
   timer_.Cancel();
+  PW_LOG_INFO("Setting RGB LED with red=0x%02x, green=0x%02x, blue=0x%02x",
+              red,
+              green,
+              blue);
   std::lock_guard lock(lock_);
-  polychrome_led_->TurnOff();
   polychrome_led_->SetColor(red, green, blue);
   polychrome_led_->SetBrightness(brightness);
   polychrome_led_->TurnOn();

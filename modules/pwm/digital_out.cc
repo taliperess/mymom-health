@@ -11,22 +11,24 @@
 // WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 // License for the specific language governing permissions and limitations under
 // the License.
-#pragma once
 
-#include "modules/led/polychrome_led.h"
 #include "modules/pwm/digital_out.h"
 
 namespace am {
 
-/// Interface for a simple LED.
-class PolychromeLedFake : public PolychromeLed {
- public:
-  PolychromeLedFake() : PolychromeLed(red_, green_, blue_) {}
-
- private:
-  PwmDigitalOutFake red_;
-  PwmDigitalOutFake green_;
-  PwmDigitalOutFake blue_;
+void PwmDigitalOut::SetCallback(Callback&& callback,
+                                uint16_t per_interval,
+                                uint32_t interval_ms) {
+  callback_ = std::move(callback);
+  DoSetCallback(callback_.value(),
+                per_interval,
+                pw::chrono::SystemClock::for_at_least(
+                    std::chrono::milliseconds(interval_ms)));
 };
+
+void PwmDigitalOut::ClearCallback() {
+  callback_.reset();
+  DoClearCallback();
+}
 
 }  // namespace am

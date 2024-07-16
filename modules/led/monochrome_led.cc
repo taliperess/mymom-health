@@ -14,37 +14,82 @@
 
 #include "modules/led/monochrome_led.h"
 
-#include "pw_assert/check.h"
-
 namespace am {
 
-/// Reference to the ``MonochromeLed`` instance returned by the system.
-///
-/// Since the PWM callbacks must be free functions that take no argument, this
-/// reference is used to access the LED. This imposes the restriction that unit
-/// tests that may create multiple ``MonochromeLed`` instances MUST NOT run
-/// concurrently.
-///
-/// TODO(b/352801898): Move this to //targets.
-static MonochromeLed* singleton = nullptr;
+MonochromeLed::MonochromeLed(pw::digital_io::DigitalInOut& sio,
+                             PwmDigitalOut& pwm)
+    : sio_(sio), pwm_(pwm) {}
 
-MonochromeLed::MonochromeLed() { singleton = this; }
-
-static void DoPulse() {
-  static uint16_t counter = 0;
-  uint16_t brightness = 0;
-  if (counter < 0x100) {
-    brightness = counter;
-  } else {
-    brightness = 0x200 - counter;
+bool MonochromeLed::IsOn() {
+  if (GetMode() != Mode::kSio) {
+    return false;
   }
-  singleton->SetBrightness(brightness * brightness);
-  counter = (counter + 1) % 0x200;
+  auto result = sio_.GetState();
+  if (!result.ok()) {
+    return false;
+  }
+  return *result == State::kActive;
+}
+
+void MonochromeLed::TurnOn() {
+  SetMode(Mode::kSio);
+  sio_.SetState(State::kActive);
+}
+
+void MonochromeLed::TurnOff() {
+  SetMode(Mode::kSio);
+  sio_.SetState(State::kInactive);
+}
+
+void MonochromeLed::SetBrightness(uint16_t level) {
+  SetMode(Mode::kPwm);
+  pwm_.SetLevel(level);
+}
+
+void MonochromeLed::Toggle() {
+  auto result = sio_.GetState();
+  bool is_off =
+      mode_ != Mode::kSio || !result.ok() || *result == State::kInactive;
+  SetMode(Mode::kSio);
+  sio_.SetState(is_off ? State::kActive : State::kInactive);
 }
 
 void MonochromeLed::Pulse(uint32_t interval_ms) {
-  SetCallback(DoPulse, 0x200, interval_ms);
-  SetState(State::kPwm);
+  SetMode(Mode::kPwm);
+  pwm_.Disable();
+  pwm_.ClearCallback();
+  pwm_.SetCallback(
+      [this]() {
+        static uint16_t counter = 0;
+        uint16_t brightness = 0;
+        if (counter < 0x100) {
+          brightness = counter;
+        } else {
+          brightness = 0x200 - counter;
+        }
+        pwm_.SetLevel(brightness * brightness);
+        counter = (counter + 1) % 0x200;
+      },
+      0x200,
+      interval_ms);
+  pwm_.Enable();
+}
+
+void MonochromeLed::SetMode(Mode mode) {
+  if (mode == mode_) {
+    return;
+  }
+  switch (mode_) {
+    case Mode::kSio:
+      sio_.Disable();
+      pwm_.Enable();
+      break;
+    case Mode::kPwm:
+      pwm_.Disable();
+      sio_.Enable();
+      break;
+  }
+  mode_ = mode;
 }
 
 }  // namespace am

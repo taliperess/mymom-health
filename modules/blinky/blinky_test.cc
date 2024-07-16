@@ -26,22 +26,41 @@ namespace am {
 
 class BlinkyTest : public ::testing::Test {
  protected:
+  using Event = ::am::MonochromeLedFake::Event;
+  using State = ::am::MonochromeLedFake::State;
+
+  static constexpr uint32_t kIntervalMs = 10;
+  static constexpr pw::chrono::SystemClock::duration kInterval =
+      pw::chrono::SystemClock::for_at_least(
+          std::chrono::milliseconds(kIntervalMs));
+
   // TODO(b/352327457): Ideally this would use simulated time, but no
   // simulated system timer exists yet. For now, relax the constraint by
   // checking that the LED was in the right state for _at least_ the expected
   // number of intervals. On some platforms, the fake LED is implemented using
   // threads, and may sleep a bit longer.
-  void Expect(bool is_on, size_t num_intervals) {
-    const pw::Vector<uint8_t>& actual = monochrome_led_.GetOutput();
-    ASSERT_LT(offset_, actual.size());
-    uint8_t encoded = MonochromeLedFake::Encode(is_on, num_intervals);
-    EXPECT_GE(actual[offset_], encoded);
-    ++offset_;
+  BlinkyTest() : clock_(pw::chrono::VirtualSystemClock::RealClock()) {}
+
+  pw::InlineDeque<Event>::iterator FirstActive() {
+    pw::InlineDeque<Event>& events = monochrome_led_.events();
+    pw::InlineDeque<Event>::iterator event = events.begin();
+    while (event != events.end()) {
+      if (event->state == State::kActive) {
+        break;
+      }
+      ++event;
+    }
+    return event;
   }
 
+  uint32_t ToMs(pw::chrono::SystemClock::duration interval) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(interval)
+        .count();
+  }
+
+  pw::chrono::VirtualSystemClock& clock_;
   MonochromeLedFake monochrome_led_;
   PolychromeLedFake polychrome_led_;
-  size_t offset_ = 0;
 };
 
 // Unit tests.
@@ -51,64 +70,98 @@ TEST_F(BlinkyTest, Toggle) {
   Blinky blinky;
   blinky.Init(worker, monochrome_led_, polychrome_led_);
 
+  auto start = clock_.now();
   blinky.Toggle();
-  pw::this_thread::sleep_for(monochrome_led_.interval() * 1);
+  pw::this_thread::sleep_for(kInterval * 1);
   blinky.Toggle();
-  pw::this_thread::sleep_for(monochrome_led_.interval() * 2);
+  pw::this_thread::sleep_for(kInterval * 2);
   blinky.Toggle();
-  pw::this_thread::sleep_for(monochrome_led_.interval() * 3);
+  pw::this_thread::sleep_for(kInterval * 3);
   blinky.Toggle();
   worker.Stop();
 
-  Expect(true, 1);
-  Expect(false, 2);
-  Expect(true, 3);
+  auto event = FirstActive();
+  ASSERT_NE(event, monochrome_led_.events().end());
+  EXPECT_EQ(event->state, State::kActive);
+  EXPECT_GE(ToMs(event->timestamp - start), kIntervalMs * 0);
+  start = event->timestamp;
+
+  ASSERT_NE(++event, monochrome_led_.events().end());
+  EXPECT_EQ(event->state, State::kInactive);
+  EXPECT_GE(ToMs(event->timestamp - start), kIntervalMs * 1);
+  start = event->timestamp;
+
+  ASSERT_NE(++event, monochrome_led_.events().end());
+  EXPECT_EQ(event->state, State::kActive);
+  EXPECT_GE(ToMs(event->timestamp - start), kIntervalMs * 2);
+  start = event->timestamp;
+
+  ASSERT_NE(++event, monochrome_led_.events().end());
+  EXPECT_EQ(event->state, State::kInactive);
+  EXPECT_GE(ToMs(event->timestamp - start), kIntervalMs * 3);
 }
 
-TEST_F(BlinkyTest, BlinkTwice) {
+TEST_F(BlinkyTest, Blink) {
   TestWorker worker;
   Blinky blinky;
   blinky.Init(worker, monochrome_led_, polychrome_led_);
-  EXPECT_EQ(blinky.Blink(2, 1), pw::OkStatus());
+
+  auto start = clock_.now();
+  EXPECT_EQ(blinky.Blink(1, kIntervalMs), pw::OkStatus());
   while (!blinky.IsIdle()) {
-    pw::this_thread::sleep_for(monochrome_led_.interval());
+    pw::this_thread::sleep_for(kInterval);
   }
   worker.Stop();
 
-  // Since the fake LED only records completed intervals, we need to blink twice
-  // to see both "on" and "off".
-  Expect(true, 1);
-  Expect(false, 1);
-  Expect(true, 1);
+  auto event = FirstActive();
+  ASSERT_NE(event, monochrome_led_.events().end());
+  EXPECT_EQ(event->state, State::kActive);
+  EXPECT_GE(ToMs(event->timestamp - start), kIntervalMs);
+  start = event->timestamp;
+
+  ASSERT_NE(++event, monochrome_led_.events().end());
+  EXPECT_EQ(event->state, State::kInactive);
+  EXPECT_GE(ToMs(event->timestamp - start), kIntervalMs);
 }
 
 TEST_F(BlinkyTest, BlinkMany) {
   TestWorker<> worker;
   Blinky blinky;
   blinky.Init(worker, monochrome_led_, polychrome_led_);
-  EXPECT_EQ(blinky.Blink(100, 1), pw::OkStatus());
+
+  auto start = clock_.now();
+  EXPECT_EQ(blinky.Blink(100, kIntervalMs), pw::OkStatus());
   while (!blinky.IsIdle()) {
-    pw::this_thread::sleep_for(monochrome_led_.interval());
+    pw::this_thread::sleep_for(kInterval);
   }
   worker.Stop();
 
-  // Every "on" and "off" is recorded, except the final one.
-  EXPECT_EQ(monochrome_led_.GetOutput().size(), 199U);
+  // Every "on" and "off" is recorded.
+  EXPECT_GE(monochrome_led_.events().size(), 200);
+  EXPECT_GE(ToMs(clock_.now() - start), kIntervalMs * 200);
 }
 
 TEST_F(BlinkyTest, BlinkSlow) {
   TestWorker<> worker;
   Blinky blinky;
   blinky.Init(worker, monochrome_led_, polychrome_led_);
-  EXPECT_EQ(blinky.Blink(2, 32), pw::OkStatus());
+
+  auto start = clock_.now();
+  EXPECT_EQ(blinky.Blink(1, kIntervalMs * 32), pw::OkStatus());
   while (!blinky.IsIdle()) {
-    pw::this_thread::sleep_for(monochrome_led_.interval());
+    pw::this_thread::sleep_for(kInterval);
   }
   worker.Stop();
 
-  Expect(true, 32);
-  Expect(false, 32);
-  Expect(true, 32);
+  auto event = FirstActive();
+  ASSERT_NE(event, monochrome_led_.events().end());
+  EXPECT_EQ(event->state, State::kActive);
+  EXPECT_GE(ToMs(event->timestamp - start), kIntervalMs * 32);
+  start = event->timestamp;
+
+  ASSERT_NE(++event, monochrome_led_.events().end());
+  EXPECT_EQ(event->state, State::kInactive);
+  EXPECT_GE(ToMs(event->timestamp - start), kIntervalMs * 32);
 }
 
 }  // namespace am

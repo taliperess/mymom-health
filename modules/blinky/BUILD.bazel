@@ -46,10 +46,10 @@ cc_library(
 pw_cc_test(
     name = "blinky_test",
     srcs = ["blinky_test.cc"],
-    flaky = True,
     deps = [
         ":blinky",
         "//modules/led:monochrome_led_fake",
+        "//modules/led:polychrome_led_fake",
         "//modules/worker:test_worker",
         "@pigweed//pw_thread:sleep",
         "@pigweed//pw_unit_test",
