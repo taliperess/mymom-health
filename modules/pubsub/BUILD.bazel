@@ -13,9 +13,15 @@
 # the License.
 
 load(
-    "@@pigweed//pw_build:pigweed.bzl",
+    "@pigweed//pw_build:pigweed.bzl",
     "pw_cc_test",
 )
+load(
+    "@pigweed//pw_protobuf_compiler:pw_proto_library.bzl",
+    "nanopb_proto_library",
+    "nanopb_rpc_proto_library",
+)
+load("@rules_python//python:proto.bzl", "py_proto_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -48,4 +54,58 @@ pw_cc_test(
         "//modules/worker:test_worker",
         "@pigweed//pw_sync:timed_thread_notification",
     ],
+)
+
+cc_library(
+    name = "service",
+    srcs = ["service.cc"],
+    hdrs = ["service.h"],
+    implementation_deps = [
+        "@pigweed//pw_log",
+    ],
+    deps = [
+        ":events",
+        ":nanopb_rpc",
+    ],
+)
+
+pw_cc_test(
+    name = "service_test",
+    srcs = ["service_test.cc"],
+    # TODO: https://pwbug.dev/352163490 - Fails in CI
+    tags = ["manual"],
+    deps = [
+        ":events",
+        ":service",
+        "//modules/worker:test_worker",
+        "@pigweed//pw_rpc:test_helpers",
+        "@pigweed//pw_rpc/nanopb:client_server_testing",
+        "@pigweed//pw_sync:timed_thread_notification",
+    ],
+)
+
+proto_library(
+    name = "proto",
+    srcs = ["pubsub.proto"],
+    import_prefix = "pubsub_pb",
+    strip_import_prefix = "/modules/pubsub",
+    deps = [
+        "@pigweed//pw_protobuf:common_proto",
+    ],
+)
+
+nanopb_proto_library(
+    name = "nanopb",
+    deps = [":proto"],
+)
+
+nanopb_rpc_proto_library(
+    name = "nanopb_rpc",
+    nanopb_proto_library_deps = [":nanopb"],
+    deps = [":proto"],
+)
+
+py_proto_library(
+    name = "py_pb2",
+    deps = [":proto"],
 )

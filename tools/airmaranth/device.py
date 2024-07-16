@@ -33,6 +33,7 @@ from pw_system.device_connection import (
 from blinky_pb import blinky_pb2
 from modules.air_sensor import air_sensor_pb2
 from modules.board import board_pb2
+from pubsub_pb import pubsub_pb2
 import morse_code_pb2
 
 
@@ -56,6 +57,7 @@ def get_all_protos() -> list[ModuleType]:
         board_pb2,
         blinky_pb2,
         morse_code_pb2,
+        pubsub_pb2,
     ]
 
 

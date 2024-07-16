@@ -24,6 +24,8 @@ cc_binary(
     srcs = ["main.cc"],
     deps = [
         "//modules/board:service",
+        "//modules/pubsub:service",
+        "//system:pubsub",
         "//system:worker",
         "//system",
         "@pigweed//pw_log",

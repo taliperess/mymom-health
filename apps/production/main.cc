@@ -15,8 +15,10 @@
 #define PW_LOG_MODULE_NAME "MAIN"
 
 #include "modules/board/service.h"
+#include "modules/pubsub/service.h"
 #include "pw_log/log.h"
 #include "pw_system/system.h"
+#include "system/pubsub.h"
 #include "system/system.h"
 #include "system/worker.h"
 
@@ -26,6 +28,10 @@ int main() {
   static am::BoardService board_service;
   board_service.Init(am::system::GetWorker(), am::system::Board());
   pw::System().rpc_server().RegisterService(board_service);
+
+  static am::PubSubService pubsub_service;
+  pubsub_service.Init(am::system::PubSub());
+  pw::System().rpc_server().RegisterService(pubsub_service);
 
   PW_LOG_INFO("Welcome to Airmaranth 🌿☁️");
   am::system::Start();

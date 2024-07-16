@@ -63,6 +63,7 @@ struct VocSample {
   float voc_level;
 };
 
+// This definition must be kept up to date with modules/pubsub/pubsub.proto.
 using Event = std::variant<AlarmStateChange,
                            ButtonA,
                            ButtonB,
