@@ -45,7 +45,6 @@ pw_cc_test(
     deps = [
         ":events",
         ":pubsub",
-        ":pubsub_test_harness",
         "//modules/worker:test_worker",
         "@pigweed//pw_sync:timed_thread_notification",
     ],
