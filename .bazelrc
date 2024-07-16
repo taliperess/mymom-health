@@ -104,6 +104,7 @@ build:rp2040 --@pigweed//pw_sync:thread_notification_backend=@pigweed//pw_sync_f
 build:rp2040 --@pigweed//pw_sync:timed_thread_notification_backend=@pigweed//pw_sync_freertos:timed_thread_notification
 build:rp2040 --@pigweed//pw_sys_io:backend=@pigweed//pw_sys_io_rp2040
 build:rp2040 --@pigweed//pw_system:extra_platform_libs=//targets/rp2040:extra_platform_libs
+build:rp2040 --@pigweed//pw_system:io_backend=@pigweed//pw_system:sys_io_target_io
 build:rp2040 --@pigweed//pw_thread_freertos:config_override=//targets/rp2040:thread_config_overrides
 build:rp2040 --@pigweed//pw_thread:id_backend=@pigweed//pw_thread_freertos:id
 build:rp2040 --@pigweed//pw_thread:iteration_backend=@pigweed//pw_thread_freertos:thread_iteration
