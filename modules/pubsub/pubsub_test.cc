@@ -31,7 +31,7 @@ using PubSub = am::GenericPubSub<TestEvent>;
 class PubSubTest : public ::testing::Test {
  protected:
   pw::InlineDeque<TestEvent, 4> event_queue_;
-  std::array<PubSub::SubscribeCallback, 4> subscribers_buffer_;
+  std::array<PubSub::Subscriber, 4> subscribers_buffer_;
   int result_ = 0;
   int events_processed_ = 0;
   pw::sync::TimedThreadNotification notification_;
@@ -210,7 +210,7 @@ TEST_F(PubSubTest, Subscribe_Unsubscribe) {
 class PubSubAmEventsTest : public ::testing::Test {
  protected:
   pw::InlineDeque<am::Event, 4> event_queue_;
-  std::array<am::PubSub::SubscribeCallback, 4> subscribers_buffer_;
+  std::array<am::PubSub::Subscriber, 4> subscribers_buffer_;
   float total_voc_ = 0;
   int events_processed_ = 0;
   pw::sync::TimedThreadNotification notification_;

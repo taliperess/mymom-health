@@ -63,7 +63,7 @@ class ManagerTest : public ::testing::Test {
   }
 
   pw::InlineDeque<Event, 4> event_queue_;
-  std::array<typename PubSub::SubscribeCallback, 4> subscribers_buffer_;
+  std::array<typename PubSub::Subscriber, 4> subscribers_buffer_;
   std::optional<Event> last_event_;
   int events_processed_ = 0;
   pw::sync::TimedThreadNotification notification_;

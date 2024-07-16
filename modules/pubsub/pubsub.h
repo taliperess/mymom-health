@@ -34,13 +34,20 @@ class GenericPubSub {
   using SubscribeCallback = pw::Function<void(Event)>;
   using SubscribeToken = size_t;
 
+  struct Subscriber {
+    SubscribeToken token = kUnassignedSubscribeToken;
+    SubscribeCallback callback = nullptr;
+  };
+
   GenericPubSub(Worker& worker,
                 pw::InlineDeque<Event>& event_queue,
-                pw::span<SubscribeCallback> subscribers)
+                pw::span<Subscriber> subscribers)
       : worker_(&worker),
         event_queue_(&event_queue),
         subscribers_(subscribers),
-        subscriber_count_(0) {}
+        subscriber_count_(0),
+        // Begin tokens at 1 as `kUnassignedSubscribeToken` is 0.
+        next_token_(1) {}
 
   /// Attempts to push an event to the event queue, returning whether it was
   /// successfully published. This is both thread safe and interrupt safe.
@@ -63,16 +70,22 @@ class GenericPubSub {
   std::optional<SubscribeToken> Subscribe(SubscribeCallback&& callback) {
     std::lock_guard lock(subscribers_lock_);
 
-    auto slot = std::find_if(subscribers_.begin(),
-                             subscribers_.end(),
-                             [](auto& s) { return s == nullptr; });
-    if (slot == subscribers_.end()) {
+    auto subscriber =
+        std::find_if(subscribers_.begin(), subscribers_.end(), [](auto& s) {
+          return s.token == kUnassignedSubscribeToken;
+        });
+    if (subscriber == subscribers_.end()) {
       return std::nullopt;
     }
 
-    *slot = std::move(callback);
+    SubscribeToken token = GenerateToken();
+
+    *subscriber = {
+        .token = token,
+        .callback = std::move(callback),
+    };
     subscriber_count_++;
-    return SubscribeToken(slot - subscribers_.begin());
+    return token;
   }
 
   /// If the Event is a std::variant, subscribes to only events of one type.
@@ -95,12 +108,17 @@ class GenericPubSub {
   bool Unsubscribe(SubscribeToken token) {
     std::lock_guard lock(subscribers_lock_);
 
-    const size_t index = static_cast<size_t>(token);
-    if (index >= subscribers_.size()) {
+    auto subscriber = std::find_if(
+        subscribers_.begin(), subscribers_.end(), [token](auto& s) {
+          return s.token == token;
+        });
+    if (subscriber == subscribers_.end()) {
       return false;
     }
 
-    subscribers_[index] = nullptr;
+    subscriber->token = kUnassignedSubscribeToken;
+    subscriber->callback = nullptr;
+
     subscriber_count_--;
     return true;
   }
@@ -115,7 +133,7 @@ class GenericPubSub {
   struct IsVariant : std::false_type {};
 
   template <typename... Types>
-  struct IsVariant<std::variant<Types...>> : std::true_type{};
+  struct IsVariant<std::variant<Types...>> : std::true_type {};
 
   // Events (or their variant elements) must be standard layout and trivially
   // copyable & destructible.
@@ -135,6 +153,17 @@ class GenericPubSub {
       EventsAreValid<Event>(),
       "Events or their std::variant elements must be standard layout, "
       "trivially copyable, and trivially destructible");
+
+  static constexpr SubscribeToken kUnassignedSubscribeToken = SubscribeToken(0);
+
+  SubscribeToken GenerateToken()
+      PW_EXCLUSIVE_LOCKS_REQUIRED(subscribers_lock_) {
+    size_t token = next_token_++;
+    if (token == kUnassignedSubscribeToken) {
+      token = next_token_++;
+    }
+    return SubscribeToken(token);
+  }
 
   bool PublishLocked(Event event) PW_EXCLUSIVE_LOCKS_REQUIRED(event_lock_) {
     if (event_queue_->full()) {
@@ -160,13 +189,20 @@ class GenericPubSub {
     event_queue_->pop_front();
     event_lock_.unlock();
 
-    subscribers_lock_.lock();
-    for (auto& callback : subscribers_) {
-      if (callback != nullptr) {
-        callback(event);
+    for (size_t i = 0; i < max_subscribers(); ++i) {
+      subscribers_lock_.lock();
+      if (subscribers_[i].token == kUnassignedSubscribeToken) {
+        subscribers_lock_.unlock();
+        continue;
       }
+
+      // As long as `token` is assigned, this subscriber cannot be overriden, so
+      // it is safe to hold onto this reference without the lock.
+      Subscriber& subscriber = subscribers_[i];
+      subscribers_lock_.unlock();
+
+      subscriber.callback(event);
     }
-    subscribers_lock_.unlock();
   }
 
   Worker* worker_;
@@ -175,13 +211,15 @@ class GenericPubSub {
   pw::InlineDeque<Event>* event_queue_ PW_GUARDED_BY(event_lock_);
 
   pw::sync::InterruptSpinLock subscribers_lock_;
-  pw::span<SubscribeCallback> subscribers_ PW_GUARDED_BY(subscribers_lock_);
-  size_t subscriber_count_;
+  pw::span<Subscriber> subscribers_ PW_GUARDED_BY(subscribers_lock_);
+  size_t subscriber_count_ PW_GUARDED_BY(subscribers_lock_);
+  size_t next_token_ PW_GUARDED_BY(subscribers_lock_);
 };
 
 template <typename Event, size_t kMaxEvents, size_t kMaxSubscribers>
 class GenericPubSubBuffer : public GenericPubSub<Event> {
  public:
+  using Subscriber = typename GenericPubSub<Event>::Subscriber;
   using SubscribeCallback = typename GenericPubSub<Event>::SubscribeCallback;
   using SubscribeToken = typename GenericPubSub<Event>::SubscribeToken;
 
@@ -190,7 +228,7 @@ class GenericPubSubBuffer : public GenericPubSub<Event> {
 
  private:
   pw::InlineDeque<Event, kMaxEvents> event_queue_;
-  std::array<SubscribeCallback, kMaxSubscribers> subscribers_;
+  std::array<Subscriber, kMaxSubscribers> subscribers_;
 };
 
 }  // namespace am
