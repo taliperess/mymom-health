@@ -20,53 +20,92 @@
 namespace am {
 namespace {
 
+pubsub_LedValue LedValueToProto(const LedValue& value) {
+  pubsub_LedValue proto;
+  proto.r = value.r();
+  proto.g = value.g();
+  proto.b = value.b();
+  return proto;
+}
+
+LedValue LedValueFromProto(const pubsub_LedValue& proto) {
+  return LedValue(proto.r, proto.g, proto.b);
+}
+
 pubsub_Event EventToProto(const Event& event) {
   pubsub_Event proto = pubsub_Event_init_default;
 
-  if (std::holds_alternative<am::AlarmStateChange>(event)) {
+  if (std::holds_alternative<AlarmStateChange>(event)) {
     proto.which_type = pubsub_Event_alarm_tag;
-    proto.type.alarm = std::get<am::AlarmStateChange>(event).alarm;
-  } else if (std::holds_alternative<am::VocSample>(event)) {
-    proto.which_type = pubsub_Event_voc_level_tag;
-    proto.type.voc_level = std::get<am::VocSample>(event).voc_level;
-  } else if (std::holds_alternative<am::ProximityStateChange>(event)) {
-    proto.which_type = pubsub_Event_proximity_tag;
-    proto.type.proximity = std::get<am::ProximityStateChange>(event).proximity;
-  } else if (std::holds_alternative<am::ButtonA>(event)) {
+    proto.type.alarm = std::get<AlarmStateChange>(event).alarm;
+  } else if (std::holds_alternative<ButtonA>(event)) {
     proto.which_type = pubsub_Event_button_a_pressed_tag;
-    proto.type.button_a_pressed = std::get<am::ButtonA>(event).pressed();
-  } else if (std::holds_alternative<am::ButtonB>(event)) {
+    proto.type.button_a_pressed = std::get<ButtonA>(event).pressed();
+  } else if (std::holds_alternative<ButtonB>(event)) {
     proto.which_type = pubsub_Event_button_b_pressed_tag;
-    proto.type.button_b_pressed = std::get<am::ButtonB>(event).pressed();
-  } else if (std::holds_alternative<am::ButtonX>(event)) {
+    proto.type.button_b_pressed = std::get<ButtonB>(event).pressed();
+  } else if (std::holds_alternative<ButtonX>(event)) {
     proto.which_type = pubsub_Event_button_x_pressed_tag;
-    proto.type.button_x_pressed = std::get<am::ButtonX>(event).pressed();
-  } else if (std::holds_alternative<am::ButtonY>(event)) {
+    proto.type.button_x_pressed = std::get<ButtonX>(event).pressed();
+  } else if (std::holds_alternative<ButtonY>(event)) {
     proto.which_type = pubsub_Event_button_y_pressed_tag;
-    proto.type.button_y_pressed = std::get<am::ButtonY>(event).pressed();
+    proto.type.button_y_pressed = std::get<ButtonY>(event).pressed();
+  } else if (std::holds_alternative<LedValueColorRotationMode>(event)) {
+    proto.which_type = pubsub_Event_led_value_color_rotation_tag;
+    proto.type.led_value_color_rotation =
+        LedValueToProto(std::get<LedValueColorRotationMode>(event));
+  } else if (std::holds_alternative<LedValueMorseCodeMode>(event)) {
+    proto.which_type = pubsub_Event_led_value_morse_code_tag;
+    proto.type.led_value_morse_code =
+        LedValueToProto(std::get<LedValueMorseCodeMode>(event));
+  } else if (std::holds_alternative<LedValueProximityMode>(event)) {
+    proto.which_type = pubsub_Event_led_value_proximity_tag;
+    proto.type.led_value_proximity =
+        LedValueToProto(std::get<LedValueProximityMode>(event));
+  } else if (std::holds_alternative<LedValueTemperatureMode>(event)) {
+    proto.which_type = pubsub_Event_led_value_temperature_tag;
+    proto.type.led_value_temperature =
+        LedValueToProto(std::get<LedValueTemperatureMode>(event));
+  } else if (std::holds_alternative<ProximityStateChange>(event)) {
+    proto.which_type = pubsub_Event_proximity_tag;
+    proto.type.proximity = std::get<ProximityStateChange>(event).proximity;
+  } else if (std::holds_alternative<VocSample>(event)) {
+    proto.which_type = pubsub_Event_voc_level_tag;
+    proto.type.voc_level = std::get<VocSample>(event).voc_level;
   } else {
     PW_LOG_WARN("Unimplemented pubsub service event");
   }
-
   return proto;
 }
 
 pw::Result<Event> ProtoToEvent(const pubsub_Event& proto) {
   switch (proto.which_type) {
     case pubsub_Event_alarm_tag:
-      return am::AlarmStateChange{.alarm = proto.type.alarm};
-    case pubsub_Event_voc_level_tag:
-      return am::VocSample{.voc_level = proto.type.voc_level};
-    case pubsub_Event_proximity_tag:
-      return am::ProximityStateChange{.proximity = proto.type.proximity};
+      return AlarmStateChange{.alarm = proto.type.alarm};
     case pubsub_Event_button_a_pressed_tag:
-      return am::ButtonA(proto.type.button_a_pressed);
+      return ButtonA(proto.type.button_a_pressed);
     case pubsub_Event_button_b_pressed_tag:
-      return am::ButtonB(proto.type.button_b_pressed);
+      return ButtonB(proto.type.button_b_pressed);
     case pubsub_Event_button_x_pressed_tag:
-      return am::ButtonX(proto.type.button_x_pressed);
+      return ButtonX(proto.type.button_x_pressed);
     case pubsub_Event_button_y_pressed_tag:
-      return am::ButtonY(proto.type.button_y_pressed);
+      return ButtonY(proto.type.button_y_pressed);
+    case pubsub_Event_led_value_color_rotation_tag:
+      return LedValueColorRotationMode(
+          LedValueFromProto(proto.type.led_value_color_rotation));
+    case pubsub_Event_led_value_morse_code_tag:
+      return LedValueMorseCodeMode(
+          LedValueFromProto(proto.type.led_value_morse_code));
+    case pubsub_Event_led_value_proximity_tag:
+      return LedValueProximityMode(
+          LedValueFromProto(proto.type.led_value_proximity));
+    case pubsub_Event_led_value_temperature_tag:
+      return LedValueTemperatureMode(
+          LedValueFromProto(proto.type.led_value_temperature));
+    case pubsub_Event_proximity_tag:
+      return ProximityStateChange{.proximity = proto.type.proximity};
+    case pubsub_Event_voc_level_tag:
+      return VocSample{.voc_level = proto.type.voc_level};
     default:
       return pw::Status::Unimplemented();
   }

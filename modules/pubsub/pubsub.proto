@@ -22,6 +22,11 @@ service PubSub {
   rpc Subscribe(pw.protobuf.Empty) returns (stream Event);
 }
 
+message LedValue {
+  uint32 r = 1;
+  uint32 g = 2;
+  uint32 b = 3;
+}
 message Event {
   // This definition must be kept up to date with
   // modules/pubsub/pubsub_events.h.
@@ -33,5 +38,9 @@ message Event {
     bool button_y_pressed = 5;
     bool proximity = 6;
     float voc_level = 7;
+    LedValue led_value_color_rotation = 8;
+    LedValue led_value_morse_code = 9;
+    LedValue led_value_proximity = 10;
+    LedValue led_value_temperature = 11;
   }
 }

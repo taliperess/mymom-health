@@ -63,12 +63,53 @@ struct VocSample {
   float voc_level;
 };
 
+class LedValue {
+ public:
+  explicit constexpr LedValue(uint8_t r, uint8_t g, uint8_t b)
+      : r_(r), g_(g), b_(b) {}
+
+  constexpr uint8_t r() const { return r_; }
+  constexpr uint8_t g() const { return g_; }
+  constexpr uint8_t b() const { return b_; }
+
+ private:
+  uint8_t r_;
+  uint8_t g_;
+  uint8_t b_;
+};
+
+class LedValueColorRotationMode : public LedValue {
+ public:
+  using LedValue::LedValue;
+  explicit LedValueColorRotationMode(const LedValue& parent)
+      : LedValue(parent) {}
+};
+class LedValueMorseCodeMode : public LedValue {
+ public:
+  using LedValue::LedValue;
+  explicit LedValueMorseCodeMode(const LedValue& parent) : LedValue(parent) {}
+};
+class LedValueProximityMode : public LedValue {
+ public:
+  using LedValue::LedValue;
+  explicit LedValueProximityMode(const LedValue& parent) : LedValue(parent) {}
+};
+class LedValueTemperatureMode : public LedValue {
+ public:
+  using LedValue::LedValue;
+  explicit LedValueTemperatureMode(const LedValue& parent) : LedValue(parent) {}
+};
+
 // This definition must be kept up to date with modules/pubsub/pubsub.proto.
 using Event = std::variant<AlarmStateChange,
                            ButtonA,
                            ButtonB,
                            ButtonX,
                            ButtonY,
+                           LedValueColorRotationMode,
+                           LedValueMorseCodeMode,
+                           LedValueProximityMode,
+                           LedValueTemperatureMode,
                            ProximityStateChange,
                            VocSample>;
 
