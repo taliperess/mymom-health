@@ -126,14 +126,16 @@ class GenericPubSub {
   constexpr size_t max_subscribers() const PW_NO_LOCK_SAFETY_ANALYSIS {
     return subscribers_.size();
   }
-  constexpr size_t subscriber_count() const { return subscriber_count_; }
+  constexpr size_t subscriber_count() const PW_NO_LOCK_SAFETY_ANALYSIS {
+    return subscriber_count_;
+  }
 
  private:
   template <typename T>
   struct IsVariant : std::false_type {};
 
   template <typename... Types>
-  struct IsVariant<std::variant<Types...>> : std::true_type {};
+  struct IsVariant<std::variant<Types...>> : std::true_type{};
 
   // Events (or their variant elements) must be standard layout and trivially
   // copyable & destructible.
