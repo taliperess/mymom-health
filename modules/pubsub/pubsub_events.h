@@ -54,9 +54,16 @@ class ButtonY : public ButtonStateChange {
   using ButtonStateChange::ButtonStateChange;
 };
 
-// Proximity sensor state change.
+/// Proximity sensor state change.
 struct ProximityStateChange {
   bool proximity;
+};
+
+/// New proximity sample.
+struct ProximitySample {
+  /// Unspecified proximity units where 0 is the minimum (farthest) and 65535 is
+  /// the maximum (nearest) value reported by the sensor.
+  uint16_t sample;
 };
 
 struct VocSample {
@@ -111,6 +118,7 @@ using Event = std::variant<AlarmStateChange,
                            LedValueProximityMode,
                            LedValueTemperatureMode,
                            ProximityStateChange,
+                           ProximitySample,
                            VocSample>;
 
 // PubSub using Airmaranth events.
