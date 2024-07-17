@@ -50,6 +50,7 @@ cc_library(
         "//modules/buttons:manager",
         "//modules/led:monochrome_led",
         "//modules/led:polychrome_led",
+        "//modules/proximity:sensor",
     ],
 )
 

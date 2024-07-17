@@ -15,6 +15,7 @@
 #include "system/system.h"
 
 #include "device/bme688.h"
+#include "device/ltr559_light_and_prox_sensor.h"
 #include "device/pico_board.h"
 #include "hardware/adc.h"
 #include "modules/air_sensor/air_sensor.h"
@@ -111,6 +112,11 @@ am::Board& Board() {
 am::ButtonManager& ButtonManager() {
   static ::am::ButtonManager manager(io_sw_a, io_sw_b, io_sw_x, io_sw_y);
   return manager;
+}
+
+am::ProximitySensor& ProximitySensor() {
+  static Ltr559ProximitySensor ltr559(I2cInitiator());
+  return ltr559;
 }
 
 }  // namespace am::system

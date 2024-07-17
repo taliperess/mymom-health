@@ -15,31 +15,12 @@
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "manager",
-    srcs = ["manager.cc"],
-    hdrs = ["manager.h"],
+    name = "sampling_thread",
+    srcs = ["sampling_thread.cc"],
+    hdrs = ["sampling_thread.h"],
     implementation_deps = [
-        "@pigweed//pw_assert",
-        "@pigweed//pw_log",
-    ],
-    deps = [
-        "//modules/edge_detector:pubsub",
-        "//modules/pubsub:events",
+        "//system",
+        "//system:pubsub",
         "@pigweed//pw_chrono:system_clock",
     ],
-)
-
-cc_library(
-    name = "sensor",
-    hdrs = ["sensor.h"],
-    deps = [
-        "@pigweed//pw_result",
-        "@pigweed//pw_status",
-    ],
-)
-
-cc_library(
-    name = "fake_sensor",
-    hdrs = ["fake_sensor.h"],
-    deps = ["//modules/proximity:sensor"],
 )

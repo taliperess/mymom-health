@@ -69,6 +69,9 @@ pubsub_Event EventToProto(const Event& event) {
   } else if (std::holds_alternative<ProximityStateChange>(event)) {
     proto.which_type = pubsub_Event_proximity_tag;
     proto.type.proximity = std::get<ProximityStateChange>(event).proximity;
+  } else if (std::holds_alternative<ProximitySample>(event)) {
+    proto.which_type = pubsub_Event_proximity_level_tag;
+    proto.type.proximity_level = std::get<ProximitySample>(event).sample;
   } else if (std::holds_alternative<VocSample>(event)) {
     proto.which_type = pubsub_Event_voc_level_tag;
     proto.type.voc_level = std::get<VocSample>(event).voc_level;

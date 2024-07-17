@@ -37,10 +37,11 @@ message Event {
     bool button_x_pressed = 4;
     bool button_y_pressed = 5;
     bool proximity = 6;
-    float voc_level = 7;
-    LedValue led_value_color_rotation = 8;
-    LedValue led_value_morse_code = 9;
-    LedValue led_value_proximity = 10;
-    LedValue led_value_temperature = 11;
+    uint32 proximity_level = 7;
+    float voc_level = 8;
+    LedValue led_value_color_rotation = 9;
+    LedValue led_value_morse_code = 10;
+    LedValue led_value_proximity = 11;
+    LedValue led_value_temperature = 12;
   }
 }

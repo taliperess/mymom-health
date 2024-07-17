@@ -18,6 +18,7 @@
 #include "modules/buttons/manager.h"
 #include "modules/led/monochrome_led.h"
 #include "modules/led/polychrome_led.h"
+#include "modules/proximity/sensor.h"
 
 // The functions in this file return specific implementations of singleton types
 // provided by the system.
@@ -28,9 +29,11 @@ namespace am::system {
 void Init();
 
 /// Starts the main system scheduler. This function never returns.
-void Start();
+[[noreturn]] void Start();
 
 AirSensor& AirSensor();
+
+ProximitySensor& ProximitySensor();
 
 Board& Board();
 

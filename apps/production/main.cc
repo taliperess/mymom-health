@@ -14,49 +14,81 @@
 
 #define PW_LOG_MODULE_NAME "MAIN"
 
+#include "apps/production/threads.h"
 #include "modules/board/service.h"
 #include "modules/color_rotation/manager.h"
+#include "modules/proximity/manager.h"
 #include "modules/pubsub/service.h"
+#include "modules/sampling_thread/sampling_thread.h"
 #include "modules/state_manager/state_manager.h"
 #include "pw_log/log.h"
 #include "pw_system/system.h"
+#include "pw_thread/detached_thread.h"
 #include "system/pubsub.h"
 #include "system/system.h"
 #include "system/worker.h"
 
+namespace am {
 namespace {
+
 const std::array kColorRotationSteps{
-    am::ColorRotationManager::Step{
+    ColorRotationManager::Step{
         .r = 0xd6, .g = 0x02, .b = 0x70, .num_cycles = 2500},
-    am::ColorRotationManager::Step{
+    ColorRotationManager::Step{
         .r = 0x9b, .g = 0x4f, .b = 0x96, .num_cycles = 2500},
-    am::ColorRotationManager::Step{
+    ColorRotationManager::Step{
         .r = 0x00, .g = 0x38, .b = 0xa8, .num_cycles = 2500},
 };
-}
-int main() {
-  am::system::Init();
 
-  am::StateManager state_manager(am::system::PubSub(),
-                                 am::system::PolychromeLed());
+void InitBoardService() {
+  StateManager state_manager(system::PubSub(), system::PolychromeLed());
   state_manager.Init();
 
-  am::ColorRotationManager color_rotation_manager(
-      kColorRotationSteps, am::system::PubSub(), am::system::GetWorker());
+  ColorRotationManager color_rotation_manager(
+      kColorRotationSteps, system::PubSub(), system::GetWorker());
   color_rotation_manager.Start();
 
-  static am::BoardService board_service;
-  board_service.Init(am::system::GetWorker(), am::system::Board());
+  static BoardService board_service;
+  board_service.Init(system::GetWorker(), system::Board());
   pw::System().rpc_server().RegisterService(board_service);
+}
 
-  static am::PubSubService pubsub_service;
-  pubsub_service.Init(am::system::PubSub());
+void InitProximitySensor() {
+  constexpr uint16_t kInitialNearTheshold = 16384;
+  constexpr uint16_t kInitialFarTheshold = 512;
+  static ProximityManager proximity(
+      system::PubSub(), kInitialFarTheshold, kInitialNearTheshold);
+
+  system::PubSub().SubscribeTo<ProximityStateChange>(
+      [](ProximityStateChange state) {
+        if (state.proximity) {
+          PW_LOG_INFO("Proximity detected!");
+        } else {
+          PW_LOG_INFO("Proximity NOT detected!");
+        }
+      });
+}
+
+[[noreturn]] void InitializeApp() {
+  system::Init();
+
+  InitBoardService();
+  InitProximitySensor();
+
+  pw::thread::DetachedThread(SamplingThreadOptions(), SamplingThread);
+
+  static PubSubService pubsub_service;
+  pubsub_service.Init(system::PubSub());
   pw::System().rpc_server().RegisterService(pubsub_service);
 
-  auto& button_manager = am::system::ButtonManager();
-  button_manager.Init(am::system::PubSub(), am::system::GetWorker());
+  auto& button_manager = system::ButtonManager();
+  button_manager.Init(system::PubSub(), system::GetWorker());
 
   PW_LOG_INFO("Welcome to Airmaranth 🌿☁️");
-  am::system::Start();
-  PW_UNREACHABLE;
+  system::Start();
 }
+
+}  // namespace
+}  // namespace am
+
+int main() { am::InitializeApp(); }

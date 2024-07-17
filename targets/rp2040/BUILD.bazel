@@ -65,8 +65,9 @@ cc_library(
     hdrs = [
         "enviro_pins.h",
     ],
-    deps = [
+    implementation_deps = [
         "//device:bme688",
+        "//device:ltr559",
         "//device:pico_board",
         "//device:pico_pwm_gpio",
         "//modules/buttons:manager",
@@ -82,7 +83,15 @@ cc_library(
         "@pigweed//pw_system:async",
         "@pigweed//third_party/freertos:support",
     ],
+    deps = ["//system:headers"],
     alwayslink = 1,
+)
+
+cc_library(
+    name = "production_app_threads",
+    srcs = ["production_app_threads.cc"],
+    implementation_deps = ["@pigweed//pw_thread_freertos:thread"],
+    deps = ["//apps/production:threads_headers"],
 )
 
 cc_library(

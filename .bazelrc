@@ -90,6 +90,7 @@ common --experimental_exclude_starlark_flags_from_exec_config
 
 # Allow running unit tests directly on hardware.
 build:rp2040 --platforms=//targets/rp2040:platform
+build:rp2040 --//apps/production:threads=//targets/rp2040:production_app_threads
 build:rp2040 --//system:system=//targets/rp2040:system
 build:rp2040 --@pigweed//pw_assert:check_backend=@pigweed//pw_assert_basic
 build:rp2040 --@pigweed//pw_assert:check_backend_impl=@pigweed//pw_assert_basic:impl

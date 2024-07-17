@@ -22,6 +22,7 @@ load("@pigweed//targets/rp2040:transition.bzl", "RP2_SYSTEM_FLAGS")
 
 _overrides = {
     "//command_line_option:platforms": "//targets/rp2040:platform",
+    "//apps/production:threads": "//targets/rp2040:production_app_threads",
     "//system:system": "//targets/rp2040:system",
     "@freertos//:freertos_config": "//targets/rp2040:freertos_config",
     "@pigweed//pw_system:extra_platform_libs": "//targets/rp2040:extra_platform_libs",

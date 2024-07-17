@@ -16,6 +16,7 @@
 
 #include "modules/air_sensor/air_sensor_fake.h"
 #include "modules/board/board_fake.h"
+#include "modules/proximity/fake_sensor.h"
 #include "pw_assert/check.h"
 #include "pw_digital_io/digital_io.h"
 #include "pw_multibuf/simple_allocator.h"
@@ -72,6 +73,11 @@ am::Board& Board() {
 am::ButtonManager& ButtonManager() {
   static ::am::ButtonManager manager(io_sw_a, io_sw_b, io_sw_x, io_sw_y);
   return manager;
+}
+
+am::ProximitySensor& ProximitySensor() {
+  static ::am::FakeProximitySensor fake_prox;
+  return fake_prox;
 }
 
 }  // namespace am::system

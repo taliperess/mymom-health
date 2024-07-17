@@ -20,19 +20,20 @@ cc_library(
         "led.cc",
         "system.cc",
     ],
-    deps = [
+    implementation_deps = [
         ":stream_channel",
         "//modules/air_sensor:air_sensor_fake",
         "//modules/board:board_fake",
         "//modules/led:monochrome_led_fake",
         "//modules/led:polychrome_led_fake",
-        "//system:headers",
+        "//modules/proximity:fake_sensor",
         "@pigweed//pw_channel",
         "@pigweed//pw_digital_io",
         "@pigweed//pw_multibuf:simple_allocator",
         "@pigweed//pw_system:async",
         "@pigweed//pw_system:io",
     ],
+    deps = ["//system:headers"],
 )
 
 cc_library(
@@ -46,4 +47,11 @@ cc_library(
         "@pigweed//pw_sync:interrupt_spin_lock",
         "@pigweed//pw_sync:thread_notification",
     ],
+)
+
+cc_library(
+    name = "production_app_threads",
+    srcs = ["production_app_threads.cc"],
+    implementation_deps = ["@pigweed//pw_thread_stl:thread"],
+    deps = ["//apps/production:threads_headers"],
 )
