@@ -12,7 +12,24 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile_commands")
+
 package(default_visibility = ["//visibility:public"])
+
+refresh_compile_commands(
+    name = "refresh_compile_commands",
+    out_dir = ".compile_commands",
+    target_groups = {
+        "host_simulator": [
+            "//apps/blinky:simulator_blinky",
+            "//modules/blinky:blinky_test",
+            "//modules/buttons:manager_test",
+        ],
+        "rp2040": [
+            "//apps/blinky:rp2040_blinky.elf",
+        ],
+    },
+)
 
 filegroup(
     name = "pw_console_config",
