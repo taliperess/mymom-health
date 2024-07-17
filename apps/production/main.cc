@@ -41,10 +41,10 @@ const std::array kColorRotationSteps{
 };
 
 void InitBoardService() {
-  StateManager state_manager(system::PubSub(), system::PolychromeLed());
+  static StateManager state_manager(system::PubSub(), system::PolychromeLed());
   state_manager.Init();
 
-  ColorRotationManager color_rotation_manager(
+  static ColorRotationManager color_rotation_manager(
       kColorRotationSteps, system::PubSub(), system::GetWorker());
   color_rotation_manager.Start();
 
