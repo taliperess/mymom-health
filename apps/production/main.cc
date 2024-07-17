@@ -54,11 +54,13 @@ void InitBoardService() {
 }
 
 void InitProximitySensor() {
+  // Set up a proximity detector state machine.
   constexpr uint16_t kInitialNearTheshold = 16384;
   constexpr uint16_t kInitialFarTheshold = 512;
   static ProximityManager proximity(
       system::PubSub(), kInitialFarTheshold, kInitialNearTheshold);
 
+  // Log when proximity is detected.
   system::PubSub().SubscribeTo<ProximityStateChange>(
       [](ProximityStateChange state) {
         if (state.proximity) {
@@ -67,6 +69,12 @@ void InitProximitySensor() {
           PW_LOG_INFO("Proximity NOT detected!");
         }
       });
+
+  // Publish LED values based on proximity samples.
+  system::PubSub().SubscribeTo<ProximitySample>([](ProximitySample event) {
+    const uint8_t value = static_cast<uint8_t>(event.sample >> 8);
+    system::PubSub().Publish(LedValueProximityMode(value, value, value));
+  });
 }
 
 [[noreturn]] void InitializeApp() {
