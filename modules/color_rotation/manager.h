@@ -19,6 +19,7 @@
 #include "modules/worker/worker.h"
 #include "pw_chrono/system_clock.h"
 #include "pw_chrono/system_timer.h"
+#include "pw_sync/interrupt_spin_lock.h"
 
 namespace am {
 namespace testing {
@@ -58,22 +59,28 @@ class ColorRotationManager {
                        Worker& worker);
 
   /// Start the manager's periodic execution.
-  void Start();
+  void Start() PW_LOCKS_EXCLUDED(lock_);
 
   /// Stop the manager's periodic execution.
-  void Stop();
+  void Stop() PW_LOCKS_EXCLUDED(lock_);
 
  private:
-  void UpdateCallback(pw::chrono::SystemClock::time_point now);
+  void UpdateCallback(pw::chrono::SystemClock::time_point now)
+      PW_LOCKS_EXCLUDED(lock_);
   void Update();
 
   const Step& CurrentStep();
   const Step& NextStep();
 
   const pw::span<const Step> steps_;
+
+  // `current_step_` and `step_cycle_` must only be accessed by the
+  // `Worker` thread.
   size_t current_step_ = 0;
   uint16_t step_cycle_ = 0;
-  bool is_running_ = false;
+
+  pw::sync::InterruptSpinLock lock_;
+  bool is_running_ PW_GUARDED_BY(lock_) = false;
 
   PubSub& pub_sub_;
   Worker& worker_;

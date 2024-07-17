@@ -16,15 +16,22 @@
 
 #include "modules/worker/test_worker.h"
 #include "pw_log/log.h"
+#include "pw_sync/interrupt_spin_lock.h"
 #include "pw_sync/timed_thread_notification.h"
 #include "pw_unit_test/framework.h"
 
 using namespace std::literals::chrono_literals;
 
 namespace am {
+
+constexpr const auto kMaxWaitOnFailedTest = 3s;
+
 class testing::ColorRotationManagerTester {
  public:
-  void StepManager(ColorRotationManager& manager) { manager.Update(); }
+  void StepManager(ColorRotationManager& manager) {
+    std::lock_guard lock(manager.lock_);
+    manager.Update();
+  }
 };
 
 // A test harness for writing tests that use pubsub.
@@ -35,17 +42,23 @@ class ManagerTest : public ::testing::Test,
 
  protected:
   void SetUp() override {
+    std::lock_guard lock(lock_);
     last_event_ = {};
     events_processed_ = 0;
   }
 
   LedValueColorRotationMode DoStep(ColorRotationManager& manager) {
     StepManager(manager);
-    EXPECT_TRUE(notification_.try_acquire_for(200ms));
-    EXPECT_TRUE(last_event_.has_value());
+    EXPECT_TRUE(notification_.try_acquire_for(kMaxWaitOnFailedTest));
+    std::optional<Event> last_event;
+    {
+      std::lock_guard lock(lock_);
+      last_event = last_event_;
+    }
+    EXPECT_TRUE(last_event.has_value());
     EXPECT_TRUE(
-        std::holds_alternative<LedValueColorRotationMode>(last_event_.value()));
-    return std::get<LedValueColorRotationMode>(last_event_.value());
+        std::holds_alternative<LedValueColorRotationMode>(last_event.value()));
+    return std::get<LedValueColorRotationMode>(last_event.value());
   }
 
   LedValueColorRotationMode DoNSteps(ColorRotationManager& manager,
@@ -58,8 +71,9 @@ class ManagerTest : public ::testing::Test,
 
   pw::InlineDeque<Event, 4> event_queue_;
   std::array<typename PubSub::Subscriber, 4> subscribers_buffer_;
-  std::optional<Event> last_event_;
-  int events_processed_ = 0;
+  pw::sync::InterruptSpinLock lock_;
+  std::optional<Event> last_event_ PW_GUARDED_BY(lock_);
+  int events_processed_ PW_GUARDED_BY(lock_) = 0;
   pw::sync::TimedThreadNotification notification_;
 };
 
@@ -67,6 +81,7 @@ TEST_F(ManagerTest, StepsAreInterpolatedBetweenAndWrap) {
   am::TestWorker<> worker;
   PubSub pubsub(worker, event_queue_, subscribers_buffer_);
   pubsub.Subscribe([this](Event event) {
+    std::lock_guard lock(lock_);
     last_event_ = event;
     events_processed_ += 1;
     notification_.release();

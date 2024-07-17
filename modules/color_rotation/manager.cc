@@ -31,19 +31,28 @@ ColorRotationManager::ColorRotationManager(const pw::span<const Step> steps,
 
 void ColorRotationManager::Start() {
   // Start the periodic update callbacks.
+  std::lock_guard lock(lock_);
   is_running_ = true;
   timer_.InvokeAfter(kStepInterval);
 }
 
-void ColorRotationManager::Stop() { is_running_ = false; }
+void ColorRotationManager::Stop() {
+  std::lock_guard lock(lock_);
+  is_running_ = false;
+  timer_.Cancel();
+}
 
 void ColorRotationManager::UpdateCallback(SystemClock::time_point /* now */) {
   worker_.RunOnce([this]() {
-    Update();
-    // Reschedule our periodic callback, if running.
-    if (is_running_) {
-      timer_.InvokeAfter(kStepInterval);
+    // Lock is held for the duration of the update in order to ensure that
+    // we never update after a call to `Stop` returns.
+    std::lock_guard lock(lock_);
+    if (!is_running_) {
+      return;
     }
+    Update();
+    // Reschedule our periodic callback.
+    timer_.InvokeAfter(kStepInterval);
   });
 }
 
