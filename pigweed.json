@@ -10,6 +10,11 @@
             "--config=presubmit"
           ],
           [
+            "build",
+            "--config=rp2040",
+            "//..."
+          ],
+          [
             "test",
             "//..."
           ],
