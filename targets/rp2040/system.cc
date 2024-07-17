@@ -38,8 +38,8 @@ namespace {
 pw::i2c::Initiator& I2cInitiator() {
   static constexpr pw::i2c::Rp2040Initiator::Config kI2c0Config{
       .clock_frequency = 400'000,
-      .sda_pin = 4,
-      .scl_pin = 5,
+      .sda_pin = board::kEnviroPinSda,
+      .scl_pin = board::kEnviroPinScl,
   };
 
   static pw::i2c::Initiator& i2c0_bus = []() -> pw::i2c::Initiator& {
