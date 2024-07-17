@@ -25,6 +25,7 @@ cc_binary(
     deps = [
         "//modules/board:service",
         "//modules/pubsub:service",
+        "//modules/state_manager",
         "//system:pubsub",
         "//system:worker",
         "//system",

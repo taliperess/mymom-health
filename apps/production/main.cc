@@ -16,6 +16,7 @@
 
 #include "modules/board/service.h"
 #include "modules/pubsub/service.h"
+#include "modules/state_manager/state_manager.h"
 #include "pw_log/log.h"
 #include "pw_system/system.h"
 #include "system/pubsub.h"
@@ -24,6 +25,10 @@
 
 int main() {
   am::system::Init();
+
+  am::StateManager state_manager(am::system::PubSub(),
+                                 am::system::PolychromeLed());
+  state_manager.Init();
 
   static am::BoardService board_service;
   board_service.Init(am::system::GetWorker(), am::system::Board());
