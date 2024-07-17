@@ -17,7 +17,6 @@
 #include <cstdint>
 #include <string_view>
 
-#include "modules/led/monochrome_led.h"
 #include "modules/worker/worker.h"
 #include "pw_chrono/system_clock.h"
 #include "pw_chrono/system_timer.h"
@@ -88,6 +87,8 @@ class Encoder final {
       pw::chrono::SystemClock::for_at_least(
           std::chrono::milliseconds(kDefaultIntervalMs));
 
+  using OutputFunction = pw::Function<void(bool)>;
+
   Encoder();
 
   ~Encoder();
@@ -95,15 +96,16 @@ class Encoder final {
   /// Injects this object's dependencies.
   ///
   /// This method MUST be called before using any other method.
-  void Init(Worker& worker, MonochromeLed& led);
+  void Init(Worker& worker, OutputFunction&& output);
 
   /// Queues a sequence of callbacks to emit the given message in Morse code.
   ///
-  /// The message is emitted by toggling the LED on and off. The shortest
-  /// interval the LED is turned on for is a "dit". The longest is a "dah",
-  /// which is three times the interval for a "dit". The LED is kept off for
-  /// one "dit" interval between each symbol, three "dit" intervals between each
-  /// letter, and 7 "dit" intervals between each word.
+  /// The message is emitted through alternating ON and OFF (true/false) calls
+  /// to the `OutputFunction` provided to `Init`. The shortest ON interval is a
+  /// "dit". The longest is a "dah", which is three times the interval for a
+  /// "dit". The output is kept off for one "dit" interval between each symbol,
+  /// three "dit" intervals between each letter, and 7 "dit" intervals between
+  /// each word.
   ///
   /// @param  request       Message to emit in Morse code.
   /// @param  repeat        Number of times to repeat the message.
@@ -127,9 +129,12 @@ class Encoder final {
   /// Callback for toggling the LED.
   void ToggleLed(pw::chrono::SystemClock::time_point);
 
+  /// Emits an "off" to all configured outputs.
+  void TurnOff();
+
   Worker* worker_ = nullptr;
-  MonochromeLed* led_ = nullptr;
   pw::chrono::SystemTimer timer_;
+  OutputFunction output_;
 
   mutable pw::sync::InterruptSpinLock lock_;
   std::string_view msg_ PW_GUARDED_BY(lock_);
@@ -139,6 +144,7 @@ class Encoder final {
       kDefaultInterval;
   uint32_t bits_ PW_GUARDED_BY(lock_) = 0;
   size_t num_bits_ PW_GUARDED_BY(lock_) = 0;
+  bool is_on_ PW_GUARDED_BY(lock_) = false;
 };
 
 }  // namespace am

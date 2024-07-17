@@ -21,6 +21,7 @@
 #include "modules/worker/test_worker.h"
 #include "pw_containers/vector.h"
 #include "pw_status/status.h"
+#include "pw_sync/timed_thread_notification.h"
 #include "pw_thread/sleep.h"
 #include "pw_thread/thread.h"
 #include "pw_unit_test/framework.h"
@@ -125,6 +126,14 @@ class MorseCodeEncoderTest : public ::testing::Test {
     }
   }
 
+  void FakeLedOutput(bool turn_on) {
+    if (turn_on) {
+      led_.TurnOn();
+    } else {
+      led_.TurnOff();
+    }
+  }
+
   pw::chrono::VirtualSystemClock& clock_;
   Encoder encoder_;
   MonochromeLedFake led_;
@@ -135,7 +144,7 @@ class MorseCodeEncoderTest : public ::testing::Test {
 
 TEST_F(MorseCodeEncoderTest, EncodeEmpty) {
   TestWorker<> worker;
-  encoder_.Init(worker, led_);
+  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
   EXPECT_EQ(encoder_.Encode("", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
@@ -144,7 +153,7 @@ TEST_F(MorseCodeEncoderTest, EncodeEmpty) {
 
 TEST_F(MorseCodeEncoderTest, EncodeOneLetter) {
   TestWorker<> worker;
-  encoder_.Init(worker, led_);
+  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
   EXPECT_EQ(encoder_.Encode("E", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
@@ -153,7 +162,7 @@ TEST_F(MorseCodeEncoderTest, EncodeOneLetter) {
 
 TEST_F(MorseCodeEncoderTest, EncodeOneWord) {
   TestWorker<> worker;
-  encoder_.Init(worker, led_);
+  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
   EXPECT_EQ(encoder_.Encode("PARIS", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
@@ -162,7 +171,7 @@ TEST_F(MorseCodeEncoderTest, EncodeOneWord) {
 
 TEST_F(MorseCodeEncoderTest, EncodeHelloWorld) {
   TestWorker<> worker;
-  encoder_.Init(worker, led_);
+  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
   EXPECT_EQ(encoder_.Encode("hello world", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
@@ -175,7 +184,7 @@ TEST_F(MorseCodeEncoderTest, EncodeHelloWorld) {
 #ifdef AM_MORSE_CODE_ENCODER_TEST_FULL
 TEST_F(MorseCodeEncoderTest, EncodeRepeated) {
   TestWorker<> worker;
-  encoder_.Init(worker, led_);
+  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
   EXPECT_EQ(encoder_.Encode("hello", 2, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
@@ -184,7 +193,7 @@ TEST_F(MorseCodeEncoderTest, EncodeRepeated) {
 
 TEST_F(MorseCodeEncoderTest, EncodeSlow) {
   TestWorker<> worker;
-  encoder_.Init(worker, led_);
+  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
   interval_ms_ = 25;
   EXPECT_EQ(encoder_.Encode("hello", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
@@ -194,7 +203,7 @@ TEST_F(MorseCodeEncoderTest, EncodeSlow) {
 
 TEST_F(MorseCodeEncoderTest, EncodeConsecutiveWhitespace) {
   TestWorker<> worker;
-  encoder_.Init(worker, led_);
+  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
   EXPECT_EQ(encoder_.Encode("hello    world", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
@@ -203,7 +212,7 @@ TEST_F(MorseCodeEncoderTest, EncodeConsecutiveWhitespace) {
 
 TEST_F(MorseCodeEncoderTest, EncodeInvalidChars) {
   TestWorker<> worker;
-  encoder_.Init(worker, led_);
+  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
   char s[2];
   s[1] = 0;
   for (char c = 127; c != 0; --c) {

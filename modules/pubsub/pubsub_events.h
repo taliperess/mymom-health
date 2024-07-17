@@ -74,6 +74,7 @@ class LedValue {
  public:
   explicit constexpr LedValue(uint8_t r, uint8_t g, uint8_t b)
       : r_(r), g_(g), b_(b) {}
+  explicit constexpr LedValue() : r_(0), g_(0), b_(0) {}
 
   constexpr uint8_t r() const { return r_; }
   constexpr uint8_t g() const { return g_; }

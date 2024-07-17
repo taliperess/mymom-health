@@ -16,8 +16,8 @@
 
 namespace am {
 
-void MorseCodeService::Init(Worker& worker, MonochromeLed& led) {
-  encoder_.Init(worker, led);
+void MorseCodeService::Init(Worker& worker, Encoder::OutputFunction&& output) {
+  encoder_.Init(worker, std::move(output));
 }
 
 pw::Status MorseCodeService::Send(const morse_code_SendRequest& request,

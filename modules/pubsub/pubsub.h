@@ -135,7 +135,7 @@ class GenericPubSub {
   struct IsVariant : std::false_type {};
 
   template <typename... Types>
-  struct IsVariant<std::variant<Types...>> : std::true_type{};
+  struct IsVariant<std::variant<Types...>> : std::true_type {};
 
   // Events (or their variant elements) must be standard layout and trivially
   // copyable & destructible.

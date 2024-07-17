@@ -40,7 +40,13 @@ int main() {
   rpc_server.RegisterService(blinky_service);
 
   static am::MorseCodeService morse_code_service;
-  morse_code_service.Init(worker, monochrome_led);
+  morse_code_service.Init(worker, [&monochrome_led](bool turn_on) {
+    if (turn_on) {
+      monochrome_led.TurnOn();
+    } else {
+      monochrome_led.TurnOff();
+    }
+  });
   rpc_server.RegisterService(morse_code_service);
 
   // Just initialize the manager until we have a button service.

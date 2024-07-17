@@ -27,7 +27,7 @@ class MorseCodeService final
  public:
   static constexpr uint32_t kDefaultDitInterval = 10;
 
-  void Init(Worker& worker, MonochromeLed& led);
+  void Init(Worker& worker, Encoder::OutputFunction&& output);
 
   pw::Status Send(const morse_code_SendRequest& request,
                   pw_protobuf_Empty& response);

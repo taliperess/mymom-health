@@ -26,11 +26,9 @@ Encoder::Encoder() : timer_(pw::bind_member<&Encoder::ToggleLed>(this)) {}
 
 Encoder::~Encoder() { timer_.Cancel(); }
 
-void Encoder::Init(Worker& worker, MonochromeLed& led) {
+void Encoder::Init(Worker& worker, OutputFunction&& output) {
   worker_ = &worker;
-
-  led_ = &led;
-  led_->TurnOff();
+  output_ = std::move(output);
 }
 
 pw::Status Encoder::Encode(std::string_view msg,
@@ -50,12 +48,13 @@ pw::Status Encoder::Encode(std::string_view msg,
   timer_.Cancel();
   {
     std::lock_guard lock(lock_);
-    led_->TurnOff();
+    is_on_ = false;
     msg_ = msg;
     msg_offset_ = 0;
     repeat_ = repeat;
     interval_ = interval;
   }
+  output_(false);
   worker_->RunOnce([this]() { ScheduleUpdate(); });
   return pw::OkStatus();
 }
@@ -67,14 +66,14 @@ bool Encoder::IsIdle() const {
 
 void Encoder::ScheduleUpdate() {
   pw::chrono::SystemClock::duration interval(0);
-  bool want_led_on = false;
+  bool want_on = false;
   while (true) {
     std::lock_guard lock(lock_);
     if (num_bits_ == 0 && !EnqueueNextLocked()) {
       return;
     }
-    want_led_on = (bits_ % 2) != 0;
-    if (want_led_on != led_->IsOn()) {
+    want_on = (bits_ % 2) != 0;
+    if (want_on != is_on_) {
       break;
     }
     bits_ >>= 1;
@@ -132,7 +131,8 @@ bool Encoder::EnqueueNextLocked() {
 void Encoder::ToggleLed(pw::chrono::SystemClock::time_point) {
   {
     std::lock_guard lock(lock_);
-    led_->Toggle();
+    is_on_ = !is_on_;
+    output_(is_on_);
   }
   worker_->RunOnce([this]() { ScheduleUpdate(); });
 }

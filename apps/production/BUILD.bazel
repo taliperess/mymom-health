@@ -25,6 +25,7 @@ cc_binary(
     srcs = ["main.cc"],
     deps = [
         "//modules/board:service",
+        "//modules/morse_code:encoder",
         "//modules/pubsub:service",
         "//modules/color_rotation:manager",
         "//modules/state_manager",

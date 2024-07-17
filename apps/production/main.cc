@@ -17,6 +17,7 @@
 #include "apps/production/threads.h"
 #include "modules/board/service.h"
 #include "modules/color_rotation/manager.h"
+#include "modules/morse_code/encoder.h"
 #include "modules/proximity/manager.h"
 #include "modules/pubsub/service.h"
 #include "modules/sampling_thread/sampling_thread.h"
@@ -40,6 +41,8 @@ const std::array kColorRotationSteps{
         .r = 0x00, .g = 0x38, .b = 0xa8, .num_cycles = 2500},
 };
 
+constexpr LedValue kMorseCodeLedColor(0, 255, 255);
+
 void InitBoardService() {
   static StateManager state_manager(system::PubSub(), system::PolychromeLed());
   state_manager.Init();
@@ -47,6 +50,19 @@ void InitBoardService() {
   static ColorRotationManager color_rotation_manager(
       kColorRotationSteps, system::PubSub(), system::GetWorker());
   color_rotation_manager.Start();
+
+  // The morse encoder will emit pubsub events to the state manager.
+  static Encoder morse_encoder;
+  morse_encoder.Init(am::system::GetWorker(), [](bool turn_on) {
+    if (turn_on) {
+      system::PubSub().Publish(LedValueMorseCodeMode(kMorseCodeLedColor));
+    } else {
+      system::PubSub().Publish(LedValueMorseCodeMode(0, 0, 0));
+    }
+  });
+  morse_encoder.Encode("PW",
+                       /*repeat=*/0,
+                       Encoder::kDefaultIntervalMs);
 
   static BoardService board_service;
   board_service.Init(system::GetWorker(), system::Board());
