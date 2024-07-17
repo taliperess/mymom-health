@@ -44,6 +44,10 @@ common --experimental_exclude_starlark_flags_from_exec_config
 # pw_transfer/py/pw_transfer.
 common --incompatible_default_to_explicit_init_py
 
+# Don't inherit system PATH. Improves hermeticity and cache hit rates. Should
+# be true by default one day (https://github.com/bazelbuild/bazel/issues/7026).
+common --incompatible_strict_action_env
+
 # C++ toolchain configuration
 # ===========================
 
