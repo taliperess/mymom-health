@@ -21,7 +21,7 @@ interface ProtoSet {
 const protos: ProtoSet[] = [
   {
     prefix: "blinky",
-    protos: ["../../modules/blinky/blinky.proto"],
+    protos: ["../modules/blinky/blinky.proto"],
   },
   {
     prefix: "pw_protobuf_protos",
@@ -31,7 +31,7 @@ const protos: ProtoSet[] = [
   },
   {
     prefix: "board",
-    protos: ["../../modules/board/board.proto"],
+    protos: ["../modules/board/board.proto"],
   },
 ];
 
