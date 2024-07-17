@@ -75,7 +75,7 @@ void InitProximitySensor() {
   InitBoardService();
   InitProximitySensor();
 
-  pw::thread::DetachedThread(SamplingThreadOptions(), SamplingThread);
+  pw::thread::DetachedThread(SamplingThreadOptions(), SamplingLoop);
 
   static PubSubService pubsub_service;
   pubsub_service.Init(system::PubSub());

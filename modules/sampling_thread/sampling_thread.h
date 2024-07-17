@@ -14,6 +14,6 @@
 namespace am {
 
 // Reads sensor samples in a loop and publishes PubSub events for them.
-[[noreturn]] void SamplingThread();
+[[noreturn]] void SamplingLoop();
 
 }  // namespace am

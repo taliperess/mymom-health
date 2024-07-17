@@ -43,7 +43,7 @@ void ReadProximity() {
 }  // namespace
 
 // Reads sensor samples in a loop and publishes PubSub events for them.
-void SamplingThread() {
+void SamplingLoop() {
   PW_CHECK_OK(system::ProximitySensor().Enable());
 
   SystemClock::time_point deadline = SystemClock::now();
