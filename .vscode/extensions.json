@@ -1,6 +1,6 @@
 {
   "recommendations": [
-    "pigweed.pigweed-vscode"
+    "pigweed.pigweed"
   ],
   "unwantedRecommendations": [
     "ms-vscode.cpptools"
