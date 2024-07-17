@@ -61,7 +61,7 @@ class EdgeDetector final {
 
 class Button {
  public:
-  Button(pw::digital_io::DigitalIn& io) : io_(io){};
+  Button(pw::digital_io::DigitalIn& io) : io_(io) { io_.Enable(); };
 
   pw::Result<EdgeDetector::StateChange> Sample(
       pw::chrono::SystemClock::time_point now);

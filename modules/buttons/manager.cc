@@ -14,9 +14,8 @@
 #include "modules/buttons/manager.h"
 #define PW_LOG_MODULE_NAME "BUTTONS"
 
+#include "pw_assert/check.h"
 #include "pw_status/try.h"
-
-#define PW_LOG_MODULE_NAME "BUTTONS"
 
 using pw::chrono::SystemClock;
 using pw::digital_io::DigitalIn;

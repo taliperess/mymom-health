@@ -29,30 +29,30 @@
 #include "system/worker.h"
 #include "targets/rp2040/enviro_pins.h"
 
-using pw::digital_io::Rp2040DigitalInOut;
+using pw::digital_io::Rp2040DigitalIn;
 
 namespace am::system {
 
 namespace {
-Rp2040DigitalInOut io_sw_a({
+Rp2040DigitalIn io_sw_a({
     .pin = board::kEnviroPinSwA,
     .polarity = pw::digital_io::Polarity::kActiveLow,
     .enable_pull_up = true,
 });
 
-Rp2040DigitalInOut io_sw_b({
+Rp2040DigitalIn io_sw_b({
     .pin = board::kEnviroPinSwB,
     .polarity = pw::digital_io::Polarity::kActiveLow,
     .enable_pull_up = true,
 });
 
-Rp2040DigitalInOut io_sw_x({
+Rp2040DigitalIn io_sw_x({
     .pin = board::kEnviroPinSwX,
     .polarity = pw::digital_io::Polarity::kActiveLow,
     .enable_pull_up = true,
 });
 
-Rp2040DigitalInOut io_sw_y({
+Rp2040DigitalIn io_sw_y({
     .pin = board::kEnviroPinSwY,
     .polarity = pw::digital_io::Polarity::kActiveLow,
     .enable_pull_up = true,
