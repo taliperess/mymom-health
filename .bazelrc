@@ -15,37 +15,58 @@
 # TODO: https://pwbug.dev/258836641#comment4: Enabling bzlmod breaks the build.
 common --noenable_bzlmod
 
+# Standard Pigweed flags
+# ======================
+# All Pigweed projects are expected to set these flags. They mostly pre-adopt
+# future Bazel settings.
+#
 # Do not attempt to configure an autodetected (local) toolchain. We vendor all
 # our toolchains, and CI VMs may not have any local toolchain to detect.
 common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+
+# Required for new toolchain resolution API.
+build --incompatible_enable_cc_toolchain_resolution
+
+# Don't propagate flags or defines to the exec config. This will become the
+# default one day (https://github.com/bazelbuild/bazel/issues/22457) and will
+# improve cache hit rates between builds targeting different platforms. This is
+# especially impactful for large host tools like protoc, which will have its
+# cache invalidated when your host C++ config changes.
+common --experimental_exclude_defines_from_exec_config
+common --experimental_exclude_starlark_flags_from_exec_config
+
+# Don't automatically create __init__.py files.
+#
+# This prevents spurious package name collisions at import time, and should be
+# the default (https://github.com/bazelbuild/bazel/issues/7386). It's
+# particularly helpful for Pigweed, because we have many potential package name
+# collisions due to a profusion of stuttering paths like
+# pw_transfer/py/pw_transfer.
+common --incompatible_default_to_explicit_init_py
+
+# C++ toolchain configuration
+# ===========================
 
 # Ignore all warnings in third-party code.
 common --per_file_copt=external/.*@-w
 common --host_per_file_copt=external/.*@-w
 
-common --custom_malloc=//targets:malloc
-
-# Default host backends.
-common --@pigweed//pw_log:backend=@pigweed//pw_log_string
-common --@pigweed//pw_log:backend_impl=@pigweed//pw_log_string:impl
-common --@pigweed//pw_log_string:handler_backend=@pigweed//pw_system:log_backend
-common --@pigweed//pw_sys_io:backend=@pigweed//pw_sys_io_stdio
-common --@pigweed//pw_system:io_backend=@pigweed//pw_system:socket_target_io
-
 # Picotool needs to build with exceptions and RTTI enabled.
 common --per_file_copt=external.*picotool.*@-fexceptions,-frtti
 common --host_per_file_copt=external.*picotool.*@-fexceptions,-frtti
-
-# Required for new toolchain resolution API.
-build --incompatible_enable_cc_toolchain_resolution
 
 # Keep debugging symbols, but don't send them when flashing.
 build --strip=never
 
 build --@pico-sdk//bazel/config:PICO_STDIO_USB=True
 build --@pico-sdk//bazel/config:PICO_STDIO_UART=True
-build --@pigweed//pw_build:default_module_config=//system:module_config
 
+# Sanitizer configs
+# =================
+common:asan --@pigweed//pw_toolchain/host_clang:asan
+
+# Presubmit
+# =========
 # Default targets to build when running:
 # bazel build --config=presubmit
 build:presubmit -- \
@@ -59,36 +80,34 @@ build:presubmit -- \
   //tools:example_script \
   //tools:toggle_blinky
 
-# Don't automatically create __init__.py files.
-#
-# This prevents spurious package name collisions at import time, and should be
-# the default (https://github.com/bazelbuild/bazel/issues/7386). It's
-# particularly helpful for Pigweed, because we have many potential package name
-# collisions due to a profusion of stuttering paths like
-# pw_transfer/py/pw_transfer.
-common --incompatible_default_to_explicit_init_py
-
-common:asan --@pigweed//pw_toolchain/host_clang:asan
-
+# UX settings
+# ===========
 # Error output settings.
 common --verbose_failures
 test --test_output=errors
 
-# Use the remote cache. This will only work for users who have permission to access it.
+# Remote cache
+# ============
+# Use the remote cache. This will only work for users who have permission to
+# access it (including the CI system!).
 common:remote_cache --remote_cache=grpcs://remotebuildexecution.googleapis.com
 common:remote_cache --google_default_credentials=true
 common:remote_cache --remote_instance_name=projects/pigweed-rbe-open/instances/default-instance
 common:remote_cache --remote_upload_local_results=false
 
-# Don't propagate flags or defines to the exec config. This will become the
-# default one day (https://github.com/bazelbuild/bazel/issues/22457) and will
-# improve cache hit rates between builds targeting different platforms. This is
-# especially impactful for large host tools like protoc, which will have its
-# cache invalidated when your host C++ config changes.
-common --experimental_exclude_defines_from_exec_config
-common --experimental_exclude_starlark_flags_from_exec_config
+# Platform configuration
+# ======================
+common --custom_malloc=//targets:malloc
+build --@pigweed//pw_build:default_module_config=//system:module_config
 
-# Allow running unit tests directly on hardware.
+# Host platform default backends.
+common --@pigweed//pw_log:backend=@pigweed//pw_log_string
+common --@pigweed//pw_log:backend_impl=@pigweed//pw_log_string:impl
+common --@pigweed//pw_log_string:handler_backend=@pigweed//pw_system:log_backend
+common --@pigweed//pw_sys_io:backend=@pigweed//pw_sys_io_stdio
+common --@pigweed//pw_system:io_backend=@pigweed//pw_system:socket_target_io
+
+# RP2040 platform configuration
 build:rp2040 --platforms=//targets/rp2040:platform
 build:rp2040 --//apps/production:threads=//targets/rp2040:production_app_threads
 build:rp2040 --//system:system=//targets/rp2040:system
