@@ -54,6 +54,18 @@ const options = {
       text: 'Onboard Temp',
     },
   },
+  scales: {
+    x: {
+      grid: {
+        color: 'rgb(136, 140, 145, 0.5)',
+      }
+    },
+    y: {
+      grid: {
+        color: 'rgb(136, 140, 145, 0.5)',
+      }
+    }
+  }
 };
 
 type Reading = {
@@ -78,6 +90,8 @@ function App() {
   const [service,] = useState<RPCService>(new RPCService());
   const [connecting, setConnecting] = useState(false);
   const [tempIsCharting, setTempIsCharting] = useState(false);
+  const [connected, setConnected] = useState(false);
+
   // const [tempInterval, setTempInterval] = useState(0);
   const [data, setData] = useState<Reading[]>([]);
   useEffect(()=>{
@@ -99,29 +113,34 @@ function App() {
   }, [tempIsCharting, service])
   return (
     <>
-      <h1>Airmaranth</h1>
-      <div className="card">
-        <button onClick={async () => {
-            setConnecting(true);
-            try{
-              await service.connect();
-            }
-            catch(e){}
-            setConnecting(false);
-          }} disabled={connecting}>
-          {connecting ? "Connecting" : "Connect"}
-        </button>
-        <button onClick={() => service.blink(5)}>
-          Blink 5 times
-        </button>
-
-        <button onClick={async () => {
-          setTempIsCharting(!tempIsCharting)
-        }}>
-          Chart Temperature
-        </button>
-        <br/>
-        {data.length>2 && <Line width={600} height={400} data={formatData(data)} options={options}/>}
+      <div className="container">
+        <h1>Airmaranth</h1>
+        <div className="card">
+          <div className="buttons">
+            <button onClick={async () => {
+                setConnecting(true);
+                try{
+                  await service.connect();
+                  setConnected(true);
+                }
+                catch(e){}
+                setConnecting(false);
+              }} disabled={connecting}>
+              {connecting ? "Connecting" : "Connect"}
+            </button>
+            <button onClick={() => service.blink(5)} disabled={!connected}>
+              Blink 5 times
+            </button>
+            <button onClick={async () => {
+              setTempIsCharting(!tempIsCharting)
+            }} disabled={!connected}>
+              Chart Temperature
+            </button>
+          </div>
+          <div className="graph">
+            {data.length>2 && <Line width={600} height={400} data={formatData(data)} options={options}/>}
+          </div>
+        </div>
       </div>
     </>
   )
