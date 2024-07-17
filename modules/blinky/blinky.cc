@@ -16,13 +16,11 @@
 
 #include <mutex>
 
-#include "modules/blinky/blinky.h"
-#include "modules/worker/worker.h"
 #include "pw_log/log.h"
 #include "pw_preprocessor/compiler.h"
-#include "pw_status/try.h"
-#include "pw_system/system.h"
-#include "system/system.h"
+
+#include "modules/blinky/blinky.h"
+#include "modules/worker/worker.h"
 
 namespace am {
 
