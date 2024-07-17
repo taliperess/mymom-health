@@ -18,7 +18,6 @@
 #include "modules/buttons/manager.h"
 #include "modules/led/monochrome_led.h"
 #include "modules/led/polychrome_led.h"
-#include "pw_i2c/initiator.h"
 
 // The functions in this file return specific implementations of singleton types
 // provided by the system.
@@ -31,16 +30,14 @@ void Init();
 /// Starts the main system scheduler. This function never returns.
 void Start();
 
-AirSensor &AirSensor();
+AirSensor& AirSensor();
 
-Board &Board();
+Board& Board();
 
-ButtonManager &ButtonManager();
+ButtonManager& ButtonManager();
 
-pw::i2c::Initiator &I2cInitiator();
+MonochromeLed& MonochromeLed();
 
-MonochromeLed &MonochromeLed();
+PolychromeLed& PolychromeLed();
 
-PolychromeLed &PolychromeLed();
-
-} // namespace am::system
+}  // namespace am::system

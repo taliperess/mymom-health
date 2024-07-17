@@ -39,14 +39,17 @@ host_backend_alias(
 
 cc_library(
     name = "headers",
-    hdrs = ["system.h", "pubsub.h", "worker.h"],
+    hdrs = [
+        "pubsub.h",
+        "system.h",
+        "worker.h",
+    ],
     deps = [
         "//modules/air_sensor",
         "//modules/board",
         "//modules/buttons:manager",
         "//modules/led:monochrome_led",
         "//modules/led:polychrome_led",
-        "@pigweed//pw_i2c:initiator",
     ],
 )
 

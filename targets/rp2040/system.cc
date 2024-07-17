@@ -32,6 +32,25 @@
 using pw::digital_io::Rp2040DigitalIn;
 
 namespace am::system {
+namespace {
+
+pw::i2c::Initiator& I2cInitiator() {
+  static constexpr pw::i2c::Rp2040Initiator::Config kI2c0Config{
+      .clock_frequency = 400'000,
+      .sda_pin = 4,
+      .scl_pin = 5,
+  };
+
+  static pw::i2c::Initiator& i2c0_bus = []() -> pw::i2c::Initiator& {
+    static pw::i2c::Rp2040Initiator bus(kI2c0Config, i2c0);
+    bus.Enable();
+    return bus;
+  }();
+
+  return i2c0_bus;
+}
+
+}  // namespace
 
 namespace {
 Rp2040DigitalIn io_sw_a({
@@ -75,12 +94,6 @@ void Start() {
   PW_UNREACHABLE;
 }
 
-constexpr pw::i2c::Rp2040Initiator::Config ki2c0Config{
-    .clock_frequency = 400'000,
-    .sda_pin = 4,
-    .scl_pin = 5,
-};
-
 am::AirSensor& AirSensor() {
   static bool initialized = false;
   static Bme688 air_sensor(I2cInitiator(), am::system::GetWorker());
@@ -98,16 +111,6 @@ am::Board& Board() {
 am::ButtonManager& ButtonManager() {
   static ::am::ButtonManager manager(io_sw_a, io_sw_b, io_sw_x, io_sw_y);
   return manager;
-}
-
-pw::i2c::Initiator& I2cInitiator() {
-  static bool enabled = false;
-  static pw::i2c::Rp2040Initiator i2c0_bus(ki2c0Config, i2c0);
-  if (!enabled) {
-    i2c0_bus.Enable();
-    enabled = true;
-  }
-  return i2c0_bus;
 }
 
 }  // namespace am::system
