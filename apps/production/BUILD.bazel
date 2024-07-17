@@ -73,34 +73,57 @@ host_device_simulator_binary(
     binary = ":production",
 )
 
+SIMULATOR_CONSOLE_COMMON_ARGS = [
+    # This arg lets us skip manual port selection.
+    "--socket",
+    "default",
+    "--config-file",
+    "$(rootpath //:pw_console_config)",
+]
+
 # Connect to a running host_device_simulator_binary with:
 #   bazel run //apps/production:simulator_console
 native_binary(
     name = "simulator_console",
     src = "//tools:console",
-    args = [
-        # This arg lets us skip manual port selection.
-        "--socket",
-        "default",
-        "--config-file",
-        "$(rootpath //:pw_console_config)",
-    ],
+    args = SIMULATOR_CONSOLE_COMMON_ARGS,
     data = [
         "//:pw_console_config",
     ],
 )
 
 native_binary(
+    name = "simulator_webconsole",
+    src = "//tools:console",
+    args = SIMULATOR_CONSOLE_COMMON_ARGS + ["--browser"],
+    data = [
+        "//:pw_console_config",
+    ],
+)
+
+RP2040_CONSOLE_COMMON_ARGS = [
+    "-b",
+    "115200",
+    "--token-databases",
+    "$(rootpath //apps/production:rp2040.elf)",
+    "--config-file",
+    "$(rootpath //:pw_console_config)",
+]
+
+native_binary(
     name = "rp2040_console",
     src = "//tools:console",
-    args = [
-        "-b",
-        "115200",
-        "--token-databases",
-        "$(rootpath //apps/production:rp2040.elf)",
-        "--config-file",
-        "$(rootpath //:pw_console_config)",
+    args = RP2040_CONSOLE_COMMON_ARGS,
+    data = [
+        ":rp2040.elf",
+        "//:pw_console_config",
     ],
+)
+
+native_binary(
+    name = "rp2040_webconsole",
+    src = "//tools:console",
+    args = RP2040_CONSOLE_COMMON_ARGS + ["--browser"],
     data = [
         ":rp2040.elf",
         "//:pw_console_config",
