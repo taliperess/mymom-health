@@ -40,6 +40,23 @@ cc_library(
 )
 
 cc_library(
+    name = "ltr559",
+    srcs = ["ltr559_light_and_prox_sensor.cc"],
+    hdrs = ["ltr559_light_and_prox_sensor.h"],
+    implementation_deps = [
+        "@pigweed//pw_log",
+    ],
+    deps = [
+        "//modules/proximity:sensor",
+        "@pigweed//pw_chrono:system_clock",
+        "@pigweed//pw_i2c:initiator",
+        "@pigweed//pw_i2c:register_device",
+        "@pigweed//pw_result",
+        "@pigweed//pw_status",
+    ],
+)
+
+cc_library(
     name = "pico_board",
     srcs = ["pico_board.cc"],
     hdrs = ["pico_board.h"],
