@@ -36,6 +36,8 @@ class GenericTestWorker : public Worker {
   GenericTestWorker(GenericTestWorker&&) = delete;
   GenericTestWorker& operator=(GenericTestWorker&&) = delete;
 
+  void Start();
+
   void RunOnce(pw::Function<void()>&& work) final;
 
   // Stops the work queue. This method MUST be called before leaving the test
@@ -59,7 +61,7 @@ class GenericTestWorker : public Worker {
 template <size_t kBufferSize = 10>
 class TestWorker final : public internal::GenericTestWorker {
  public:
-  TestWorker() : GenericTestWorker(work_queue_) {}
+  TestWorker() : GenericTestWorker(work_queue_) { Start(); }
 
  private:
   pw::work_queue::WorkQueueWithBuffer<kBufferSize> work_queue_;

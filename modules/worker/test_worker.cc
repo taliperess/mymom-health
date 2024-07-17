@@ -19,8 +19,11 @@
 namespace am::internal {
 
 GenericTestWorker::GenericTestWorker(pw::work_queue::WorkQueue& work_queue)
-    : work_queue_(&work_queue),
-      work_thread_(pw::thread::Thread(context_.options(), work_queue)) {}
+    : work_queue_(&work_queue) {}
+
+void GenericTestWorker::Start() {
+  work_thread_ = pw::thread::Thread(context_.options(), *work_queue_);
+}
 
 void GenericTestWorker::RunOnce(pw::Function<void()>&& work) {
   work_queue_->PushWork(std::move(work));
