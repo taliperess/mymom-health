@@ -48,13 +48,14 @@ class ColorRotationManager {
   constexpr static pw::chrono::SystemClock::duration kStepInterval =
       std::chrono::milliseconds(20);
 
-  /// Construct a ColorRoationManager with a given set of steps.
+  /// Construct a ColorRotationManager.
   ///
-  /// @param steps The steps in the color rotation.
-  ColorRotationManager(pw::span<Step> steps);
-
-  /// Inject pub_sub and worker instances in to the manager.
-  void Init(PubSub& pub_sub, Worker& worker);
+  /// @param steps   The steps in the color rotation.
+  /// @param pub_sub PubSub instance.
+  /// @param worker  Worker instance.
+  ColorRotationManager(const pw::span<const Step> steps,
+                       PubSub& pub_sub,
+                       Worker& worker);
 
   /// Start the manager's periodic execution.
   void Start();
@@ -66,16 +67,16 @@ class ColorRotationManager {
   void UpdateCallback(pw::chrono::SystemClock::time_point now);
   void Update();
 
-  Step& CurrentStep();
-  Step& NextStep();
+  const Step& CurrentStep();
+  const Step& NextStep();
 
-  pw::span<Step> steps_;
+  const pw::span<const Step> steps_;
   size_t current_step_ = 0;
   uint16_t step_cycle_ = 0;
   bool is_running_ = false;
 
-  PubSub* pub_sub_ = nullptr;
-  Worker* worker_ = nullptr;
+  PubSub& pub_sub_;
+  Worker& worker_;
   pw::chrono::SystemTimer timer_;
 
   friend testing::ColorRotationManagerTester;

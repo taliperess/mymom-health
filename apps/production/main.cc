@@ -15,6 +15,7 @@
 #define PW_LOG_MODULE_NAME "MAIN"
 
 #include "modules/board/service.h"
+#include "modules/color_rotation/manager.h"
 #include "modules/pubsub/service.h"
 #include "modules/state_manager/state_manager.h"
 #include "pw_log/log.h"
@@ -23,12 +24,26 @@
 #include "system/system.h"
 #include "system/worker.h"
 
+namespace {
+const std::array kColorRotationSteps{
+    am::ColorRotationManager::Step{
+        .r = 0xd6, .g = 0x02, .b = 0x70, .num_cycles = 2500},
+    am::ColorRotationManager::Step{
+        .r = 0x9b, .g = 0x4f, .b = 0x96, .num_cycles = 2500},
+    am::ColorRotationManager::Step{
+        .r = 0x00, .g = 0x38, .b = 0xa8, .num_cycles = 2500},
+};
+}
 int main() {
   am::system::Init();
 
   am::StateManager state_manager(am::system::PubSub(),
                                  am::system::PolychromeLed());
   state_manager.Init();
+
+  am::ColorRotationManager color_rotation_manager(
+      kColorRotationSteps, am::system::PubSub(), am::system::GetWorker());
+  color_rotation_manager.Start();
 
   static am::BoardService board_service;
   board_service.Init(am::system::GetWorker(), am::system::Board());
@@ -37,6 +52,9 @@ int main() {
   static am::PubSubService pubsub_service;
   pubsub_service.Init(am::system::PubSub());
   pw::System().rpc_server().RegisterService(pubsub_service);
+
+  auto& button_manager = am::system::ButtonManager();
+  button_manager.Init(am::system::PubSub(), am::system::GetWorker());
 
   PW_LOG_INFO("Welcome to Airmaranth 🌿☁️");
   am::system::Start();

@@ -21,14 +21,13 @@ using pw::chrono::SystemClock;
 
 namespace am {
 
-ColorRotationManager::ColorRotationManager(pw::span<Step> steps)
+ColorRotationManager::ColorRotationManager(const pw::span<const Step> steps,
+                                           PubSub& pub_sub,
+                                           Worker& worker)
     : steps_(steps),
+      pub_sub_(pub_sub),
+      worker_(worker),
       timer_(pw::bind_member<&ColorRotationManager::UpdateCallback>(this)) {}
-
-void ColorRotationManager::Init(PubSub& pub_sub, Worker& worker) {
-  pub_sub_ = &pub_sub;
-  worker_ = &worker;
-}
 
 void ColorRotationManager::Start() {
   // Start the periodic update callbacks.
@@ -39,8 +38,7 @@ void ColorRotationManager::Start() {
 void ColorRotationManager::Stop() { is_running_ = false; }
 
 void ColorRotationManager::UpdateCallback(SystemClock::time_point /* now */) {
-  PW_CHECK_NOTNULL(worker_);
-  worker_->RunOnce([this]() {
+  worker_.RunOnce([this]() {
     Update();
     // Reschedule our periodic callback, if running.
     if (is_running_) {
@@ -50,9 +48,8 @@ void ColorRotationManager::UpdateCallback(SystemClock::time_point /* now */) {
 }
 
 void ColorRotationManager::Update() {
-  PW_CHECK_NOTNULL(pub_sub_);
-  Step& current = CurrentStep();
-  Step& next = NextStep();
+  const Step& current = CurrentStep();
+  const Step& next = NextStep();
   uint8_t r = Lerp(current.r, next.r, step_cycle_, current.num_cycles);
   uint8_t g = Lerp(current.g, next.g, step_cycle_, current.num_cycles);
   uint8_t b = Lerp(current.b, next.b, step_cycle_, current.num_cycles);
@@ -69,14 +66,14 @@ void ColorRotationManager::Update() {
     }
   }
 
-  pub_sub_->Publish(LedValueColorRotationMode(r, g, b));
+  pub_sub_.Publish(LedValueColorRotationMode(r, g, b));
 }
 
-ColorRotationManager::Step& ColorRotationManager::CurrentStep() {
+const ColorRotationManager::Step& ColorRotationManager::CurrentStep() {
   return steps_[current_step_];
 }
 
-ColorRotationManager::Step& ColorRotationManager::NextStep() {
+const ColorRotationManager::Step& ColorRotationManager::NextStep() {
   size_t next_step = current_step_ + 1;
   if (next_step >= steps_.size()) {
     next_step = 0;

@@ -79,8 +79,7 @@ TEST_F(ManagerTest, StepsAreInterpolatedBetweenAndWrap) {
       ColorRotationManager::Step{
           .r = 0x00, .g = 0xff, .b = 0x00, .num_cycles = 0x40},
   };
-  ColorRotationManager manager(steps);
-  manager.Init(pubsub, worker);
+  ColorRotationManager manager(steps, pubsub, worker);
 
   // First cycle should yield red.
   auto color_0 = DoStep(manager);
