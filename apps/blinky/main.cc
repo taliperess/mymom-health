@@ -15,10 +15,8 @@
 
 #include "modules/blinky/service.h"
 #include "modules/board/service.h"
-#include "modules/morse_code/service.h"
 #include "pw_log/log.h"
 #include "pw_system/system.h"
-#include "system/pubsub.h"
 #include "system/system.h"
 #include "system/worker.h"
 
@@ -26,10 +24,8 @@ int main() {
   am::system::Init();
   auto& rpc_server = pw::System().rpc_server();
   auto& worker = am::system::GetWorker();
-  auto& pubsub = am::system::PubSub();
   auto& monochrome_led = am::system::MonochromeLed();
   auto& polychrome_led = am::system::PolychromeLed();
-  auto& button_manager = am::system::ButtonManager();
 
   static am::BoardService board_service;
   board_service.Init(worker, am::system::Board());
@@ -38,19 +34,6 @@ int main() {
   static am::BlinkyService blinky_service;
   blinky_service.Init(worker, monochrome_led, polychrome_led);
   rpc_server.RegisterService(blinky_service);
-
-  static am::MorseCodeService morse_code_service;
-  morse_code_service.Init(worker, [&monochrome_led](bool turn_on) {
-    if (turn_on) {
-      monochrome_led.TurnOn();
-    } else {
-      monochrome_led.TurnOff();
-    }
-  });
-  rpc_server.RegisterService(morse_code_service);
-
-  // Just initialize the manager until we have a button service.
-  button_manager.Init(pubsub, worker);
 
   PW_LOG_INFO("Started blinky app; waiting for RPCs...");
   am::system::Start();
