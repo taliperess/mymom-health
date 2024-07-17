@@ -39,6 +39,12 @@ ChartJS.register(
 
 const options = {
   animation: false,
+  scales: {
+    y: {
+      suggestedMin: 15,
+      suggestedMax: 25
+    }
+  },
   plugins: {
     legend: {
       position: 'top' as const,
