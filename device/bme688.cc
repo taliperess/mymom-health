@@ -49,11 +49,7 @@ static int8_t Write(uint8_t reg_address,
               context);
   auto i2c_device = static_cast<pw::i2c::RegisterDevice*>(context);
 
-  std::array<std::byte, 32> write_buffer;
-  for (size_t i = 0; i < length; i++) {
-    write_buffer[i] = std::byte{data[i]};
-  }
-
+  std::array<std::byte, 16> write_buffer;
   pw::span<const uint8_t> bytes(data, length);
   auto status =
       i2c_device->WriteRegisters8(reg_address, bytes, write_buffer, kTimeout);
