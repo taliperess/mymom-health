@@ -18,6 +18,7 @@
 #include "pico/stdlib.h"
 #include "pw_digital_io_rp2040/digital_io.h"
 #include "system/system.h"
+#include "targets/rp2040/enviro_pins.h"
 
 namespace am::system {
 
@@ -34,17 +35,17 @@ am::MonochromeLed& MonochromeLed() {
 }
 
 static constexpr pw::digital_io::Rp2040Config kRedLedConfig = {
-    .pin = 6,
+    .pin = board::kEnviroPinLedR,
     .polarity = pw::digital_io::Polarity::kActiveLow,
 };
 
 static constexpr pw::digital_io::Rp2040Config kGreenLedConfig = {
-    .pin = 7,
+    .pin = board::kEnviroPinLedG,
     .polarity = pw::digital_io::Polarity::kActiveLow,
 };
 
 static constexpr pw::digital_io::Rp2040Config kBlueLedConfig = {
-    .pin = 10,
+    .pin = board::kEnviroPinLedB,
     .polarity = pw::digital_io::Polarity::kActiveLow,
 };
 
