@@ -16,6 +16,7 @@
 import argparse
 import logging
 from types import ModuleType
+from typing import Any
 
 import pw_cli.log
 from pw_protobuf_protos import common_pb2
@@ -37,12 +38,56 @@ from pubsub_pb import pubsub_pb2
 import morse_code_pb2
 
 
+_LOG = logging.getLogger(__file__)
+
+
+def _led_indicator(led_value: pubsub_pb2.LedValue):
+    r = led_value.r
+    g = led_value.g
+    b = led_value.b
+    set_color = f'\x1B[48;2;{r};{g};{b}m'
+    unset_color = '\x1B[m '
+    return set_color + ' LED ' + unset_color
+
+
 # Airmaranth specific device classes, new functions can be added here
 # similar to ones on the parent pw_system.device.Device class:
 # https://cs.opensource.google/pigweed/pigweed/+/main:pw_system/py/pw_system/device.py?q=%22def%20run_tests(%22
 class Device(PwSystemDevice):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.pubsub_call_ = None
+
+    def log_pubsub_events(self, filter: None | str = None):
+        """Logs pubsub events.
+
+        Args:
+          filter: If provided, only events containing the `filter` string will
+            be logged.
+        """
+        self.stop_logging_pubsub_events()
+
+        def log_event(event: pubsub_pb2.Event):
+            event_str = str(event)
+            if filter is not None and filter not in event_str:
+                return
+            event_type = event.WhichOneof('type')
+            event_value = getattr(event, event_type)
+            prefix = ''
+            if isinstance(event_value, pubsub_pb2.LedValue):
+                prefix = _led_indicator(event_value)
+
+            _LOG.info("%s %s", prefix, str(event).replace('\n', ' '))
+
+        self.pubsub_call_ = self.rpcs.pubsub.PubSub.Subscribe.invoke(
+            on_next=lambda call_, event: log_event(event)
+        )
+
+    def stop_logging_pubsub_events(self):
+        """Stops a `log_pubsub_events` call if one was started."""
+        if self.pubsub_call_ is not None:
+            self.pubsub_call_.cancel()
+            self.pubsub_call_ = None
 
 
 class DeviceWithTracing(PwSystemDeviceWithTracing):
