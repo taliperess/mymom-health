@@ -31,9 +31,13 @@ static constexpr uint8_t Lerp(uint8_t a,
                               uint16_t numerator,
                               uint16_t denominator) {
   // Do calculations in 32bit space to avoid overflows due to multiplication.
-  uint32_t a_32 = a;
-  uint32_t b_32 = b;
+  // 8 bits of value (a and b) * 16 bits of numerator yields 24 bits.
+  // That 24 bits divided by the denominator yields an 8 bit value to return.
+  int32_t a_32 = a;
+  int32_t b_32 = b;
 
-  return static_cast<uint8_t>(a_32 + (b_32 - a_32) * numerator / denominator);
+  return static_cast<uint8_t>(a_32 + (b_32 - a_32) *
+                                         static_cast<int32_t>(numerator) /
+                                         static_cast<int32_t>(denominator));
 }
 }  // namespace am

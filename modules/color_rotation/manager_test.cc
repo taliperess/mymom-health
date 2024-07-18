@@ -116,7 +116,7 @@ TEST_F(ManagerTest, StepsAreInterpolatedBetweenAndWrap) {
 
   // Halfway through the next step we should have a mix of yellow and green.
   auto color_3 = DoNSteps(manager, 0x20);
-  EXPECT_EQ(color_3.r(), 0x7f);
+  EXPECT_EQ(color_3.r(), 0x80);
   EXPECT_EQ(color_3.g(), 0xff);
   EXPECT_EQ(color_3.b(), 0x00);
 
@@ -129,7 +129,7 @@ TEST_F(ManagerTest, StepsAreInterpolatedBetweenAndWrap) {
   // At the end of the steps we should find our way back to red
   auto color_5 = DoNSteps(manager, 0x20);
   EXPECT_EQ(color_5.r(), 0x7f);
-  EXPECT_EQ(color_5.g(), 0x7f);
+  EXPECT_EQ(color_5.g(), 0x80);
   EXPECT_EQ(color_5.b(), 0x00);
 
   auto color_6 = DoNSteps(manager, 0x20);

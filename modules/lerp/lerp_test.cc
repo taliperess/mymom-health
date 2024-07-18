@@ -21,3 +21,6 @@ TEST(LerpTest, OneFractionReturnsB) { EXPECT_EQ(am::Lerp(0, 20, 10, 10), 20); }
 TEST(LerpTest, HalfFractionReturnsHalfwayPoint) {
   EXPECT_EQ(am::Lerp(0, 20, 5, 10), 10);
 }
+TEST(LerpTest, BLessThanAHandledCorrectly) {
+  EXPECT_EQ(am::Lerp(20, 0, 5, 10), 10);
+}
