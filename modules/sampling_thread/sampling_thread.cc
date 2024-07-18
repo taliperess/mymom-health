@@ -40,6 +40,13 @@ void ReadProximity() {
   system::PubSub().Publish(ProximitySample{*sample});
 }
 
+void ReadAirSensor() {
+  // Read the sensor syncronously to avoid conflicting with other I2C sensors.
+  pw::sync::ThreadNotification notification;
+  system::AirSensor().Measure(notification);
+  notification.acquire();
+}
+
 }  // namespace
 
 // Reads sensor samples in a loop and publishes PubSub events for them.
@@ -54,6 +61,7 @@ void SamplingLoop() {
     pw::this_thread::sleep_until(deadline);
 
     ReadProximity();
+    ReadAirSensor();
   }
 }
 

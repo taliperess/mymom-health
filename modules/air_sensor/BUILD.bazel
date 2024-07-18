@@ -30,7 +30,7 @@ cc_library(
         "@pigweed//pw_sync:interrupt_spin_lock",
         "@pigweed//pw_sync:lock_annotations",
         "@pigweed//pw_sync:thread_notification",
-    ]
+    ],
 )
 
 cc_library(
@@ -40,7 +40,7 @@ cc_library(
         ":air_sensor",
         "@pigweed//pw_status",
         "@pigweed//pw_sync:thread_notification",
-    ]
+    ],
 )
 
 proto_library(
@@ -71,9 +71,15 @@ cc_library(
     name = "service",
     srcs = ["service.cc"],
     hdrs = ["service.h"],
+    implementation_deps = [
+        "@pigweed//pw_log",
+    ],
     deps = [
         ":air_sensor",
         ":nanopb_rpc",
+        "//modules/worker",
+        "@pigweed//pw_chrono:system_clock",
+        "@pigweed//pw_chrono:system_timer",
         "@pigweed//pw_sync:thread_notification",
     ],
 )

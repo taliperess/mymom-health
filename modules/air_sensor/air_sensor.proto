@@ -18,8 +18,9 @@ package air_sensor;
 import "pw_protobuf_protos/common.proto";
 
 service AirSensor {
-  rpc Init2(pw.protobuf.Empty) returns (pw.protobuf.Empty);
   rpc Measure(pw.protobuf.Empty) returns (Measurement);
+
+  rpc MeasureStream(MeasureStreamRequest) returns (stream Measurement);
 }
 
 message Measurement {
@@ -27,4 +28,9 @@ message Measurement {
   float pressure = 2;
   float humidity = 3;
   float gas_resistance = 4;
+}
+
+message MeasureStreamRequest {
+  // The interval at which to sample the temperature sensor. Minimum 500ms.
+  uint32 sample_interval_ms = 1;
 }

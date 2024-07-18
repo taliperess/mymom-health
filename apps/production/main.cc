@@ -97,7 +97,7 @@ void InitProximitySensor() {
 void InitAirSensor() {
   static AirSensor& air_sensor = am::system::AirSensor();
   static am::AirSensorService air_sensor_service;
-  air_sensor_service.Init(air_sensor);
+  air_sensor_service.Init(system::GetWorker(), air_sensor);
   pw::System().rpc_server().RegisterService(air_sensor_service);
 }
 

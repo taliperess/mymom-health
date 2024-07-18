@@ -14,15 +14,13 @@
 
 #include "modules/air_sensor/service.h"
 
+#include "pw_log/log.h"
+
 namespace am {
 
-void AirSensorService::Init(AirSensor& air_sensor) {
+void AirSensorService::Init(Worker& worker, AirSensor& air_sensor) {
+  worker_ = &worker;
   air_sensor_ = &air_sensor;
-}
-
-pw::Status AirSensorService::Init2(const pw_protobuf_Empty&,
-                                   pw_protobuf_Empty&) {
-  return air_sensor_->Init();
 }
 
 pw::Status AirSensorService::Measure(const pw_protobuf_Empty&,
@@ -34,6 +32,44 @@ pw::Status AirSensorService::Measure(const pw_protobuf_Empty&,
   response.humidity = air_sensor_->humidity();
   response.gas_resistance = air_sensor_->gas_resistance();
   return pw::OkStatus();
+}
+
+void AirSensorService::MeasureStream(
+    const air_sensor_MeasureStreamRequest& request,
+    ServerWriter<air_sensor_Measurement>& writer) {
+  if (request.sample_interval_ms < 500) {
+    writer.Finish(pw::Status::InvalidArgument());
+    return;
+  }
+
+  sample_interval_ = pw::chrono::SystemClock::for_at_least(
+      std::chrono::milliseconds(request.sample_interval_ms));
+  sample_writer_ = std::move(writer);
+
+  ScheduleSample();
+}
+
+void AirSensorService::SampleCallback(pw::chrono::SystemClock::time_point) {
+  float temperature = air_sensor_->temperature();
+  float pressure = air_sensor_->pressure();
+  float humidity = air_sensor_->humidity();
+  float gas_resistance = air_sensor_->gas_resistance();
+
+  pw::Status status = sample_writer_.Write({
+      .temperature = temperature,
+      .pressure = pressure,
+      .humidity = humidity,
+      .gas_resistance = gas_resistance,
+  });
+  if (status.ok()) {
+    ScheduleSample();
+  } else {
+    PW_LOG_INFO("Air Sensor stream closed; ending periodic sampling");
+  }
+}
+
+void AirSensorService::ScheduleSample() {
+  worker_->RunOnce([this]() { sample_timer_.InvokeAfter(sample_interval_); });
 }
 
 }  // namespace am

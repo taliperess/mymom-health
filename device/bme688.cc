@@ -156,6 +156,7 @@ void Bme688::GetDataCallback(pw::chrono::SystemClock::time_point) {
     Update(data.temperature, data.pressure, data.humidity, data.gas_resistance);
   }
   notification_->release();
+  notification_ = nullptr;
 }
 
 pw::Status Bme688::Check(int8_t result) {

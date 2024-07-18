@@ -15,21 +15,42 @@
 
 #include "modules/air_sensor/air_sensor.h"
 #include "modules/air_sensor/air_sensor.rpc.pb.h"
+#include "modules/worker/worker.h"
+#include "pw_chrono/system_clock.h"
+#include "pw_chrono/system_timer.h"
+#include "pw_function/function.h"
+#include "pw_status/status.h"
 #include "pw_sync/thread_notification.h"
 
 namespace am {
 
 class AirSensorService final
-    : public ::air_sensor::pw_rpc::nanopb::AirSensor::Service<AirSensorService> {
+    : public ::air_sensor::pw_rpc::nanopb::AirSensor::Service<
+          AirSensorService> {
  public:
-  void Init(AirSensor& air_sensor);
+  AirSensorService()
+      : sample_timer_(
+            pw::bind_member<&AirSensorService::SampleCallback>(this)) {}
 
-  pw::Status Init2(const pw_protobuf_Empty&, pw_protobuf_Empty&);
-  pw::Status Measure(const pw_protobuf_Empty&, air_sensor_Measurement& response);
+  void Init(Worker& worker, AirSensor& air_sensor);
+
+  pw::Status Measure(const pw_protobuf_Empty&,
+                     air_sensor_Measurement& response);
+
+  void MeasureStream(const air_sensor_MeasureStreamRequest& request,
+                     ServerWriter<air_sensor_Measurement>& writer);
 
  private:
+  void SampleCallback(pw::chrono::SystemClock::time_point);
+
+  void ScheduleSample();
+
+  Worker* worker_ = nullptr;
   AirSensor* air_sensor_ = nullptr;
   pw::sync::ThreadNotification notification_;
+  pw::chrono::SystemTimer sample_timer_;
+  pw::chrono::SystemClock::duration sample_interval_;
+  ServerWriter<air_sensor_Measurement> sample_writer_;
 };
 
 }  // namespace am
