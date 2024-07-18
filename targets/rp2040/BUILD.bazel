@@ -36,7 +36,13 @@ cc_library(
     deps = [
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
         "@pigweed//pw_tokenizer:linker_script",
-    ],
+    ] + select({
+        "@rules_cc//cc/compiler:clang": [
+            "@pigweed//pw_libcxx",
+            "@pico-sdk//src/rp2_common/pico_clib_interface:llvm_libc_interface",
+        ],
+        "//conditions:default": [],
+    }),
     alwayslink = 1,
 )
 

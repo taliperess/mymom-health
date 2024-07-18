@@ -24,6 +24,7 @@ cc_library(
         #
         # Allow us to capture two 64bit pointers in a pw::function.
         "PW_FUNCTION_INLINE_CALLABLE_SIZE=16UL",
+        "PW_ASSERT_BASIC_ACTION=PW_ASSERT_BASIC_ACTION_EXIT",
     ],
 )
 

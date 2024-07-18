@@ -83,7 +83,7 @@ void PicoPwmGpio::DoSetCallback(const Callback& callback,
   float clkdiv = 65536.f / (60.f * freq * per_interval);
   clkdiv = std::min(clkdiv, kClkDivMax);
 
-  PW_LOG_INFO("Pulsing at frequency of %f times per second", freq, clkdiv);
+  PW_LOG_INFO("Pulsing at frequency of %f times per second", freq);
   if (clkdiv < 1.f) {
     uint16_t wrap = std::numeric_limits<uint16_t>::max();
     wrap = static_cast<uint16_t>(clkdiv * wrap);

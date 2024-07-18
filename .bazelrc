@@ -143,6 +143,8 @@ build:rp2040 --@pigweed//pw_unit_test:main=//targets/rp2040:unit_test_rpc_main
 build:rp2040 --@freertos//:freertos_config=//targets/rp2040:freertos_config
 build:rp2040 --@pico-sdk//bazel/config:PICO_STDIO_USB=True
 build:rp2040 --@pico-sdk//bazel/config:PICO_STDIO_UART=True
+build:rp2040 --@pico-sdk//bazel/config:PICO_CLIB=@pigweed//targets/rp2040:pico_sdk_clib_select
+build:rp2040 --@pico-sdk//bazel/config:PICO_TOOLCHAIN="clang"
 test:rp2040 --run_under=@pigweed//targets/rp2040/py:unit_test_client
 
 # User bazelrc file; see

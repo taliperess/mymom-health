@@ -28,6 +28,8 @@ _overrides = {
     "@pigweed//pw_system:extra_platform_libs": "//targets/rp2040:extra_platform_libs",
     "@pigweed//pw_system:io_backend": "@pigweed//pw_system:sys_io_target_io",
     "@pigweed//pw_build:default_module_config": "//system:module_config",
+    "@pico-sdk//bazel/config:PICO_CLIB": "@pigweed//targets/rp2040:pico_sdk_clib_select",
+    "@pico-sdk//bazel/config:PICO_TOOLCHAIN": "clang",
 }
 
 def _rp2040_transition_impl(settings, attr):
