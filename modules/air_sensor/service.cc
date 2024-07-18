@@ -20,11 +20,13 @@ void AirSensorService::Init(AirSensor& air_sensor) {
   air_sensor_ = &air_sensor;
 }
 
-pw::Status AirSensorService::Init2(const pw_protobuf_Empty&, pw_protobuf_Empty&) {
+pw::Status AirSensorService::Init2(const pw_protobuf_Empty&,
+                                   pw_protobuf_Empty&) {
   return air_sensor_->Init();
 }
 
-pw::Status AirSensorService::Measure(const pw_protobuf_Empty&, air_sensor_Measurement& response) {
+pw::Status AirSensorService::Measure(const pw_protobuf_Empty&,
+                                     air_sensor_Measurement& response) {
   PW_TRY(air_sensor_->Measure(notification_));
   notification_.acquire();
   response.temperature = air_sensor_->temperature();

@@ -52,3 +52,9 @@ py_binary(
     srcs = ["airmaranth/toggle_blinky.py"],
     deps = [":airmaranth_lib"],
 )
+
+py_binary(
+    name = "air_measure",
+    srcs = ["airmaranth/air_measure.py"],
+    deps = [":airmaranth_lib"],
+)

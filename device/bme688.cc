@@ -12,60 +12,86 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 #define PW_LOG_MODULE_NAME "BME688"
+#define PW_LOG_LEVEL PW_LOG_LEVEL_WARN
 
 #include "device/bme688.h"
 
-#include <cstdint>
 #include <chrono>
+#include <cstdint>
 
 #include "bme68x.h"
 #include "pw_assert/check.h"
 #include "pw_bytes/endian.h"
 #include "pw_bytes/span.h"
-#include "pw_span/span.h"
 #include "pw_function/function.h"
 #include "pw_log/log.h"
+#include "pw_span/span.h"
 #include "pw_status/try.h"
 #include "pw_thread/sleep.h"
 
 namespace am {
 
-static constexpr pw::i2c::Address kAddress = pw::i2c::Address::SevenBit<BME68X_I2C_ADDR_LOW>();
+static constexpr pw::i2c::Address kAddress =
+    pw::i2c::Address::SevenBit<BME68X_I2C_ADDR_HIGH>();
 static constexpr uint16_t kHeaterTemperature = 300;
 static constexpr uint16_t kHeaterDuration = 100;
-static constexpr auto kTimeout = pw::chrono::SystemClock::for_at_least(std::chrono::minutes(2));
+static constexpr auto kTimeout =
+    pw::chrono::SystemClock::for_at_least(std::chrono::minutes(2));
 
-static int8_t Write(uint8_t address, const uint8_t* data, uint32_t length, void* context) {
-  PW_LOG_INFO("Write(address=0x%02x, data=%p, length=%u, context=%p)", address, (const void*)data, length, context);
+static int8_t Write(uint8_t reg_address,
+                    const uint8_t* data,
+                    uint32_t length,
+                    void* context) {
+  PW_LOG_INFO("Write(reg_address=0x%02x, data=%p, length=%u, context=%p)",
+              reg_address,
+              (const void*)data,
+              length,
+              context);
   auto i2c_device = static_cast<pw::i2c::RegisterDevice*>(context);
-  PW_CHECK_UINT_EQ(length, 1U);
-  std::array<std::byte, 2> buffer;
+
+  std::array<std::byte, 32> write_buffer;
+  for (size_t i = 0; i < length; i++) {
+    write_buffer[i] = std::byte{data[i]};
+  }
+
   pw::span<const uint8_t> bytes(data, length);
-  auto status = i2c_device->WriteRegisters8(address, bytes, buffer, kTimeout);
+  auto status =
+      i2c_device->WriteRegisters8(reg_address, bytes, write_buffer, kTimeout);
   PW_LOG_INFO("WriteRegisters8 returned %s", pw_StatusString(status));
   return status.ok() ? 0 : 1;
 }
 
-static int8_t Read(uint8_t address, uint8_t* data, uint32_t length, void* context) {
-  PW_LOG_INFO("Read(address=0x%02x, data=%p, length=%u, context=%p)", address, (void*)data, length, context);
+static int8_t Read(uint8_t reg_address,
+                   uint8_t* data,
+                   uint32_t length,
+                   void* context) {
+  PW_LOG_INFO("Read(reg_address=0x%02x, data=%p, length=%u, context=%p)",
+              reg_address,
+              (const void*)data,
+              length,
+              context);
   auto i2c_device = static_cast<pw::i2c::RegisterDevice*>(context);
-  PW_CHECK_UINT_EQ(length, 1U);
-  pw::span<uint8_t> bytes(data, length);
-  auto status = i2c_device->ReadRegisters8(address, bytes, kTimeout);
+
+  pw::span<uint8_t> read_buffer(data, length);
+  auto status = i2c_device->ReadRegisters8(reg_address, read_buffer, kTimeout);
   PW_LOG_INFO("ReadRegisters8 returned %s", pw_StatusString(status));
   return status.ok() ? 0 : 1;
 }
 
 static void Delay(uint32_t interval_us, void* context) {
   PW_LOG_INFO("Delay(interval_us=%u, context=%p)", interval_us, context);
-  auto interval = pw::chrono::SystemClock::for_at_least(std::chrono::microseconds(interval_us));
+  auto interval = pw::chrono::SystemClock::for_at_least(
+      std::chrono::microseconds(interval_us));
   pw::this_thread::sleep_for(interval);
 }
 
 Bme688::Bme688(pw::i2c::Initiator& initiator, Worker& worker)
-  : worker_(worker), 
-    i2c_device_(initiator, kAddress, pw::endian::native, pw::i2c::RegisterAddressSize::k1Byte),
-    get_data_(pw::bind_member<&Bme688::GetDataCallback>(this)) {}
+    : worker_(worker),
+      i2c_device_(initiator,
+                  kAddress,
+                  pw::endian::native,
+                  pw::i2c::RegisterAddressSize::k1Byte),
+      get_data_(pw::bind_member<&Bme688::GetDataCallback>(this)) {}
 
 pw::Status Bme688::Init() {
   bme688_.intf_ptr = &i2c_device_;
@@ -73,13 +99,19 @@ pw::Status Bme688::Init() {
   bme688_.read = Read;
   bme688_.write = Write;
   bme688_.delay_us = Delay;
-  bme688_.amb_temp = 21; // Celsius, approximately 70 degrees Fahrenheit.
+  bme688_.amb_temp = 21;  // Celsius, approximately 70 degrees Fahrenheit.
 
   PW_LOG_INFO("bme68x_init");
-  PW_TRY(Check(bme68x_init(&bme688_)));
+  auto init_status = Check(bme68x_init(&bme688_));
+  if (!init_status.ok()) {
+    return init_status;
+  }
 
   PW_LOG_INFO("bme68x_get_conf");
-  PW_TRY(Check(bme68x_get_conf(&config_, &bme688_)));
+  auto get_conf_status = Check(bme68x_get_conf(&config_, &bme688_));
+  if (!get_conf_status.ok()) {
+    return get_conf_status;
+  }
 
   config_.filter = BME68X_FILTER_OFF;
   config_.odr = BME68X_ODR_NONE;
@@ -88,7 +120,12 @@ pw::Status Bme688::Init() {
   config_.os_temp = BME68X_OS_2X;
 
   PW_LOG_INFO("bme68x_set_conf");
-  return Check(bme68x_set_conf(&config_, &bme688_));
+  auto set_conf_status = Check(bme68x_set_conf(&config_, &bme688_));
+  if (!set_conf_status.ok()) {
+    return set_conf_status;
+  }
+
+  return pw::OkStatus();
 }
 
 pw::Status Bme688::DoMeasure(pw::sync::ThreadNotification& notification) {
@@ -104,10 +141,12 @@ pw::Status Bme688::DoMeasure(pw::sync::ThreadNotification& notification) {
   PW_TRY(Check(bme68x_set_heatr_conf(BME68X_FORCED_MODE, &heater_, &bme688_)));
   PW_TRY(Check(bme68x_set_op_mode(BME68X_FORCED_MODE, &bme688_)));
 
-  worker_.RunOnce([this](){
-    uint32_t delay_us = bme68x_get_meas_dur(BME68X_FORCED_MODE, &config_, &bme688_);
+  worker_.RunOnce([this]() {
+    uint32_t delay_us =
+        bme68x_get_meas_dur(BME68X_FORCED_MODE, &config_, &bme688_);
     delay_us += (heater_.heatr_dur * 1000);
-    auto delay = pw::chrono::SystemClock::for_at_least(std::chrono::microseconds(delay_us));
+    auto delay = pw::chrono::SystemClock::for_at_least(
+        std::chrono::microseconds(delay_us));
     get_data_.InvokeAfter(delay);
   });
   return pw::OkStatus();
@@ -116,7 +155,8 @@ pw::Status Bme688::DoMeasure(pw::sync::ThreadNotification& notification) {
 void Bme688::GetDataCallback(pw::chrono::SystemClock::time_point) {
   bme68x_data data;
   uint8_t n;
-  if (Check(bme68x_get_data(BME68X_FORCED_MODE, &data, &n, &bme688_)).ok() && n != 0) {
+  if (Check(bme68x_get_data(BME68X_FORCED_MODE, &data, &n, &bme688_)).ok() &&
+      n != 0) {
     Update(data.temperature, data.pressure, data.humidity, data.gas_resistance);
   }
   notification_->release();
@@ -124,36 +164,36 @@ void Bme688::GetDataCallback(pw::chrono::SystemClock::time_point) {
 
 pw::Status Bme688::Check(int8_t result) {
   switch (result) {
-  case BME68X_OK:
-    return pw::OkStatus();
+    case BME68X_OK:
+      return pw::OkStatus();
 
-  case BME68X_E_NULL_PTR:
-    PW_LOG_ERROR("Null pointer");
-    return pw::Status::InvalidArgument();
+    case BME68X_E_NULL_PTR:
+      PW_LOG_ERROR("Null pointer");
+      return pw::Status::InvalidArgument();
 
-  case BME68X_E_COM_FAIL:
-    PW_LOG_ERROR("Communication failure");
-    return pw::Status::Unavailable();
+    case BME68X_E_COM_FAIL:
+      PW_LOG_ERROR("Communication failure");
+      return pw::Status::Unavailable();
 
-  case BME68X_E_INVALID_LENGTH:
-    PW_LOG_ERROR("Incorrect length parameter");
-    return pw::Status::OutOfRange();
+    case BME68X_E_INVALID_LENGTH:
+      PW_LOG_ERROR("Incorrect length parameter");
+      return pw::Status::OutOfRange();
 
-  case BME68X_E_DEV_NOT_FOUND:
-    PW_LOG_ERROR("Device not found");
-    return pw::Status::NotFound();
+    case BME68X_E_DEV_NOT_FOUND:
+      PW_LOG_ERROR("Device not found");
+      return pw::Status::NotFound();
 
-  case BME68X_E_SELF_TEST:
-    PW_LOG_ERROR("Self test error");
-    return pw::Status::FailedPrecondition();
+    case BME68X_E_SELF_TEST:
+      PW_LOG_ERROR("Self test error");
+      return pw::Status::FailedPrecondition();
 
-  case BME68X_W_NO_NEW_DATA:
-    PW_LOG_WARN("No new data found");
-    return pw::OkStatus();
+    case BME68X_W_NO_NEW_DATA:
+      PW_LOG_WARN("No new data found");
+      return pw::OkStatus();
 
-  default:
-    PW_LOG_ERROR("Unknown error code: %d", result);
-    return pw::Status::Unknown();
+    default:
+      PW_LOG_ERROR("Unknown error code: %d", result);
+      return pw::Status::Unknown();
   }
 }
 

@@ -96,11 +96,7 @@ void Start() {
 }
 
 am::AirSensor& AirSensor() {
-  static bool initialized = false;
   static Bme688 air_sensor(I2cInitiator(), am::system::GetWorker());
-  if (!initialized) {
-    PW_CHECK_OK(air_sensor.Init());
-  }
   return air_sensor;
 }
 

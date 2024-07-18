@@ -15,6 +15,7 @@
 #define PW_LOG_MODULE_NAME "MAIN"
 
 #include "apps/production/threads.h"
+#include "modules/air_sensor/service.h"
 #include "modules/board/service.h"
 #include "modules/color_rotation/manager.h"
 #include "modules/morse_code/encoder.h"
@@ -93,11 +94,19 @@ void InitProximitySensor() {
   });
 }
 
+void InitAirSensor() {
+  static AirSensor& air_sensor = am::system::AirSensor();
+  static am::AirSensorService air_sensor_service;
+  air_sensor_service.Init(air_sensor);
+  pw::System().rpc_server().RegisterService(air_sensor_service);
+}
+
 [[noreturn]] void InitializeApp() {
   system::Init();
 
   InitBoardService();
   InitProximitySensor();
+  InitAirSensor();
 
   pw::thread::DetachedThread(SamplingThreadOptions(), SamplingLoop);
 

@@ -52,10 +52,11 @@ class DeviceWithTracing(PwSystemDeviceWithTracing):
 
 def get_all_protos() -> list[ModuleType]:
     return [
+        air_sensor_pb2,
+        blinky_pb2,
+        board_pb2,
         common_pb2,
         echo_pb2,
-        board_pb2,
-        blinky_pb2,
         morse_code_pb2,
         pubsub_pb2,
     ]
