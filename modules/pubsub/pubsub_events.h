@@ -102,10 +102,10 @@ class LedValueProximityMode : public LedValue {
   using LedValue::LedValue;
   explicit LedValueProximityMode(const LedValue& parent) : LedValue(parent) {}
 };
-class LedValueTemperatureMode : public LedValue {
+class LedValueVocMode : public LedValue {
  public:
   using LedValue::LedValue;
-  explicit LedValueTemperatureMode(const LedValue& parent) : LedValue(parent) {}
+  explicit LedValueVocMode(const LedValue& parent) : LedValue(parent) {}
 };
 
 // This definition must be kept up to date with modules/pubsub/pubsub.proto.
@@ -117,7 +117,7 @@ using Event = std::variant<AlarmStateChange,
                            LedValueColorRotationMode,
                            LedValueMorseCodeMode,
                            LedValueProximityMode,
-                           LedValueTemperatureMode,
+                           LedValueVocMode,
                            ProximityStateChange,
                            ProximitySample,
                            VocSample>;

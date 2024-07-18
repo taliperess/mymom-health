@@ -74,8 +74,8 @@ void StateManager::HandleStateEvent(Event& event) {
       }
       break;
     case kTemperature:
-      if (std::holds_alternative<LedValueTemperatureMode>(event)) {
-        SetLed(std::get<LedValueTemperatureMode>(event));
+      if (std::holds_alternative<LedValueVocMode>(event)) {
+        SetLed(std::get<LedValueVocMode>(event));
       }
       break;
     case kMorseCode:

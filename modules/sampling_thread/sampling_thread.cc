@@ -41,10 +41,14 @@ void ReadProximity() {
 }
 
 void ReadAirSensor() {
+  auto& air_sensor = system::AirSensor();
+
   // Read the sensor syncronously to avoid conflicting with other I2C sensors.
   pw::sync::ThreadNotification notification;
-  system::AirSensor().Measure(notification);
+  air_sensor.Measure(notification);
   notification.acquire();
+
+  system::PubSub().Publish(VocSample{air_sensor.gas_resistance()});
 }
 
 }  // namespace

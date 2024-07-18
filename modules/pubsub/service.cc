@@ -62,10 +62,10 @@ pubsub_Event EventToProto(const Event& event) {
     proto.which_type = pubsub_Event_led_value_proximity_tag;
     proto.type.led_value_proximity =
         LedValueToProto(std::get<LedValueProximityMode>(event));
-  } else if (std::holds_alternative<LedValueTemperatureMode>(event)) {
-    proto.which_type = pubsub_Event_led_value_temperature_tag;
-    proto.type.led_value_temperature =
-        LedValueToProto(std::get<LedValueTemperatureMode>(event));
+  } else if (std::holds_alternative<LedValueVocMode>(event)) {
+    proto.which_type = pubsub_Event_led_value_voc_tag;
+    proto.type.led_value_voc =
+        LedValueToProto(std::get<LedValueVocMode>(event));
   } else if (std::holds_alternative<ProximityStateChange>(event)) {
     proto.which_type = pubsub_Event_proximity_tag;
     proto.type.proximity = std::get<ProximityStateChange>(event).proximity;
@@ -102,9 +102,8 @@ pw::Result<Event> ProtoToEvent(const pubsub_Event& proto) {
     case pubsub_Event_led_value_proximity_tag:
       return LedValueProximityMode(
           LedValueFromProto(proto.type.led_value_proximity));
-    case pubsub_Event_led_value_temperature_tag:
-      return LedValueTemperatureMode(
-          LedValueFromProto(proto.type.led_value_temperature));
+    case pubsub_Event_led_value_voc_tag:
+      return LedValueVocMode(LedValueFromProto(proto.type.led_value_voc));
     case pubsub_Event_proximity_tag:
       return ProximityStateChange{.proximity = proto.type.proximity};
     case pubsub_Event_voc_level_tag:
