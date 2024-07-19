@@ -22,6 +22,16 @@
             "test",
             "--config=asan",
             "//..."
+          ],
+          [
+            "test",
+            "--config=tsan",
+            "//..."
+          ],
+          [
+            "test",
+            "--config=ubsan",
+            "//..."
           ]
         ]
       }

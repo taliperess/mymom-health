@@ -68,6 +68,8 @@ build --@pico-sdk//bazel/config:PICO_STDIO_UART=True
 # Sanitizer configs
 # =================
 common:asan --@pigweed//pw_toolchain/host_clang:asan
+common:tsan --@pigweed//pw_toolchain/host_clang:tsan
+common:ubsan --@pigweed//pw_toolchain/host_clang:ubsan
 
 # Presubmit
 # =========
