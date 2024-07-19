@@ -15,6 +15,11 @@ windows:
       hidden: False
     Host Logs:
       hidden: False
+    Pubsub Events:
+      loggers:
+        device.pubsub_events:
+          level: DEBUG
+      hidden: False
 
 # Color options
 ui_theme: dark
@@ -30,6 +35,7 @@ spaces_between_columns: 2
 window_column_split_method: vertical
 # window_column_split_method: horizontal
 # hide_date_from_log_time: True
+recolor_log_lines_to_match_level: False
 
 snippets:
   Echo RPC:

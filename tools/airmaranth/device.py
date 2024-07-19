@@ -39,6 +39,7 @@ import morse_code_pb2
 
 
 _LOG = logging.getLogger(__file__)
+_PUBSUB_LOG = logging.getLogger('device.pubsub_events')
 
 
 def _led_indicator(led_value: pubsub_pb2.LedValue):
@@ -67,6 +68,9 @@ class Device(PwSystemDevice):
         """
         self.stop_logging_pubsub_events()
 
+        # Hide from the root logger window.
+        _PUBSUB_LOG.propagate = False
+
         def log_event(event: pubsub_pb2.Event):
             event_str = str(event)
             if filter is not None and filter not in event_str:
@@ -77,7 +81,7 @@ class Device(PwSystemDevice):
             if isinstance(event_value, pubsub_pb2.LedValue):
                 prefix = _led_indicator(event_value)
 
-            _LOG.info("%s %s", prefix, str(event).replace('\n', ' '))
+            _PUBSUB_LOG.info("%s %s", prefix, str(event).replace('\n', ' '))
 
         self.pubsub_call_ = self.rpcs.pubsub.PubSub.Subscribe.invoke(
             on_next=lambda call_, event: log_event(event)

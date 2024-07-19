@@ -20,7 +20,10 @@ py_library(
     name = "airmaranth_lib",
     srcs = [
         "airmaranth/__init__.py",
+        "airmaranth/air_measure.py",
         "airmaranth/device.py",
+        "airmaranth/example_script.py",
+        "airmaranth/toggle_blinky.py",
     ],
     imports = ["."],
     deps = [
