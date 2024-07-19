@@ -17,14 +17,18 @@
 #include "modules/worker/test_worker.h"
 #include "pw_digital_io/digital_io.h"
 #include "pw_sync/timed_thread_notification.h"
+#include "pw_sync/interrupt_spin_lock.h"
 #include "pw_unit_test/framework.h"
 
-using pw::chrono::SystemClock;
-using pw::digital_io::DigitalIn;
-using pw::digital_io::State;
+using ::pw::chrono::SystemClock;
+using ::pw::digital_io::DigitalIn;
+using ::pw::digital_io::State;
+using ::pw::sync::InterruptSpinLock;
 using namespace std::literals::chrono_literals;
 
 namespace am {
+
+constexpr const auto kMaxWaitOnFailedTest = 3s;
 
 using pw::digital_io::DigitalInOut;
 using pw::digital_io::State;
@@ -34,6 +38,7 @@ class TestDigitalInOut : public DigitalInOut {
   TestDigitalInOut() : state_(State::kInactive) {}
 
   void NoisySetState(int settle_iterations, State final_state) {
+    std::lock_guard lock(lock_);
     settle_iterations_ = settle_iterations;
     final_state_ = final_state;
   }
@@ -41,6 +46,7 @@ class TestDigitalInOut : public DigitalInOut {
  private:
   pw::Status DoEnable(bool) override { return pw::OkStatus(); }
   pw::Result<State> DoGetState() override {
+    std::lock_guard lock(lock_);
     if (settle_iterations_ <= 0) {
       state_ = final_state_;
     } else {
@@ -55,9 +61,10 @@ class TestDigitalInOut : public DigitalInOut {
     return pw::OkStatus();
   }
 
-  State state_ = State::kInactive;
-  State final_state_ = State::kInactive;
-  int settle_iterations_ = 0;
+  InterruptSpinLock lock_;
+  State state_ PW_GUARDED_BY(lock_) = State::kInactive;
+  State final_state_ PW_GUARDED_BY(lock_) = State::kInactive;
+  int settle_iterations_ PW_GUARDED_BY(lock_) = 0;
 };
 
 // A test harness for writing tests that use pubsub.
@@ -74,6 +81,32 @@ class ManagerTest : public ::testing::Test {
     io_b_.SetState(State::kInactive);
     io_x_.SetState(State::kInactive);
     io_y_.SetState(State::kInactive);
+  }
+
+  /// Expects that a button was pressed.
+  /// If `false`, the test must abort.
+  template<typename Event>
+  [[nodiscard]] bool AssertPressed(bool pressed = true) {
+    bool acquired = notification_.try_acquire_for(kMaxWaitOnFailedTest);
+    EXPECT_TRUE(acquired);
+    if (!acquired) {
+      return false;
+    }
+    bool has_value = last_event_.has_value();
+    EXPECT_TRUE(has_value);
+    if (!has_value) {
+      return false;
+    }
+    bool holds_alternative = std::holds_alternative<Event>(last_event_.value());
+    EXPECT_TRUE(holds_alternative);
+    if (!holds_alternative) {
+      return false;
+    }
+    EXPECT_EQ(std::get<Event>(last_event_.value()).pressed(), pressed);
+    if (std::get<Event>(last_event_.value()).pressed() != pressed) {
+      return false;
+    }
+    return true;
   }
 
   pw::InlineDeque<Event, 4> event_queue_;
@@ -198,7 +231,7 @@ TEST(DebounceTest, RapidStateChangesAreDebounced) {
             State::kInactive);
 }
 
-TEST(EdgeDetectorTest, EdgesDectected) {
+TEST(EdgeDetectorTest, EdgesDetected) {
   EdgeDetector edge_detector(State::kInactive);
 
   // Inactive -> Inactive = None.
@@ -222,7 +255,7 @@ TEST(EdgeDetectorTest, EdgesDectected) {
             EdgeDetector::StateChange::kNone);
 }
 
-TEST_F(ManagerTest, TodoNameMe) {
+TEST_F(ManagerTest, AllButtonsTurnOnAndOffEvents) {
   am::TestWorker<> worker;
   PubSub pubsub(worker, event_queue_, subscribers_buffer_);
   ButtonManager manager(io_a_, io_b_, io_x_, io_y_);
@@ -235,55 +268,32 @@ TEST_F(ManagerTest, TodoNameMe) {
   });
 
   io_a_.SetState(State::kActive);
-  EXPECT_TRUE(notification_.try_acquire_for(200ms));
-  EXPECT_TRUE(last_event_.has_value());
-  EXPECT_TRUE(std::holds_alternative<am::ButtonA>(last_event_.value()));
-  EXPECT_TRUE(std::get<am::ButtonA>(last_event_.value()).pressed());
+  ASSERT_TRUE(AssertPressed<am::ButtonA>());
 
   io_b_.SetState(State::kActive);
-  EXPECT_TRUE(notification_.try_acquire_for(200ms));
-  EXPECT_TRUE(last_event_.has_value());
-  EXPECT_TRUE(std::holds_alternative<am::ButtonB>(last_event_.value()));
-  EXPECT_TRUE(std::get<am::ButtonB>(last_event_.value()).pressed());
+  ASSERT_TRUE(AssertPressed<am::ButtonB>());
 
   io_x_.SetState(State::kActive);
-  EXPECT_TRUE(notification_.try_acquire_for(200ms));
-  EXPECT_TRUE(last_event_.has_value());
-  EXPECT_TRUE(std::holds_alternative<am::ButtonX>(last_event_.value()));
-  EXPECT_TRUE(std::get<am::ButtonX>(last_event_.value()).pressed());
+  ASSERT_TRUE(AssertPressed<am::ButtonX>());
 
   io_y_.SetState(State::kActive);
-  EXPECT_TRUE(notification_.try_acquire_for(200ms));
-  EXPECT_TRUE(last_event_.has_value());
-  EXPECT_TRUE(std::holds_alternative<am::ButtonY>(last_event_.value()));
-  EXPECT_TRUE(std::get<am::ButtonY>(last_event_.value()).pressed());
+  ASSERT_TRUE(AssertPressed<am::ButtonY>());
 
   io_a_.SetState(State::kInactive);
-  EXPECT_TRUE(notification_.try_acquire_for(200ms));
-  EXPECT_TRUE(last_event_.has_value());
-  EXPECT_TRUE(std::holds_alternative<am::ButtonA>(last_event_.value()));
-  EXPECT_FALSE(std::get<am::ButtonA>(last_event_.value()).pressed());
+  ASSERT_TRUE(AssertPressed<am::ButtonA>(false));
 
   io_b_.SetState(State::kInactive);
-  EXPECT_TRUE(notification_.try_acquire_for(200ms));
-  EXPECT_TRUE(last_event_.has_value());
-  EXPECT_TRUE(std::holds_alternative<am::ButtonB>(last_event_.value()));
-  EXPECT_FALSE(std::get<am::ButtonB>(last_event_.value()).pressed());
+  ASSERT_TRUE(AssertPressed<am::ButtonB>(false));
 
   io_x_.SetState(State::kInactive);
-  EXPECT_TRUE(notification_.try_acquire_for(200ms));
-  EXPECT_TRUE(last_event_.has_value());
-  EXPECT_TRUE(std::holds_alternative<am::ButtonX>(last_event_.value()));
-  EXPECT_FALSE(std::get<am::ButtonX>(last_event_.value()).pressed());
+  ASSERT_TRUE(AssertPressed<am::ButtonX>(false));
 
   io_y_.SetState(State::kInactive);
-  EXPECT_TRUE(notification_.try_acquire_for(200ms));
-  EXPECT_TRUE(last_event_.has_value());
-  EXPECT_TRUE(std::holds_alternative<am::ButtonY>(last_event_.value()));
-  EXPECT_FALSE(std::get<am::ButtonY>(last_event_.value()).pressed());
+  ASSERT_TRUE(AssertPressed<am::ButtonY>(false));
 
   worker.Stop();
 }
+
 TEST_F(ManagerTest, DebouncingWorksOnNoisyIo) {
   am::TestWorker<> worker;
   PubSub pubsub(worker, event_queue_, subscribers_buffer_);
@@ -299,19 +309,13 @@ TEST_F(ManagerTest, DebouncingWorksOnNoisyIo) {
   // Set line active with 10 noisy transition and assert that we only
   // receive one event.
   io_a_.NoisySetState(10, State::kActive);
-  EXPECT_TRUE(notification_.try_acquire_for(200ms));
-  EXPECT_TRUE(last_event_.has_value());
-  EXPECT_TRUE(std::holds_alternative<am::ButtonA>(last_event_.value()));
-  EXPECT_TRUE(std::get<am::ButtonA>(last_event_.value()).pressed());
+  ASSERT_TRUE(AssertPressed<am::ButtonA>());
   EXPECT_EQ(events_processed_, 1);
 
   // Set line inactive with 10 noisy transition and assert that we only
   // receive one event.
   io_a_.NoisySetState(10, State::kInactive);
-  EXPECT_TRUE(notification_.try_acquire_for(200ms));
-  EXPECT_TRUE(last_event_.has_value());
-  EXPECT_TRUE(std::holds_alternative<am::ButtonA>(last_event_.value()));
-  EXPECT_FALSE(std::get<am::ButtonA>(last_event_.value()).pressed());
+  ASSERT_TRUE(AssertPressed<am::ButtonA>(false));
   EXPECT_EQ(events_processed_, 2);
 
   worker.Stop();
