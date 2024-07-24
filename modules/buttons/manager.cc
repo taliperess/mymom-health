@@ -62,7 +62,7 @@ ButtonManager::ButtonManager(pw::digital_io::DigitalIn& button_a,
                   Button(button_x),
                   Button(button_y),
                 }
-    , timer_(pw::bind_member<&ButtonManager::SampleCallback>(this)) {}
+    , timer_(pw::bind_member<&ButtonManager::SampleCallback>(this)), active_(false) {}
 
 ButtonManager::~ButtonManager() {}
 
@@ -71,7 +71,7 @@ void ButtonManager::Init(PubSub& pub_sub, Worker& worker) {
   worker_ = &worker;
 
   // Start the periodic sampling callbacks.
-  timer_.InvokeAfter(kSampleInterval);
+  Start();
 }
 
 void ButtonManager::SampleCallback(SystemClock::time_point now) {

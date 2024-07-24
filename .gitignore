@@ -60,3 +60,4 @@ __pycache__/
 logfile.txt
 pw_console-*logs.txt
 .pw_console.user.yaml
+factory-logs-*.txt

@@ -86,6 +86,18 @@ class ButtonManager final {
 
   void Init(PubSub& pub_sub, Worker& worker);
 
+  void Start() {
+    if (!active_) {
+      timer_.InvokeAfter(kSampleInterval);
+    }
+    active_ = true;
+  }
+
+  void Stop() {
+    timer_.Cancel();
+    active_ = false;
+  }
+
  private:
   Button buttons_[4];
 
@@ -99,5 +111,6 @@ class ButtonManager final {
   PubSub* pub_sub_ = nullptr;
   Worker* worker_ = nullptr;
   pw::chrono::SystemTimer timer_;
+  bool active_;
 };
 }  // namespace am

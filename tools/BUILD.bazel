@@ -27,6 +27,7 @@ py_library(
     ],
     imports = ["."],
     deps = [
+        "//apps/factory:py_pb2",
         "//modules/air_sensor:py_pb2",
         "//modules/blinky:py_pb2",
         "//modules/board:py_pb2",
@@ -60,4 +61,13 @@ py_binary(
     name = "air_measure",
     srcs = ["airmaranth/air_measure.py"],
     deps = [":airmaranth_lib"],
+)
+
+py_binary(
+    name = "factory",
+    srcs = ["airmaranth/factory.py"],
+    deps = [
+        ":airmaranth_lib",
+        "@pigweed//pw_cli/py:pw_cli",
+    ],
 )

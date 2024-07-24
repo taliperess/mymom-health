@@ -18,9 +18,9 @@ load("@pigweed//pw_build:compatibility.bzl", "incompatible_with_mcu")
 package(default_visibility = ["//visibility:public"])
 
 refresh_compile_commands(
-    target_compatible_with = incompatible_with_mcu(),
     name = "refresh_compile_commands",
     out_dir = ".compile_commands",
+    target_compatible_with = incompatible_with_mcu(),
     target_groups = {
         "host_simulator": [
             "//apps/blinky:simulator_blinky",
@@ -30,6 +30,7 @@ refresh_compile_commands(
         ],
         "rp2040": [
             "//apps/blinky:rp2040_blinky.elf",
+            "//apps/factory:rp2040.elf",
             "//apps/production:rp2040.elf",
         ],
     },
