@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-"""Bazel transitions for Rp2040_System.
+"""Project-specific bazel transitions for rp2xxx-series chips.
 
 TODO:  b/301334234 - Use platform-based flags and retire these transitions.
 """
@@ -23,10 +23,10 @@ load("@pigweed//targets/rp2040:transition.bzl", "RP2_SYSTEM_FLAGS")
 _COMMON_FLAGS = merge_flags_for_transition_impl(
     base = RP2_SYSTEM_FLAGS,
     override = {
-        "//apps/production:threads": "//targets/rp2040:production_app_threads",
-        "//system:system": "//targets/rp2040:system",
-        "@freertos//:freertos_config": "//targets/rp2040:freertos_config",
-        "@pigweed//pw_system:extra_platform_libs": "//targets/rp2040:extra_platform_libs",
+        "//apps/production:threads": "//targets/rp2:production_app_threads",
+        "//system:system": "//targets/rp2:system",
+        "@freertos//:freertos_config": "//targets/rp2:freertos_config",
+        "@pigweed//pw_system:extra_platform_libs": "//targets/rp2:extra_platform_libs",
         "@pigweed//pw_system:io_backend": "@pigweed//pw_system:sys_io_target_io",
         "@pigweed//pw_build:default_module_config": "//system:module_config",
         "@pico-sdk//bazel/config:PICO_CLIB": "@pigweed//targets/rp2040:pico_sdk_clib_select",
@@ -36,11 +36,11 @@ _COMMON_FLAGS = merge_flags_for_transition_impl(
 )
 
 _RP2040_FLAGS = {
-    "//command_line_option:platforms": "//targets/rp2040:rp2040",
+    "//command_line_option:platforms": "//targets/rp2:rp2040",
 }
 
 _RP2350_FLAGS = {
-    "//command_line_option:platforms": "//targets/rp2040:rp2350",
+    "//command_line_option:platforms": "//targets/rp2:rp2350",
 }
 
 def _rp2_transition(device_specific_flags):

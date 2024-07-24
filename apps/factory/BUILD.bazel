@@ -20,7 +20,7 @@ load(
 )
 load("@pigweed//targets/rp2040:flash.bzl", "flash_rp2040")
 load("@rules_python//python:proto.bzl", "py_proto_library")
-load("//targets/rp2040:binary.bzl", "rp2040_binary")
+load("//targets/rp2:binary.bzl", "rp2040_binary")
 
 package(default_visibility = ["//visibility:public"])
 

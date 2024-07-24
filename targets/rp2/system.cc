@@ -34,7 +34,7 @@
 #endif  // defined(PICO_RP2350) && PICO_RP2350
 #include "system/pubsub.h"
 #include "system/worker.h"
-#include "targets/rp2040/enviro_pins.h"
+#include "targets/rp2/enviro_pins.h"
 
 using pw::digital_io::Rp2040DigitalIn;
 

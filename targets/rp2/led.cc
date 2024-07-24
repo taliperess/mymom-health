@@ -18,7 +18,7 @@
 #include "pico/stdlib.h"
 #include "pw_digital_io_rp2040/digital_io.h"
 #include "system/system.h"
-#include "targets/rp2040/enviro_pins.h"
+#include "targets/rp2/enviro_pins.h"
 
 namespace am::system {
 
