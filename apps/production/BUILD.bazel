@@ -16,7 +16,7 @@ load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 load("@pigweed//pw_build:compatibility.bzl", "host_backend_alias")
 load("@pigweed//targets/host_device_simulator:transition.bzl", "host_device_simulator_binary")
 load("@pigweed//targets/rp2040:flash.bzl", "flash_rp2040")
-load("//targets/rp2040:binary.bzl", "rp2040_binary")
+load("//targets/rp2040:binary.bzl", "rp2040_binary", "rp2350_binary")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -70,6 +70,12 @@ rp2040_binary(
     binary = ":production",
 )
 
+# Create an rp2350 flashable ELF
+rp2350_binary(
+    name = "rp2350.elf",
+    binary = ":production",
+)
+
 # Create a host binary using the Pigweed upstream pw_system host_device_simulator.
 host_device_simulator_binary(
     name = "simulator",
@@ -113,6 +119,10 @@ RP2040_CONSOLE_COMMON_ARGS = [
     "$(rootpath //:pw_console_config)",
 ]
 
+RP2350_CONSOLE_COMMON_ARGS = [
+    a.replace("rp2040", "rp2350") for a in RP2040_CONSOLE_COMMON_ARGS
+]
+
 native_binary(
     name = "rp2040_console",
     src = "//tools:console",
@@ -124,11 +134,31 @@ native_binary(
 )
 
 native_binary(
+    name = "rp2350_console",
+    src = "//tools:console",
+    args = RP2350_CONSOLE_COMMON_ARGS,
+    data = [
+        ":rp2350.elf",
+        "//:pw_console_config",
+    ],
+)
+
+native_binary(
     name = "rp2040_webconsole",
     src = "//tools:console",
     args = RP2040_CONSOLE_COMMON_ARGS + ["--browser"],
     data = [
         ":rp2040.elf",
+        "//:pw_console_config",
+    ],
+)
+
+native_binary(
+    name = "rp2350_webconsole",
+    src = "//tools:console",
+    args = RP2350_CONSOLE_COMMON_ARGS + ["--browser"],
+    data = [
+        ":rp2350.elf",
         "//:pw_console_config",
     ],
 )
@@ -145,7 +175,29 @@ native_binary(
     ],
 )
 
-flash_rp2040(
+native_binary(
+    name = "rp2350_air_measure",
+    src = "//tools:air_measure",
+    args = [
+        "--token-databases",
+        "$(rootpath //apps/production:rp2350.elf)",
+    ],
+    data = [
+        ":rp2350.elf",
+    ],
+)
+
+alias(
     name = "flash",
+    actual = ":flash_rp2040",
+)
+
+flash_rp2040(
+    name = "flash_rp2040",
     rp2040_binary = "rp2040.elf",
+)
+
+flash_rp2040(
+    name = "flash_rp2350",
+    rp2040_binary = "rp2350.elf",
 )

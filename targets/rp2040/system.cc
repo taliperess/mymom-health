@@ -26,6 +26,12 @@
 #include "pw_i2c_rp2040/initiator.h"
 #include "pw_multibuf/simple_allocator.h"
 #include "pw_system/system.h"
+#if defined(PICO_RP2040) && PICO_RP2040
+#include "system_RP2040.h"
+#endif  // defined(PICO_RP2040) && PICO_RP2040
+#if defined(PICO_RP2350) && PICO_RP2350
+#include "system_RP2350.h"
+#endif  // defined(PICO_RP2350) && PICO_RP2350
 #include "system/pubsub.h"
 #include "system/worker.h"
 #include "targets/rp2040/enviro_pins.h"
@@ -81,6 +87,7 @@ Rp2040DigitalIn io_sw_y({
 
 void Init() {
   // PICO_SDK inits.
+  SystemInit();
   stdio_init_all();
   setup_default_uart();
   stdio_usb_init();

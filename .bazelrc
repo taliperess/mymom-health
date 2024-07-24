@@ -123,7 +123,7 @@ common --@pigweed//pw_sys_io:backend=@pigweed//pw_sys_io_stdio
 common --@pigweed//pw_system:io_backend=@pigweed//pw_system:socket_target_io
 
 # RP2040 platform configuration
-build:rp2040 --platforms=//targets/rp2040:platform
+build:rp2040 --platforms=//targets/rp2040:rp2040
 build:rp2040 --//apps/production:threads=//targets/rp2040:production_app_threads
 build:rp2040 --//system:system=//targets/rp2040:system
 build:rp2040 --@pigweed//pw_assert:check_backend=@pigweed//pw_assert_basic
@@ -154,6 +154,10 @@ build:rp2040 --@pico-sdk//bazel/config:PICO_CLIB=@pigweed//targets/rp2040:pico_s
 build:rp2040 --@pico-sdk//bazel/config:PICO_TOOLCHAIN=clang
 build:rp2040 --@pigweed//pw_toolchain:cortex-m_toolchain_kind=clang
 test:rp2040 --run_under=@pigweed//targets/rp2040/py:unit_test_client
+
+# RP2350 is the same as rp2040 but with a different --platforms setting.
+build:rp2350 --config=rp2040
+build:rp2350 --platforms=//targets/rp2040:rp2350
 
 # Temporary settings
 # ==================
