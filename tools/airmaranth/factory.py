@@ -20,6 +20,7 @@ import logging
 from pathlib import Path
 import sys
 import threading
+import time
 from typing import Callable, Tuple
 
 from factory_pb import factory_pb2
@@ -40,11 +41,29 @@ class TestTimeoutError(Exception):
     def __init__(self, timeout: float):
         super().__init__(f'No device response detected within {timeout}s')
 
+@dataclass
+class Color:
+    r: int
+    g: int
+    b: int
+    name: str = ''
+    format_fn: Callable[[str], str] = lambda s: s
+
+    @property
+    def hex(self) -> int:
+        return self.r << 16 | self.g << 8 | self.b
+
+    @property
+    def formatted_name(self) -> str:
+        return self.format_fn(self.name)
+
 
 class Test(abc.ABC):
-    def __init__(self, name: str):
+    def __init__(self, name: str, rpcs):
         self.name = name
         self._notification = threading.Event()
+        self._rpcs = rpcs
+        self._blinky_service = rpcs.blinky.Blinky
         self.passed_tests = []
         self.failed_tests = []
 
@@ -68,12 +87,30 @@ class Test(abc.ABC):
         """Records a test as passed."""
         self.passed_tests.append(name)
         print(f'{colors().green("PASS:")} {name}')
+        self.blink_led(Color(0, 255, 0))
 
     def fail_test(self, name: str) -> None:
         """Records a test as failed."""
         self.failed_tests.append(name)
         print(f'{colors().bold_red("FAIL:")} {name}')
+        self.blink_led(Color(255, 0, 0))
 
+    def set_led(self, color: Color) -> Status:
+        """Sets the device's RGB LED to the specified color."""
+        status, _ = self._rpcs.blinky.Blinky.SetRgb(hex=color.hex, brightness=255)
+        return status
+
+    def unset_led(self) -> Status:
+        """Turns off the device's LED."""
+        status, _ = self._rpcs.blinky.Blinky.SetRgb(hex=0, brightness=0)
+        return status
+
+    def blink_led(self, color: Color) -> None:
+        self.unset_led()
+        time.sleep(0.05)
+        self.set_led(color)
+        time.sleep(0.05)
+        self.unset_led()
 
 class ButtonsTest(Test):
     _TEST_TIMEOUT_S = 10.0
@@ -91,8 +128,7 @@ class ButtonsTest(Test):
             return f'button_{self.button.lower()}_pressed'
 
     def __init__(self, rpcs):
-        super().__init__('ButtonsTest')
-        self._rpcs = rpcs
+        super().__init__('ButtonsTest', rpcs)
         self._factory_service = rpcs.factory.Factory
         self._expected_event: Tuple[str, bool] | None = None
 
@@ -145,38 +181,20 @@ class ButtonsTest(Test):
 
 
 class LedTest(Test):
-    @dataclass
-    class Color:
-        name: str
-        r: int
-        g: int
-        b: int
-        format_fn: Callable[[str], str] = lambda s: s
-
-        @property
-        def hex(self) -> int:
-            return self.r << 16 | self.g << 8 | self.b
-
-        @property
-        def formatted_name(self) -> str:
-            return self.format_fn(self.name)
-
     def __init__(self, rpcs):
-        super().__init__('LedTest')
-        self._rpcs = rpcs
-        self._blinky_service = rpcs.blinky.Blinky
+        super().__init__('LedTest', rpcs)
 
     def run(self) -> bool:
-        status, _ = self._blinky_service.SetRgb(hex=0, brightness=0)
+        status = self.unset_led()
         assert status is Status.OK
 
-        self._test_led(LedTest.Color('white', 255, 255, 255, colors().bold_white))
-        self._test_led(LedTest.Color('red', 255, 0, 0, colors().red))
-        self._test_led(LedTest.Color('green', 0, 255, 0, colors().green))
-        self._test_led(LedTest.Color('blue', 0, 0, 255, colors().blue))
-        self._test_led(LedTest.Color('off', 0, 0, 0))
+        self._test_led(Color(255, 255, 255, 'white', colors().bold_white))
+        self._test_led(Color(255, 0, 0, 'red', colors().red))
+        self._test_led(Color(0, 255, 0, 'green', colors().green))
+        self._test_led(Color(0, 0, 255, 'blue', colors().blue))
+        self._test_led(Color(0, 0, 0, 'off'))
 
-        status, _ = self._blinky_service.SetRgb(hex=0, brightness=0)
+        status = self.unset_led()
         assert status is Status.OK
 
         return len(self.failed_tests) == 0
@@ -184,7 +202,7 @@ class LedTest(Test):
     def _test_led(self, color: Color) -> bool:
         test_name = f'led_{color.name}'
 
-        self._blinky_service.SetRgb(hex=color.hex, brightness=255)
+        self.set_led(color)
 
         if self.prompt_yn(f'Is the LED {color.formatted_name}?'):
             self.pass_test(test_name)
@@ -198,8 +216,8 @@ def _run_tests(rpcs) -> bool:
     print('\nStarting hardware tests')
 
     tests_to_run = [
-        ButtonsTest(rpcs),
         LedTest(rpcs),
+        ButtonsTest(rpcs),
     ]
 
     all_passes = []
