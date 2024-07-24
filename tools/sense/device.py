@@ -11,7 +11,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
-"""Airmaranth device connection."""
+"""Pigweed Sense device connection."""
 
 import argparse
 import logging
@@ -52,7 +52,7 @@ def _led_indicator(led_value: pubsub_pb2.LedValue):
     return set_color + ' LED ' + unset_color
 
 
-# Airmaranth specific device classes, new functions can be added here
+# Pigweed Sense specific device classes, new functions can be added here
 # similar to ones on the parent pw_system.device.Device class:
 # https://cs.opensource.google/pigweed/pigweed/+/main:pw_system/py/pw_system/device.py?q=%22def%20run_tests(%22
 class Device(PwSystemDevice):
@@ -118,7 +118,7 @@ def get_device_connection(log: bool = True) -> DeviceConnection:
         pw_cli.log.install(level=logging.DEBUG)
 
     parser = argparse.ArgumentParser(
-        prog='airmaranth',
+        prog='sense',
         description=__doc__,
     )
     parser = add_device_args(parser)
@@ -137,7 +137,7 @@ def get_device_connection(log: bool = True) -> DeviceConnection:
         rpc_logging=args.rpc_logging,
         hdlc_encoding=args.hdlc_encoding,
         channel_id=args.channel_id,
-        # Device tracing is not hooked up yet for Airmaranth.
+        # Device tracing is not hooked up yet for Pigweed Sense.
         device_tracing=False,
         device_class=Device,
         device_tracing_class=DeviceWithTracing,

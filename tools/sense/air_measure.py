@@ -15,7 +15,7 @@
 
 import logging
 
-from airmaranth.device import get_device_connection
+from sense.device import get_device_connection
 
 _LOG = logging.getLogger(__file__)
 

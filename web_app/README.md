@@ -1,5 +1,5 @@
-# Airmaranth Web App
-This is a pure web app that connects and interacts with Airmaranth over WebSerial.
+# Pigweed Sense Web App
+This is a pure web app that connects and interacts with Pigweed Sense over WebSerial.
 
 ## Getting Started
 

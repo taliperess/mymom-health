@@ -15,7 +15,7 @@
 
 import logging
 
-from airmaranth.device import (
+from sense.device import (
     Device,
     get_device_connection,
 )

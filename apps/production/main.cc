@@ -138,7 +138,7 @@ void InitAirSensor() {
   auto& button_manager = system::ButtonManager();
   button_manager.Init(system::PubSub(), system::GetWorker());
 
-  PW_LOG_INFO("Welcome to Airmaranth 🌿☁️");
+  PW_LOG_INFO("Welcome to Pigweed Sense 🌿☁️");
   system::Start();
 }
 

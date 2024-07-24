@@ -114,7 +114,7 @@ function App() {
   return (
     <>
       <div className="container">
-        <h1>Airmaranth</h1>
+        <h1>Pigweed Sense</h1>
         <div className="card">
           <div className="buttons">
             <button onClick={async () => {

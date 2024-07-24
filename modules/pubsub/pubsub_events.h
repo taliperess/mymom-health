@@ -122,7 +122,7 @@ using Event = std::variant<AlarmStateChange,
                            ProximitySample,
                            VocSample>;
 
-// PubSub using Airmaranth events.
+// PubSub using Sense events.
 using PubSub = GenericPubSub<Event>;
 
 }  // namespace am

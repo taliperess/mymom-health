@@ -18,7 +18,7 @@ import sys
 
 import pw_system.console
 
-from airmaranth.device import (
+from sense.device import (
     get_all_protos,
     get_device_connection,
 )

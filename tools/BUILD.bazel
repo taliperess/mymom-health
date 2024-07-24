@@ -17,13 +17,13 @@ load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 package(default_visibility = ["//visibility:public"])
 
 py_library(
-    name = "airmaranth_lib",
+    name = "sense_lib",
     srcs = [
-        "airmaranth/__init__.py",
-        "airmaranth/air_measure.py",
-        "airmaranth/device.py",
-        "airmaranth/example_script.py",
-        "airmaranth/toggle_blinky.py",
+        "sense/__init__.py",
+        "sense/air_measure.py",
+        "sense/device.py",
+        "sense/example_script.py",
+        "sense/toggle_blinky.py",
     ],
     imports = ["."],
     deps = [
@@ -41,33 +41,33 @@ py_library(
 
 py_binary(
     name = "console",
-    srcs = ["airmaranth/console.py"],
-    deps = [":airmaranth_lib"],
+    srcs = ["sense/console.py"],
+    deps = [":sense_lib"],
 )
 
 py_binary(
     name = "example_script",
-    srcs = ["airmaranth/example_script.py"],
-    deps = [":airmaranth_lib"],
+    srcs = ["sense/example_script.py"],
+    deps = [":sense_lib"],
 )
 
 py_binary(
     name = "toggle_blinky",
-    srcs = ["airmaranth/toggle_blinky.py"],
-    deps = [":airmaranth_lib"],
+    srcs = ["sense/toggle_blinky.py"],
+    deps = [":sense_lib"],
 )
 
 py_binary(
     name = "air_measure",
-    srcs = ["airmaranth/air_measure.py"],
-    deps = [":airmaranth_lib"],
+    srcs = ["sense/air_measure.py"],
+    deps = [":sense_lib"],
 )
 
 py_binary(
     name = "factory",
-    srcs = ["airmaranth/factory.py"],
+    srcs = ["sense/factory.py"],
     deps = [
-        ":airmaranth_lib",
+        ":sense_lib",
         "@pigweed//pw_cli/py:pw_cli",
     ],
 )

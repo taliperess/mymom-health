@@ -29,7 +29,7 @@ from pw_cli.color import colors
 import pw_cli.log
 from pw_status import Status
 
-from airmaranth.device import (
+from sense.device import (
     Device,
     get_device_connection,
 )
