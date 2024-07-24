@@ -31,7 +31,8 @@ cc_binary(
         "@pigweed//pw_system:async",
 
         # These should be provided by pw_system:async.
-        "@pigweed//pw_assert:backend_impl",
+        "@pigweed//pw_assert:assert_backend_impl",
+        "@pigweed//pw_assert:check_backend_impl",
         "@pigweed//pw_log:backend_impl",
         "@pigweed//pw_system:extra_platform_libs",
     ],
