@@ -11,9 +11,6 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
-#
-# TODO: https://pwbug.dev/258836641#comment4: Enabling bzlmod breaks the build.
-common --noenable_bzlmod
 
 # Standard Pigweed flags
 # ======================
@@ -50,6 +47,11 @@ common --incompatible_default_to_explicit_init_py
 # Don't inherit system PATH. Improves hermeticity and cache hit rates. Should
 # be true by default one day (https://github.com/bazelbuild/bazel/issues/7026).
 common --incompatible_strict_action_env
+
+# Expose exec toolchains for Python. We use these toolchains in some rule
+# implementations (git grep for
+# "@rules_python//python:exec_tools_toolchain_type").
+build --@rules_python//python/config_settings:exec_tools_toolchain=enabled
 
 # C++ toolchain configuration
 # ===========================
@@ -152,6 +154,12 @@ build:rp2040 --@pico-sdk//bazel/config:PICO_CLIB=@pigweed//targets/rp2040:pico_s
 build:rp2040 --@pico-sdk//bazel/config:PICO_TOOLCHAIN=clang
 build:rp2040 --@pigweed//pw_toolchain:cortex-m_toolchain_kind=clang
 test:rp2040 --run_under=@pigweed//targets/rp2040/py:unit_test_client
+
+# Temporary settings
+# ==================
+#
+# TODO: https://pwbug.dev/355058285 - Remove these.
+build --@pico-sdk//bazel/config:PICO_TINYUSB_LIB=@tinyusb
 
 # User bazelrc file; see
 # https://bazel.build/configure/best-practices#bazelrc-file

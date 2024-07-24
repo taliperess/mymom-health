@@ -5,6 +5,9 @@ compile_commands.json
 user.bazelrc
 /bazel-*
 
+# Ignore until https://github.com/bazelbuild/bazel/issues/20369 is fixed.
+MODULE.bazel.lock
+
 # Environment
 .environment/
 environment/

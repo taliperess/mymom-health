@@ -1,0 +1,110 @@
+# Copyright 2024 The Pigweed Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations under
+# the License.
+module(
+    name = "showcase-rp2",
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.6.1")
+bazel_dep(name = "freertos", version = "10.5.1.bcr.1")
+bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
+bazel_dep(name = "nanopb", repo_name = "com_github_nanopb_nanopb")
+bazel_dep(name = "pico-sdk", version = "1.6.0-rc1")
+bazel_dep(name = "pigweed")
+bazel_dep(name = "platforms", version = "0.0.10")
+bazel_dep(name = "pw_toolchain")
+bazel_dep(name = "rules_cc")
+bazel_dep(name = "rules_python", version = "0.34.0")
+
+# Module overrides
+# ================
+# TODO: https://pwbug.dev/349880767 - Point this back to the upstream repo once
+# this PR is merged.
+archive_override(
+    module_name = "hedron_compile_commands",
+    strip_prefix = "bazel-compile-commands-extractor-163521345aa6366fd1ed801b989b668b5c806f69",
+    urls = ["https://github.com/chadnorvell/bazel-compile-commands-extractor/archive/163521345aa6366fd1ed801b989b668b5c806f69.tar.gz"],
+)
+
+# TODO: https://pwbug.dev/354274498 - nanopb is not yet in the BCR.
+git_override(
+    module_name = "nanopb",
+    commit = "7c6c581bc6f7406a4f01c3b9853251ff0a68458b",
+    remote = "https://github.com/nanopb/nanopb.git",
+)
+
+# TODO: https://pwbug.dev/355058285 - Remove this once the released version of
+# pico-sdk is in the BCR.
+git_override(
+    module_name = "pico-sdk",
+    commit = "fb5e29760a9df97a716dfd583f59edb1355f6436",
+    remote = "https://pigweed-internal.googlesource.com/third_party/github/raspberrypi/pico-sdk",
+)
+
+# TODO: https://pwbug.dev/354270165 - Add picotool to the BCR.
+git_override(
+    module_name = "picotool",
+    commit = "9ba9194b1e5ef51e34cbab119da6aed8c42d09f9",
+    remote = "https://pigweed-internal.googlesource.com/third_party/github/raspberrypi/picotool",
+)
+
+git_override(
+    module_name = "pigweed",
+    commit = "dc6b2ce2be29663f859011ef6df33158e34ff9d2",
+    remote = "https://pigweed-internal.googlesource.com/pigweed/pigweed",
+)
+
+git_override(
+    module_name = "pw_toolchain",
+    commit = "dc6b2ce2be29663f859011ef6df33158e34ff9d2",
+    remote = "https://pigweed-internal.googlesource.com/pigweed/pigweed",
+    strip_prefix = "pw_toolchain_bazel",
+)
+
+# TODO: https://pwbug.dev/258836641 - Pre-release version needed for the Pico
+# SDK. Remove this once rules_cc 0.10.0 is released and the Pico SDK
+# MODULE.bazel declares its dependency on it.
+archive_override(
+    module_name = "rules_cc",
+    integrity = "sha256-NddP6xi6LzsIHT8bMSVJ2NtoURbN+l3xpjvmIgB6aSg=",
+    strip_prefix = "rules_cc-1acf5213b6170f1f0133e273cb85ede0e732048f",
+    urls = [
+        "https://github.com/bazelbuild/rules_cc/archive/1acf5213b6170f1f0133e273cb85ede0e732048f.zip",
+    ],
+)
+
+http_archive = use_repo_rule(
+    "@bazel_tools//tools/build_defs/repo:http.bzl",
+    "http_archive",
+)
+
+# TODO: https://pwbug.dev/355058285 - Remove this once pico-sdk depends on a
+# publicly viewable version of tinyusb.
+http_archive(
+    name = "tinyusb",
+    build_file = "@pico-sdk//src/rp2_common/tinyusb:tinyusb.BUILD",
+    sha256 = "ac57109bba00d26ffa33312d5f334990ec9a9a4d82bf890ed8b825b4610d1da2",
+    strip_prefix = "tinyusb-86c416d4c0fb38432460b3e11b08b9de76941bf5",
+    url = "https://github.com/hathach/tinyusb/archive/86c416d4c0fb38432460b3e11b08b9de76941bf5.zip",
+)
+
+# TODO: https://github.com/boschsensortec/BME68x_SensorAPI/issues/24 - Can't add
+# bme68x_sensor_api the BCR because it doesn't publish a stable-checksum
+# archive.
+http_archive(
+    name = "bme68x_sensor_api",
+    build_file = "@showcase-rp2//device:bme68x.BUILD.bazel",
+    sha256 = "af505a1021989ad619ac9a422cbb55110629fdf5625e96b89e2257d7a089d151",
+    strip_prefix = "BME68x_SensorAPI-4.4.8",
+    urls = ["https://github.com/boschsensortec/BME68x_SensorAPI/archive/refs/tags/v4.4.8.tar.gz"],
+)
