@@ -22,6 +22,7 @@ build_overrides/pigweed_environment.gni
 .idea/
 .project
 .cproject
+.clangd
 .clangd/
 *.swp
 *.swo
