@@ -32,6 +32,30 @@ refresh_compile_commands(
             "//apps/blinky:rp2040_blinky.elf",
             "//apps/factory:rp2040.elf",
             "//apps/production:rp2040.elf",
+            [
+                "//modules/blinky:blinky_test",
+                "--config=rp2040",
+            ],
+            [
+                "//modules/buttons:manager_test",
+                "--config=rp2040",
+            ],
+            [
+                "//modules/color_rotation:manager_test",
+                "--config=rp2040",
+            ],
+            [
+                "//modules/edge_detector:hysteresis_edge_detector_test",
+                "--config=rp2040",
+            ],
+            [
+                "//modules/lerp:lerp_test",
+                "--config=rp2040",
+            ],
+            [
+                "//modules/morse_code:encoder_test",
+                "--config=rp2040",
+            ],
         ],
     },
 )
