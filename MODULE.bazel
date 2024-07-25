@@ -16,7 +16,7 @@ module(
 )
 
 bazel_dep(name = "bazel_skylib", version = "1.6.1")
-bazel_dep(name = "freertos", version = "10.5.1.bcr.1")
+bazel_dep(name = "freertos", version = "10.5.1.bcr.2")
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 bazel_dep(name = "nanopb", repo_name = "com_github_nanopb_nanopb")
 bazel_dep(name = "pico-sdk", version = "1.6.0-rc1")
