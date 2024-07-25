@@ -44,11 +44,13 @@ void ReadAirSensor() {
   auto& air_sensor = system::AirSensor();
 
   // Read the sensor syncronously to avoid conflicting with other I2C sensors.
-  pw::sync::ThreadNotification notification;
-  air_sensor.Measure(notification);
-  notification.acquire();
+  pw::Result<uint16_t> score = air_sensor.MeasureSync();
+  if (!score.ok()) {
+    PW_LOG_WARN("Failed to read air sensor score: %s", score.status().str());
+    return;
+  }
 
-  system::PubSub().Publish(VocSample{air_sensor.gas_resistance()});
+  system::PubSub().Publish(AirQuality{*score});
 }
 
 }  // namespace

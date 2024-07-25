@@ -23,8 +23,6 @@ class AirSensorFake : public AirSensor {
  public:
   AirSensorFake() = default;
 
-  pw::Status Init() override { return pw::OkStatus(); }
-
   using AirSensor::Update;
 
  private:

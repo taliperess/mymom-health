@@ -66,8 +66,10 @@ struct ProximitySample {
   uint16_t sample;
 };
 
-struct VocSample {
-  float voc_level;
+/// Air quality score that combines relative humidity and gas resistance values.
+struct AirQuality {
+  /// 10 bit value ranging from 0 (very poor) to 1023 (excellent).
+  uint16_t score;
 };
 
 class LedValue {
@@ -102,10 +104,10 @@ class LedValueProximityMode : public LedValue {
   using LedValue::LedValue;
   explicit LedValueProximityMode(const LedValue& parent) : LedValue(parent) {}
 };
-class LedValueVocMode : public LedValue {
+class LedValueAirQualityMode : public LedValue {
  public:
   using LedValue::LedValue;
-  explicit LedValueVocMode(const LedValue& parent) : LedValue(parent) {}
+  explicit LedValueAirQualityMode(const LedValue& parent) : LedValue(parent) {}
 };
 
 // This definition must be kept up to date with modules/pubsub/pubsub.proto.
@@ -117,10 +119,10 @@ using Event = std::variant<AlarmStateChange,
                            LedValueColorRotationMode,
                            LedValueMorseCodeMode,
                            LedValueProximityMode,
-                           LedValueVocMode,
+                           LedValueAirQualityMode,
                            ProximityStateChange,
                            ProximitySample,
-                           VocSample>;
+                           AirQuality>;
 
 // PubSub using Sense events.
 using PubSub = GenericPubSub<Event>;

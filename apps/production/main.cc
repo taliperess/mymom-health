@@ -94,24 +94,24 @@ void InitProximitySensor() {
   });
 
   // Publish LED values based on gas resistance samples.
-  system::PubSub().SubscribeTo<VocSample>([](VocSample event) {
+  system::PubSub().SubscribeTo<AirQuality>([](AirQuality event) {
     uint8_t red = 0;
     uint8_t green = 0;
     uint8_t blue = 0;
-    if (event.voc_level < 20000.f) {
+    if (event.score < 0x100) {
       red = 0xff;
-    } else if (event.voc_level < 40000.f) {
-      green =
-          static_cast<uint8_t>((event.voc_level - 20000.f) * 255.f / 20000.f);
-      red = 0xff - green;
-    } else if (event.voc_level < 60000.f) {
-      blue =
-          static_cast<uint8_t>((event.voc_level - 40000.f) * 255.f / 20000.f);
-      green = 0xff - green;
+      green = event.score;
+    } else if (event.score < 0x200) {
+      red = static_cast<uint8_t>(0xff - (event.score - 0x100));
+      green = 0xff;
+    } else if (event.score < 0x300) {
+      green = 0xff;
+      blue = event.score - 0x200;
     } else {
+      green = static_cast<uint8_t>(0xff - (event.score - 0x300));
       blue = 0xff;
     }
-    system::PubSub().Publish(LedValueVocMode(red, green, blue));
+    system::PubSub().Publish(LedValueAirQualityMode(red, green, blue));
   });
 }
 

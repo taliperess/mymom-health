@@ -25,7 +25,11 @@ cc_library(
     name = "air_sensor",
     srcs = ["air_sensor.cc"],
     hdrs = ["air_sensor.h"],
+    implementation_deps = [
+    ],
     deps = [
+        "@pigweed//pw_log",
+        "@pigweed//pw_result",
         "@pigweed//pw_status",
         "@pigweed//pw_sync:interrupt_spin_lock",
         "@pigweed//pw_sync:lock_annotations",

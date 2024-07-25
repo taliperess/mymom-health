@@ -89,7 +89,7 @@ Bme688::Bme688(pw::i2c::Initiator& initiator, Worker& worker)
                   pw::i2c::RegisterAddressSize::k1Byte),
       get_data_(pw::bind_member<&Bme688::GetDataCallback>(this)) {}
 
-pw::Status Bme688::Init() {
+pw::Status Bme688::DoInit() {
   bme688_.intf_ptr = &i2c_device_;
   bme688_.intf = bme68x_intf::BME68X_I2C_INTF;
   bme688_.read = Read;

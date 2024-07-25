@@ -38,10 +38,10 @@ message Event {
     bool button_y_pressed = 5;
     bool proximity = 6;
     uint32 proximity_level = 7;
-    float voc_level = 8;
+    uint32 air_quality = 8;
     LedValue led_value_color_rotation = 9;
     LedValue led_value_morse_code = 10;
     LedValue led_value_proximity = 11;
-    LedValue led_value_voc = 12;
+    LedValue led_value_air_quality = 12;
   }
 }

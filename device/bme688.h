@@ -13,15 +13,14 @@
 // the License.
 #pragma once
 
-#include "modules/air_sensor/air_sensor.h"
-
 #include "bme68x_defs.h"
+#include "modules/air_sensor/air_sensor.h"
+#include "modules/worker/worker.h"
 #include "pw_chrono/system_clock.h"
 #include "pw_chrono/system_timer.h"
 #include "pw_i2c/initiator.h"
 #include "pw_i2c/register_device.h"
 #include "pw_status/status.h"
-#include "modules/worker/worker.h"
 
 namespace sense {
 
@@ -29,9 +28,9 @@ class Bme688 : public AirSensor {
  public:
   explicit Bme688(pw::i2c::Initiator& initiator, Worker& worker);
 
-  pw::Status Init() override;
-
  private:
+  pw::Status DoInit() override;
+
   pw::Status DoMeasure(pw::sync::ThreadNotification& notification) override;
 
   void GetDataCallback(pw::chrono::SystemClock::time_point);

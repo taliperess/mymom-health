@@ -62,19 +62,19 @@ pubsub_Event EventToProto(const Event& event) {
     proto.which_type = pubsub_Event_led_value_proximity_tag;
     proto.type.led_value_proximity =
         LedValueToProto(std::get<LedValueProximityMode>(event));
-  } else if (std::holds_alternative<LedValueVocMode>(event)) {
-    proto.which_type = pubsub_Event_led_value_voc_tag;
-    proto.type.led_value_voc =
-        LedValueToProto(std::get<LedValueVocMode>(event));
+  } else if (std::holds_alternative<LedValueAirQualityMode>(event)) {
+    proto.which_type = pubsub_Event_led_value_air_quality_tag;
+    proto.type.led_value_air_quality =
+        LedValueToProto(std::get<LedValueAirQualityMode>(event));
   } else if (std::holds_alternative<ProximityStateChange>(event)) {
     proto.which_type = pubsub_Event_proximity_tag;
     proto.type.proximity = std::get<ProximityStateChange>(event).proximity;
   } else if (std::holds_alternative<ProximitySample>(event)) {
     proto.which_type = pubsub_Event_proximity_level_tag;
     proto.type.proximity_level = std::get<ProximitySample>(event).sample;
-  } else if (std::holds_alternative<VocSample>(event)) {
-    proto.which_type = pubsub_Event_voc_level_tag;
-    proto.type.voc_level = std::get<VocSample>(event).voc_level;
+  } else if (std::holds_alternative<AirQuality>(event)) {
+    proto.which_type = pubsub_Event_air_quality_tag;
+    proto.type.air_quality = std::get<AirQuality>(event).score;
   } else {
     PW_LOG_WARN("Unimplemented pubsub service event");
   }
@@ -102,12 +102,13 @@ pw::Result<Event> ProtoToEvent(const pubsub_Event& proto) {
     case pubsub_Event_led_value_proximity_tag:
       return LedValueProximityMode(
           LedValueFromProto(proto.type.led_value_proximity));
-    case pubsub_Event_led_value_voc_tag:
-      return LedValueVocMode(LedValueFromProto(proto.type.led_value_voc));
+    case pubsub_Event_led_value_air_quality_tag:
+      return LedValueAirQualityMode(
+          LedValueFromProto(proto.type.led_value_air_quality));
     case pubsub_Event_proximity_tag:
       return ProximityStateChange{.proximity = proto.type.proximity};
-    case pubsub_Event_voc_level_tag:
-      return VocSample{.voc_level = proto.type.voc_level};
+    case pubsub_Event_air_quality_tag:
+      return AirQuality{.score = static_cast<uint16_t>(proto.type.air_quality)};
     default:
       return pw::Status::Unimplemented();
   }
