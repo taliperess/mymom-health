@@ -16,7 +16,7 @@
 #include "modules/led/polychrome_led.h"
 #include "modules/pubsub/pubsub_events.h"
 
-namespace am {
+namespace sense {
 
 class StateManager {
  public:
@@ -50,4 +50,4 @@ class StateManager {
   State state_;
 };
 
-}  // namespace am
+}  // namespace sense

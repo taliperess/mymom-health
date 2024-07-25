@@ -26,7 +26,7 @@
 #include "system/system.h"
 #include "system/worker.h"
 
-namespace am {
+namespace sense {
 namespace {
 
 [[noreturn]] void InitializeApp() {
@@ -40,7 +40,7 @@ namespace {
   pubsub_service.Init(system::PubSub());
   pw::System().rpc_server().RegisterService(pubsub_service);
 
-  static am::BlinkyService blinky_service;
+  static sense::BlinkyService blinky_service;
   blinky_service.Init(
       system::GetWorker(), system::MonochromeLed(), system::PolychromeLed());
   pw::System().rpc_server().RegisterService(blinky_service);
@@ -51,8 +51,8 @@ namespace {
   static ProximityManager proximity(
       system::PubSub(), kInitialFarTheshold, kInitialNearTheshold);
 
-  static AirSensor& air_sensor = am::system::AirSensor();
-  static am::AirSensorService air_sensor_service;
+  static AirSensor& air_sensor = sense::system::AirSensor();
+  static sense::AirSensorService air_sensor_service;
   air_sensor_service.Init(system::GetWorker(), air_sensor);
   pw::System().rpc_server().RegisterService(air_sensor_service);
 
@@ -69,6 +69,6 @@ namespace {
 }
 
 }  // namespace
-}  // namespace am
+}  // namespace sense
 
-int main() { am::InitializeApp(); }
+int main() { sense::InitializeApp(); }

@@ -20,7 +20,7 @@
 #include "pw_digital_io/digital_io.h"
 #include "pw_result/result.h"
 
-namespace am {
+namespace sense {
 
 /// Implementation of `DigitalInOut` for testing.
 ///
@@ -72,4 +72,4 @@ class DigitalInOutFake : public DigitalInOutFakeImpl {
   pw::InlineDeque<Event, kCapacity> events_;
 };
 
-}  // namespace am
+}  // namespace sense

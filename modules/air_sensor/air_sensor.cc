@@ -16,7 +16,7 @@
 
 #include <mutex>
 
-namespace am {
+namespace sense {
 
 float AirSensor::temperature() const {
   std::lock_guard lock(lock_);
@@ -46,4 +46,4 @@ void AirSensor::Update(float temperature, float pressure, float humidity, float 
   gas_resistance_ = gas_resistance;
 }
 
-}  // namespace am
+}  // namespace sense

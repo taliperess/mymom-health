@@ -46,7 +46,7 @@ VirtualInput io_sw_y(State::kInactive);
 
 }  // namespace
 
-namespace am::system {
+namespace sense::system {
 
 void Init() {}
 
@@ -60,24 +60,24 @@ void Start() {
   PW_UNREACHABLE;
 }
 
-am::AirSensor& AirSensor() {
+sense::AirSensor& AirSensor() {
   static AirSensorFake air_sensor;
   return air_sensor;
 }
 
-am::Board& Board() {
+sense::Board& Board() {
   static BoardFake board;
   return board;
 }
 
-am::ButtonManager& ButtonManager() {
-  static ::am::ButtonManager manager(io_sw_a, io_sw_b, io_sw_x, io_sw_y);
+sense::ButtonManager& ButtonManager() {
+  static ::sense::ButtonManager manager(io_sw_a, io_sw_b, io_sw_x, io_sw_y);
   return manager;
 }
 
-am::ProximitySensor& ProximitySensor() {
-  static ::am::FakeProximitySensor fake_prox;
+sense::ProximitySensor& ProximitySensor() {
+  static ::sense::FakeProximitySensor fake_prox;
   return fake_prox;
 }
 
-}  // namespace am::system
+}  // namespace sense::system

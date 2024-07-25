@@ -16,16 +16,16 @@
 #include "modules/led/polychrome_led_fake.h"
 #include "system/system.h"
 
-namespace am::system {
+namespace sense::system {
 
-am::MonochromeLed& MonochromeLed() {
+sense::MonochromeLed& MonochromeLed() {
   static MonochromeLedFake monochrome_led;
   return monochrome_led;
 }
 
-am::PolychromeLed& PolychromeLed() {
+sense::PolychromeLed& PolychromeLed() {
   static PolychromeLedFake polychrome_led;
   return polychrome_led;
 }
 
-}  // namespace am::system
+}  // namespace sense::system

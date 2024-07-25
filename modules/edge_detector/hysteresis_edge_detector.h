@@ -16,7 +16,7 @@
 #include "pw_assert/assert.h"
 #include "pw_function/function.h"
 
-namespace am {
+namespace sense {
 
 enum class Edge { kNone, kRising, kFalling };
 
@@ -110,4 +110,4 @@ class HysteresisEdgeDetector : public internal::BaseHysteresisEdgeDetector {
   Sample high_threshold_;
 };
 
-}  // namespace am
+}  // namespace sense

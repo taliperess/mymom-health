@@ -15,10 +15,10 @@
 
 #include "pw_thread/thread.h"
 
-namespace am {
+namespace sense {
 
 /// Thread options to use for the sampling thread. Must be implemented by the
 /// target.
 const pw::thread::Options& SamplingThreadOptions();
 
-}  // namespace am
+}  // namespace sense

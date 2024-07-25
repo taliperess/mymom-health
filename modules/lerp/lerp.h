@@ -15,7 +15,7 @@
 
 #include <cstdint>
 
-namespace am {
+namespace sense {
 /// Linearly interpolate between a and b using the specified fraction.
 ///
 /// Does not do any bounds checking to ensure that the fraction is between
@@ -40,4 +40,4 @@ static constexpr uint8_t Lerp(uint8_t a,
                                          static_cast<int32_t>(numerator) /
                                          static_cast<int32_t>(denominator));
 }
-}  // namespace am
+}  // namespace sense

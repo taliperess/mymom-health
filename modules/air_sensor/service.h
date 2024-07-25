@@ -22,7 +22,7 @@
 #include "pw_status/status.h"
 #include "pw_sync/thread_notification.h"
 
-namespace am {
+namespace sense {
 
 class AirSensorService final
     : public ::air_sensor::pw_rpc::nanopb::AirSensor::Service<
@@ -53,4 +53,4 @@ class AirSensorService final
   ServerWriter<air_sensor_Measurement> sample_writer_;
 };
 
-}  // namespace am
+}  // namespace sense

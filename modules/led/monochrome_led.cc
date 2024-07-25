@@ -14,7 +14,7 @@
 
 #include "modules/led/monochrome_led.h"
 
-namespace am {
+namespace sense {
 
 MonochromeLed::MonochromeLed(pw::digital_io::DigitalInOut& sio,
                              PwmDigitalOut& pwm)
@@ -92,4 +92,4 @@ void MonochromeLed::SetMode(Mode mode) {
   mode_ = mode;
 }
 
-}  // namespace am
+}  // namespace sense

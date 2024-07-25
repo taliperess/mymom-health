@@ -16,7 +16,7 @@
 #include "apps/factory/factory_pb/factory.rpc.pb.h"
 #include "modules/buttons/manager.h"
 
-namespace am {
+namespace sense {
 
 class FactoryService final
     : public ::factory::pw_rpc::nanopb::Factory::Service<FactoryService> {
@@ -32,4 +32,4 @@ class FactoryService final
   ButtonManager* button_manager_;
 };
 
-}  // namespace am
+}  // namespace sense

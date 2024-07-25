@@ -22,7 +22,7 @@
 #include "pw_multibuf/multibuf.h"
 #include "pw_status/status.h"
 
-namespace am::system {
+namespace sense::system {
 
 using pw::OkStatus;
 using pw::Result;
@@ -207,4 +207,4 @@ pw::Result<pw::channel::WriteToken> StreamChannel::DoWrite(
   return CreateWriteToken(token);
 }
 
-}  // namespace am::system
+}  // namespace sense::system

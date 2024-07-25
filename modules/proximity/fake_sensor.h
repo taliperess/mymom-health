@@ -15,7 +15,7 @@
 
 #include "modules/proximity/sensor.h"
 
-namespace am {
+namespace sense {
 
 /// Fake proximity sensor.
 class FakeProximitySensor final : public ProximitySensor {
@@ -38,4 +38,4 @@ class FakeProximitySensor final : public ProximitySensor {
   pw::Result<uint16_t> sample_;
 };
 
-}  // namespace am
+}  // namespace sense

@@ -18,7 +18,7 @@
 #include "modules/pwm/digital_out.h"
 #include "pw_digital_io/digital_io.h"
 
-namespace am {
+namespace sense {
 
 /// Interface for a simple LED.
 class MonochromeLed {
@@ -70,4 +70,4 @@ class MonochromeLed {
   PwmDigitalOut& pwm_;
 };
 
-}  // namespace am
+}  // namespace sense

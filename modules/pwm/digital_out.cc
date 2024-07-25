@@ -14,7 +14,7 @@
 
 #include "modules/pwm/digital_out.h"
 
-namespace am {
+namespace sense {
 
 void PwmDigitalOut::SetCallback(Callback&& callback,
                                 uint16_t per_interval,
@@ -31,4 +31,4 @@ void PwmDigitalOut::ClearCallback() {
   DoClearCallback();
 }
 
-}  // namespace am
+}  // namespace sense

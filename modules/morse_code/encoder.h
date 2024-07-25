@@ -25,7 +25,7 @@
 #include "pw_sync/interrupt_spin_lock.h"
 #include "pw_sync/lock_annotations.h"
 
-namespace am {
+namespace sense {
 namespace internal {
 
 struct Encoding {
@@ -147,4 +147,4 @@ class Encoder final {
   bool is_on_ PW_GUARDED_BY(lock_) = false;
 };
 
-}  // namespace am
+}  // namespace sense

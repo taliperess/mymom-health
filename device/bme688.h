@@ -23,7 +23,7 @@
 #include "pw_status/status.h"
 #include "modules/worker/worker.h"
 
-namespace am {
+namespace sense {
 
 class Bme688 : public AirSensor {
  public:
@@ -47,4 +47,4 @@ class Bme688 : public AirSensor {
   pw::sync::ThreadNotification* notification_ = nullptr;
 };
 
-}  // namespace am
+}  // namespace sense

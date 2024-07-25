@@ -17,7 +17,7 @@
 
 #include "pw_log/log.h"
 
-namespace am {
+namespace sense {
 namespace {
 
 pubsub_LedValue LedValueToProto(const LedValue& value) {
@@ -145,4 +145,4 @@ void PubSubService::Subscribe(const pw_protobuf_Empty&,
   stream_ = std::move(writer);
 }
 
-}  // namespace am
+}  // namespace sense

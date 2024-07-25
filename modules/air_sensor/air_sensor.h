@@ -18,7 +18,7 @@
 #include "pw_sync/lock_annotations.h"
 #include "pw_sync/thread_notification.h"
 
-namespace am {
+namespace sense {
 
 class AirSensor {
  public:
@@ -47,4 +47,4 @@ class AirSensor {
   float gas_resistance_ PW_GUARDED_BY(lock_) = 10000.f;
 };
 
-}  // namespace am
+}  // namespace sense

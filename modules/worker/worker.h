@@ -15,7 +15,7 @@
 
 #include "pw_function/function.h"
 
-namespace am {
+namespace sense {
 
 /// Interface for a worker that can ambiently execute functions.
 ///
@@ -29,4 +29,4 @@ class Worker {
   ~Worker() = default;
 };
 
-}  // namespace am
+}  // namespace sense

@@ -19,7 +19,7 @@
 #include "pw_chrono/system_timer.h"
 #include "pw_status/status.h"
 
-namespace am {
+namespace sense {
 
 class BoardService final
     : public ::board::pw_rpc::nanopb::Board::Service<BoardService> {
@@ -49,4 +49,4 @@ class BoardService final
   ServerWriter<board_OnboardTempResponse> temp_sample_writer_;
 };
 
-}  // namespace am
+}  // namespace sense

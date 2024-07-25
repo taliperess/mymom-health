@@ -26,14 +26,14 @@
 #include "pw_thread/thread.h"
 #include "pw_unit_test/framework.h"
 
-namespace am {
+namespace sense {
 
 // Test fixtures.
 
 class MorseCodeEncoderTest : public ::testing::Test {
  protected:
-  using Event = ::am::MonochromeLedFake::Event;
-  using State = ::am::MonochromeLedFake::State;
+  using Event = ::sense::MonochromeLedFake::Event;
+  using State = ::sense::MonochromeLedFake::State;
 
   static constexpr uint32_t kIntervalMs = 10;
 
@@ -228,4 +228,4 @@ TEST_F(MorseCodeEncoderTest, EncodeInvalidChars) {
 }
 #endif  // AM_MORSE_CODE_ENCODER_TEST_FULL
 
-}  // namespace am
+}  // namespace sense

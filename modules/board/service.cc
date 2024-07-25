@@ -19,7 +19,7 @@
 #include "pw_status/status.h"
 #include "system/system.h"
 
-namespace am {
+namespace sense {
 
 BoardService::BoardService()
     : temp_sample_timer_([this](pw::chrono::SystemClock::time_point) {
@@ -73,4 +73,4 @@ void BoardService::ScheduleTempSample() {
       [this]() { temp_sample_timer_.InvokeAfter(temp_sample_interval_); });
 }
 
-}  // namespace am
+}  // namespace sense

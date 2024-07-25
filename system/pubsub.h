@@ -15,8 +15,8 @@
 
 #include "modules/pubsub/pubsub_events.h"
 
-namespace am::system {
+namespace sense::system {
 
 PubSub& PubSub();
 
-}  // namespace am::system
+}  // namespace sense::system

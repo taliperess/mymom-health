@@ -16,7 +16,7 @@
 #include "modules/board/board.rpc.pb.h"
 #include "pw_status/status.h"
 
-namespace am {
+namespace sense {
 
 /// Interface for Pico board functionality not associated with another
 /// component.
@@ -40,4 +40,4 @@ class Board {
   Board() = default;
 };
 
-}  // namespace am
+}  // namespace sense

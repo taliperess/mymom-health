@@ -23,7 +23,7 @@
 #include "pw_unit_test/framework.h"
 #include "pw_work_queue/work_queue.h"
 
-namespace am {
+namespace sense {
 namespace internal {
 
 /// A worker which delegates to a work queue running on a dedicated test
@@ -67,4 +67,4 @@ class TestWorker final : public internal::GenericTestWorker {
   pw::work_queue::WorkQueueWithBuffer<kBufferSize> work_queue_;
 };
 
-}  // namespace am
+}  // namespace sense

@@ -25,7 +25,7 @@
 #include "pw_sync/interrupt_spin_lock.h"
 #include "pw_sync/lock_annotations.h"
 
-namespace am {
+namespace sense {
 
 template <typename EventType>
 class GenericPubSub {
@@ -233,4 +233,4 @@ class GenericPubSubBuffer : public GenericPubSub<Event> {
   std::array<Subscriber, kMaxSubscribers> subscribers_;
 };
 
-}  // namespace am
+}  // namespace sense

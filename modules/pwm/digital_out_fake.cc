@@ -18,7 +18,7 @@
 
 #include "pw_log/log.h"
 
-namespace am {
+namespace sense {
 
 void PwmDigitalOutFake::DoEnable() { PW_LOG_INFO("PWM: +"); }
 
@@ -42,4 +42,4 @@ void PwmDigitalOutFake::DoClearCallback() {
   PW_LOG_INFO("PWM: callback cleared");
 }
 
-}  // namespace am
+}  // namespace sense

@@ -20,17 +20,17 @@
 #include "system/system.h"
 #include "targets/rp2/enviro_pins.h"
 
-namespace am::system {
+namespace sense::system {
 
 static constexpr pw::digital_io::Rp2040Config kDefaultLedConfig = {
     .pin = PICO_DEFAULT_LED_PIN,
     .polarity = pw::digital_io::Polarity::kActiveHigh,
 };
 
-am::MonochromeLed& MonochromeLed() {
+sense::MonochromeLed& MonochromeLed() {
   static ::pw::digital_io::Rp2040DigitalInOut led_sio(kDefaultLedConfig);
-  static ::am::PicoPwmGpio led_pwm(kDefaultLedConfig);
-  static ::am::MonochromeLed led(led_sio, led_pwm);
+  static ::sense::PicoPwmGpio led_pwm(kDefaultLedConfig);
+  static ::sense::MonochromeLed led(led_sio, led_pwm);
   return led;
 }
 
@@ -49,12 +49,12 @@ static constexpr pw::digital_io::Rp2040Config kBlueLedConfig = {
     .polarity = pw::digital_io::Polarity::kActiveLow,
 };
 
-am::PolychromeLed& PolychromeLed() {
-  static ::am::PicoPwmGpio red_pwm(kRedLedConfig);
-  static ::am::PicoPwmGpio green_pwm(kGreenLedConfig);
-  static ::am::PicoPwmGpio blue_pwm(kBlueLedConfig);
-  static ::am::PolychromeLed rgb_led(red_pwm, green_pwm, blue_pwm);
+sense::PolychromeLed& PolychromeLed() {
+  static ::sense::PicoPwmGpio red_pwm(kRedLedConfig);
+  static ::sense::PicoPwmGpio green_pwm(kGreenLedConfig);
+  static ::sense::PicoPwmGpio blue_pwm(kBlueLedConfig);
+  static ::sense::PolychromeLed rgb_led(red_pwm, green_pwm, blue_pwm);
   return rgb_led;
 }
 
-}  // namespace am::system
+}  // namespace sense::system

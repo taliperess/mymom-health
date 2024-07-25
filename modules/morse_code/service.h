@@ -19,7 +19,7 @@
 #include "pw_status/status.h"
 #include "pw_string/string.h"
 
-namespace am {
+namespace sense {
 
 class MorseCodeService final
     : public ::morse_code::pw_rpc::nanopb::MorseCode::Service<
@@ -37,4 +37,4 @@ class MorseCodeService final
   pw::InlineString<sizeof(morse_code_SendRequest::msg)> msg_;
 };
 
-}  // namespace am
+}  // namespace sense

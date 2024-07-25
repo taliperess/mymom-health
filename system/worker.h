@@ -15,9 +15,9 @@
 
 #include "modules/worker/worker.h"
 
-namespace am::system {
+namespace sense::system {
 
 /// Returns a worker which delegates work to `pw::System`.
 Worker& GetWorker();
 
-}  // namespace am::system
+}  // namespace sense::system

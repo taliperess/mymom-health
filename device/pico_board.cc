@@ -17,7 +17,7 @@
 #include "hardware/adc.h"
 #include "pico/bootrom.h"
 
-namespace am {
+namespace sense {
 
 PicoBoard::PicoBoard() { adc_init(); }
 
@@ -49,4 +49,4 @@ pw::Status PicoBoard::Reboot(board_RebootType_Enum reboot_type) {
   return pw::OkStatus();
 }
 
-}  // namespace am
+}  // namespace sense

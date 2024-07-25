@@ -15,7 +15,7 @@
 
 #include "modules/pwm/digital_out.h"
 
-namespace am {
+namespace sense {
 
 /// This class represents an fake output being driven by the PWM block.
 ///
@@ -44,4 +44,4 @@ class PwmDigitalOutFake : public PwmDigitalOut {
   void DoClearCallback() override;
 };
 
-}  // namespace am
+}  // namespace sense

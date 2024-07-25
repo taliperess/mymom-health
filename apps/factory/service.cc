@@ -14,7 +14,7 @@
 
 #include "apps/factory/service.h"
 
-namespace am {
+namespace sense {
 
 void FactoryService::Init(ButtonManager& button_manager) {
   button_manager_ = &button_manager;
@@ -42,4 +42,4 @@ pw::Status FactoryService::EndTest(const factory_EndTestRequest& request,
   return pw::OkStatus();
 }
 
-}  // namespace am
+}  // namespace sense

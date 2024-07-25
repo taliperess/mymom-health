@@ -17,7 +17,7 @@
 #include "pw_log/log.h"
 #include "pw_system/system.h"
 
-namespace am::system {
+namespace sense::system {
 namespace internal {
 
 /// A worker which delegates work to `pw::System`.
@@ -37,4 +37,4 @@ Worker& GetWorker() {
   return worker;
 }
 
-}  // namespace am::system
+}  // namespace sense::system

@@ -16,7 +16,7 @@
 #include "modules/edge_detector/pubsub.h"
 #include "modules/pubsub/pubsub_events.h"
 
-namespace am {
+namespace sense {
 
 class ProximityManager {
  public:
@@ -29,7 +29,7 @@ class ProximityManager {
 
  private:
   struct ProxSamplerPubSub {
-    using PubSub = am::PubSub;
+    using PubSub = sense::PubSub;
     using Sample = uint16_t;
     using SampleEvent = ProximitySample;
 
@@ -43,4 +43,4 @@ class ProximityManager {
   PubSubHysteresisEdgeDetector<ProxSamplerPubSub> edge_detector_;
 };
 
-}  // namespace am
+}  // namespace sense

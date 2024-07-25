@@ -26,7 +26,7 @@ using ::pw::digital_io::State;
 using ::pw::sync::InterruptSpinLock;
 using namespace std::literals::chrono_literals;
 
-namespace am {
+namespace sense {
 
 constexpr const auto kMaxWaitOnFailedTest = 3s;
 
@@ -70,7 +70,7 @@ class TestDigitalInOut : public DigitalInOut {
 // A test harness for writing tests that use pubsub.
 class ManagerTest : public ::testing::Test {
  public:
-  using PubSub = am::GenericPubSub<Event>;
+  using PubSub = sense::GenericPubSub<Event>;
 
  protected:
   virtual void SetUp() override {
@@ -256,7 +256,7 @@ TEST(EdgeDetectorTest, EdgesDetected) {
 }
 
 TEST_F(ManagerTest, AllButtonsTurnOnAndOffEvents) {
-  am::TestWorker<> worker;
+  sense::TestWorker<> worker;
   PubSub pubsub(worker, event_queue_, subscribers_buffer_);
   ButtonManager manager(io_a_, io_b_, io_x_, io_y_);
   manager.Init(pubsub, worker);
@@ -268,34 +268,34 @@ TEST_F(ManagerTest, AllButtonsTurnOnAndOffEvents) {
   });
 
   io_a_.SetState(State::kActive);
-  ASSERT_TRUE(AssertPressed<am::ButtonA>());
+  ASSERT_TRUE(AssertPressed<sense::ButtonA>());
 
   io_b_.SetState(State::kActive);
-  ASSERT_TRUE(AssertPressed<am::ButtonB>());
+  ASSERT_TRUE(AssertPressed<sense::ButtonB>());
 
   io_x_.SetState(State::kActive);
-  ASSERT_TRUE(AssertPressed<am::ButtonX>());
+  ASSERT_TRUE(AssertPressed<sense::ButtonX>());
 
   io_y_.SetState(State::kActive);
-  ASSERT_TRUE(AssertPressed<am::ButtonY>());
+  ASSERT_TRUE(AssertPressed<sense::ButtonY>());
 
   io_a_.SetState(State::kInactive);
-  ASSERT_TRUE(AssertPressed<am::ButtonA>(false));
+  ASSERT_TRUE(AssertPressed<sense::ButtonA>(false));
 
   io_b_.SetState(State::kInactive);
-  ASSERT_TRUE(AssertPressed<am::ButtonB>(false));
+  ASSERT_TRUE(AssertPressed<sense::ButtonB>(false));
 
   io_x_.SetState(State::kInactive);
-  ASSERT_TRUE(AssertPressed<am::ButtonX>(false));
+  ASSERT_TRUE(AssertPressed<sense::ButtonX>(false));
 
   io_y_.SetState(State::kInactive);
-  ASSERT_TRUE(AssertPressed<am::ButtonY>(false));
+  ASSERT_TRUE(AssertPressed<sense::ButtonY>(false));
 
   worker.Stop();
 }
 
 TEST_F(ManagerTest, DebouncingWorksOnNoisyIo) {
-  am::TestWorker<> worker;
+  sense::TestWorker<> worker;
   PubSub pubsub(worker, event_queue_, subscribers_buffer_);
   pubsub.Subscribe([this](Event event) {
     last_event_ = event;
@@ -309,15 +309,15 @@ TEST_F(ManagerTest, DebouncingWorksOnNoisyIo) {
   // Set line active with 10 noisy transition and assert that we only
   // receive one event.
   io_a_.NoisySetState(10, State::kActive);
-  ASSERT_TRUE(AssertPressed<am::ButtonA>());
+  ASSERT_TRUE(AssertPressed<sense::ButtonA>());
   EXPECT_EQ(events_processed_, 1);
 
   // Set line inactive with 10 noisy transition and assert that we only
   // receive one event.
   io_a_.NoisySetState(10, State::kInactive);
-  ASSERT_TRUE(AssertPressed<am::ButtonA>(false));
+  ASSERT_TRUE(AssertPressed<sense::ButtonA>(false));
   EXPECT_EQ(events_processed_, 2);
 
   worker.Stop();
 }
-}  // namespace am
+}  // namespace sense

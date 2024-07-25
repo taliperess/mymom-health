@@ -19,7 +19,7 @@
 
 using pw::chrono::SystemClock;
 
-namespace am {
+namespace sense {
 
 ColorRotationManager::ColorRotationManager(const pw::span<const Step> steps,
                                            PubSub& pub_sub,
@@ -90,4 +90,4 @@ const ColorRotationManager::Step& ColorRotationManager::NextStep() {
   return steps_[next_step];
 }
 
-}  // namespace am
+}  // namespace sense

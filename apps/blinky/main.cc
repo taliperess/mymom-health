@@ -21,21 +21,21 @@
 #include "system/worker.h"
 
 int main() {
-  am::system::Init();
+  sense::system::Init();
   auto& rpc_server = pw::System().rpc_server();
-  auto& worker = am::system::GetWorker();
-  auto& monochrome_led = am::system::MonochromeLed();
-  auto& polychrome_led = am::system::PolychromeLed();
+  auto& worker = sense::system::GetWorker();
+  auto& monochrome_led = sense::system::MonochromeLed();
+  auto& polychrome_led = sense::system::PolychromeLed();
 
-  static am::BoardService board_service;
-  board_service.Init(worker, am::system::Board());
+  static sense::BoardService board_service;
+  board_service.Init(worker, sense::system::Board());
   rpc_server.RegisterService(board_service);
 
-  static am::BlinkyService blinky_service;
+  static sense::BlinkyService blinky_service;
   blinky_service.Init(worker, monochrome_led, polychrome_led);
   rpc_server.RegisterService(blinky_service);
 
   PW_LOG_INFO("Started blinky app; waiting for RPCs...");
-  am::system::Start();
+  sense::system::Start();
   PW_UNREACHABLE;
 }

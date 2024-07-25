@@ -25,12 +25,12 @@ pw::unit_test::UnitTestService unit_test_service;
 }  // namespace
 
 int main() {
-  am::system::Init();
+  sense::system::Init();
   auto& rpc_server = pw::System().rpc_server();
 
   rpc_server.RegisterService(unit_test_service);
 
   PW_LOG_INFO("Started test_runner app; waiting for RPCs...");
-  am::system::Start();
+  sense::system::Start();
   PW_UNREACHABLE;
 }

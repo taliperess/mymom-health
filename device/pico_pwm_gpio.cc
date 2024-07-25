@@ -25,7 +25,7 @@
 #include "pw_assert/check.h"
 #include "pw_log/log.h"
 
-namespace am {
+namespace sense {
 
 // The PWM block triggers callbacks by raising "wrap" interrupts at a configured
 // interval. At most one exclusive IRQ handler may be installed at any one time,
@@ -105,4 +105,4 @@ void PicoPwmGpio::DoClearCallback() {
   current_callback = nullptr;
 }
 
-}  // namespace am
+}  // namespace sense

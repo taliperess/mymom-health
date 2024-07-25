@@ -24,7 +24,7 @@
 #include "pw_result/result.h"
 #include "pw_status/status.h"
 
-namespace am {
+namespace sense {
 
 /// Basic driver for the LTR559 ambient light and proximity sensor.
 class Ltr559LightAndProxSensor {
@@ -75,4 +75,4 @@ class Ltr559ProximitySensor final : public ProximitySensor {
   Ltr559LightAndProxSensor sensor_;
 };
 
-}  // namespace am
+}  // namespace sense

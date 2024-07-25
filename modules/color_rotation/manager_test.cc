@@ -22,7 +22,7 @@
 
 using namespace std::literals::chrono_literals;
 
-namespace am {
+namespace sense {
 
 constexpr const auto kMaxWaitOnFailedTest = 3s;
 
@@ -38,7 +38,7 @@ class testing::ColorRotationManagerTester {
 class ManagerTest : public ::testing::Test,
                     public testing::ColorRotationManagerTester {
  public:
-  using PubSub = am::GenericPubSub<Event>;
+  using PubSub = sense::GenericPubSub<Event>;
 
  protected:
   void SetUp() override {
@@ -78,7 +78,7 @@ class ManagerTest : public ::testing::Test,
 };
 
 TEST_F(ManagerTest, StepsAreInterpolatedBetweenAndWrap) {
-  am::TestWorker<> worker;
+  sense::TestWorker<> worker;
   PubSub pubsub(worker, event_queue_, subscribers_buffer_);
   pubsub.Subscribe([this](Event event) {
     std::lock_guard lock(lock_);
@@ -139,4 +139,4 @@ TEST_F(ManagerTest, StepsAreInterpolatedBetweenAndWrap) {
 
   worker.Stop();
 }
-}  // namespace am
+}  // namespace sense

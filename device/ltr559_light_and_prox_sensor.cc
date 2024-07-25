@@ -18,7 +18,7 @@
 
 #include "pw_log/log.h"
 
-namespace am {
+namespace sense {
 
 Ltr559LightAndProxSensor::Ltr559LightAndProxSensor(
     pw::i2c::Initiator& i2c_initiator,
@@ -48,4 +48,4 @@ pw::Result<uint16_t> Ltr559ProximitySensor::DoReadSample() {
   return raw_sample << 5;
 }
 
-}  // namespace am
+}  // namespace sense

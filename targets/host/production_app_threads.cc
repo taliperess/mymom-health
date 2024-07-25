@@ -15,11 +15,11 @@
 #include "apps/production/threads.h"
 #include "pw_thread_stl/options.h"
 
-namespace am {
+namespace sense {
 
 const pw::thread::Options& SamplingThreadOptions() {
   static constexpr pw::thread::stl::Options kOptions;
   return kOptions;
 }
 
-}  // namespace am
+}  // namespace sense

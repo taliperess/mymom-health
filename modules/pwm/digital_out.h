@@ -18,7 +18,7 @@
 #include "pw_chrono/system_clock.h"
 #include "pw_function/function.h"
 
-namespace am {
+namespace sense {
 
 /// This class represents an output being driven by the PWM block.
 class PwmDigitalOut {
@@ -79,4 +79,4 @@ class PwmDigitalOut {
   std::optional<Callback> callback_;
 };
 
-}  // namespace am
+}  // namespace sense

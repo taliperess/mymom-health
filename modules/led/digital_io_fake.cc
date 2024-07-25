@@ -16,7 +16,7 @@
 
 #include "pw_log/log.h"
 
-namespace am {
+namespace sense {
 
 DigitalInOutFakeImpl::DigitalInOutFakeImpl(Clock& clock,
                                            pw::InlineDeque<Event>& events)
@@ -44,4 +44,4 @@ pw::Status DigitalInOutFakeImpl::DoSetState(State state) {
   return pw::OkStatus();
 }
 
-}  // namespace am
+}  // namespace sense

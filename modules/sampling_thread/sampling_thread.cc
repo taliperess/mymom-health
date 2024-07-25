@@ -23,7 +23,7 @@
 #include "system/pubsub.h"
 #include "system/system.h"
 
-namespace am {
+namespace sense {
 namespace {
 
 using pw::chrono::SystemClock;
@@ -69,4 +69,4 @@ void SamplingLoop() {
   }
 }
 
-}  // namespace am
+}  // namespace sense

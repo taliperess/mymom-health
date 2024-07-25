@@ -23,7 +23,7 @@
 // The functions in this file return specific implementations of singleton types
 // provided by the system.
 
-namespace am::system {
+namespace sense::system {
 
 /// Initializes the system. This must be called before anything else in `main`.
 void Init();
@@ -43,4 +43,4 @@ MonochromeLed& MonochromeLed();
 
 PolychromeLed& PolychromeLed();
 
-}  // namespace am::system
+}  // namespace sense::system

@@ -15,7 +15,7 @@
 
 #include "modules/blinky/service.h"
 
-namespace am {
+namespace sense {
 
 void BlinkyService::Init(Worker& worker,
                          MonochromeLed& monochrome_led,
@@ -75,4 +75,4 @@ pw::Status BlinkyService::Rainbow(const blinky_CycleRequest& request,
   return pw::OkStatus();
 }
 
-}  // namespace am
+}  // namespace sense

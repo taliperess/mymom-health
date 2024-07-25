@@ -23,7 +23,7 @@
 #include "pw_digital_io_rp2040/digital_io.h"
 #include "pw_function/function.h"
 
-namespace am {
+namespace sense {
 
 class PicoPwmGpio : public PwmDigitalOut {
  public:
@@ -56,4 +56,4 @@ class PicoPwmGpio : public PwmDigitalOut {
   uint16_t level_ = 0;
 };
 
-}  // namespace am
+}  // namespace sense

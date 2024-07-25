@@ -20,14 +20,14 @@
 #include "pw_thread/sleep.h"
 #include "pw_unit_test/framework.h"
 
-namespace am {
+namespace sense {
 
 // Test fixtures.
 
 class BlinkyTest : public ::testing::Test {
  protected:
-  using Event = ::am::MonochromeLedFake::Event;
-  using State = ::am::MonochromeLedFake::State;
+  using Event = ::sense::MonochromeLedFake::Event;
+  using State = ::sense::MonochromeLedFake::State;
 
   static constexpr uint32_t kIntervalMs = 10;
   static constexpr pw::chrono::SystemClock::duration kInterval =
@@ -164,4 +164,4 @@ TEST_F(BlinkyTest, BlinkSlow) {
   EXPECT_GE(ToMs(event->timestamp - start), kIntervalMs * 32);
 }
 
-}  // namespace am
+}  // namespace sense

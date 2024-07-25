@@ -17,7 +17,7 @@
 
 #include "modules/pubsub/pubsub.h"
 
-namespace am {
+namespace sense {
 
 // VOC / CO2 crossed over the threshold.
 struct AlarmStateChange {
@@ -125,4 +125,4 @@ using Event = std::variant<AlarmStateChange,
 // PubSub using Sense events.
 using PubSub = GenericPubSub<Event>;
 
-}  // namespace am
+}  // namespace sense

@@ -29,9 +29,9 @@ class PubSubServiceTest : public ::testing::Test {
  protected:
   void TearDown() override { worker_.Stop(); }
 
-  am::TestWorker<> worker_;
-  pw::InlineDeque<am::Event, 4> event_queue_;
-  std::array<am::PubSub::SubscribeCallback, 4> subscribers_buffer_;
+  sense::TestWorker<> worker_;
+  pw::InlineDeque<sense::Event, 4> event_queue_;
+  std::array<sense::PubSub::SubscribeCallback, 4> subscribers_buffer_;
   pw::sync::TimedThreadNotification notification_;
   pw::sync::TimedThreadNotification work_queue_start_notification_;
   int events_processed_ = 0;
@@ -40,16 +40,16 @@ class PubSubServiceTest : public ::testing::Test {
 };
 
 TEST_F(PubSubServiceTest, Subscribe) {
-  PW_NANOPB_TEST_METHOD_CONTEXT(am::PubSubService, Subscribe) ctx;
-  am::PubSub pubsub(worker_, event_queue_, subscribers_buffer_);
+  PW_NANOPB_TEST_METHOD_CONTEXT(sense::PubSubService, Subscribe) ctx;
+  sense::PubSub pubsub(worker_, event_queue_, subscribers_buffer_);
 
   ctx.service().Init(pubsub);
   ctx.call({});
 
   pw::rpc::test::WaitForPackets(ctx.output(), 3, [&pubsub] {
-    EXPECT_TRUE(pubsub.Publish(am::VocSample{.voc_level = 0.25f}));
-    EXPECT_TRUE(pubsub.Publish(am::ButtonB(false)));
-    EXPECT_TRUE(pubsub.Publish(am::ButtonY(true)));
+    EXPECT_TRUE(pubsub.Publish(sense::VocSample{.voc_level = 0.25f}));
+    EXPECT_TRUE(pubsub.Publish(sense::ButtonB(false)));
+    EXPECT_TRUE(pubsub.Publish(sense::ButtonY(true)));
   });
 
   EXPECT_EQ(ctx.responses().size(), 3u);
@@ -62,18 +62,18 @@ TEST_F(PubSubServiceTest, Subscribe) {
 }
 
 TEST_F(PubSubServiceTest, Publish) {
-  PW_NANOPB_TEST_METHOD_CONTEXT(am::PubSubService, Publish) ctx;
-  am::PubSub pubsub(worker_, event_queue_, subscribers_buffer_);
+  PW_NANOPB_TEST_METHOD_CONTEXT(sense::PubSubService, Publish) ctx;
+  sense::PubSub pubsub(worker_, event_queue_, subscribers_buffer_);
 
   ctx.service().Init(pubsub);
 
-  pubsub.Subscribe([this](am::Event event) {
+  pubsub.Subscribe([this](sense::Event event) {
     events_processed_++;
 
-    if (std::holds_alternative<am::VocSample>(event)) {
-      total_voc_ += std::get<am::VocSample>(event).voc_level;
-    } else if (std::holds_alternative<am::ButtonA>(event)) {
-      if (std::get<am::ButtonA>(event).pressed()) {
+    if (std::holds_alternative<sense::VocSample>(event)) {
+      total_voc_ += std::get<sense::VocSample>(event).voc_level;
+    } else if (std::holds_alternative<sense::ButtonA>(event)) {
+      if (std::get<sense::ButtonA>(event).pressed()) {
         button_presses_++;
       }
     } else {

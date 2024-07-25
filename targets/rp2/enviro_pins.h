@@ -14,7 +14,7 @@
 
 #pragma once
 
-namespace am::board {
+namespace sense::board {
 
 // Pins are declared as `unsigned int` to match the types used in the Pico SDK.
 inline constexpr unsigned int kEnviroPinPmsReset = 2;
@@ -39,4 +39,4 @@ inline constexpr unsigned int kEnviroLcdVSync = 21;
 inline constexpr unsigned int kEnviroLtr550Int = 22;
 inline constexpr unsigned int kEnviroMicOut = 26;
 
-}  // namespace am::board
+}  // namespace sense::board

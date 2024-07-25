@@ -25,7 +25,7 @@
 #include "pw_sync/interrupt_spin_lock.h"
 #include "pw_sync/lock_annotations.h"
 
-namespace am {
+namespace sense {
 
 /// Simple component that blink the on-board LED.
 class Blinky final {
@@ -95,4 +95,4 @@ class Blinky final {
       kDefaultInterval;
 };
 
-}  // namespace am
+}  // namespace sense

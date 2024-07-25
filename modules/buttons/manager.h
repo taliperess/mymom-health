@@ -25,7 +25,7 @@
 #include "pw_sync/interrupt_spin_lock.h"
 #include "pw_sync/lock_annotations.h"
 
-namespace am {
+namespace sense {
 class Debouncer final {
  public:
   constexpr static pw::chrono::SystemClock::duration kDebounceInterval =
@@ -113,4 +113,4 @@ class ButtonManager final {
   pw::chrono::SystemTimer timer_;
   bool active_;
 };
-}  // namespace am
+}  // namespace sense

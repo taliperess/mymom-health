@@ -16,7 +16,7 @@
 #include "modules/led/polychrome_led.h"
 #include "modules/pwm/digital_out.h"
 
-namespace am {
+namespace sense {
 
 /// Interface for a simple LED.
 class PolychromeLedFake : public PolychromeLed {
@@ -29,4 +29,4 @@ class PolychromeLedFake : public PolychromeLed {
   PwmDigitalOutFake blue_;
 };
 
-}  // namespace am
+}  // namespace sense

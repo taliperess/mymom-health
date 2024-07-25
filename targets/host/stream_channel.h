@@ -23,7 +23,7 @@
 #include "pw_sync/interrupt_spin_lock.h"
 #include "pw_sync/thread_notification.h"
 
-namespace am::system {
+namespace sense::system {
 namespace internal {
 
 /// State for the stream-reading thread.
@@ -150,4 +150,4 @@ class StreamChannel final : public pw::channel::ByteReaderWriter {
   uint32_t write_token_;
 };
 
-}  // namespace am::system
+}  // namespace sense::system

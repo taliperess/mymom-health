@@ -16,7 +16,7 @@
 #include "modules/blinky/blinky.h"
 #include "modules/blinky/blinky_pb/blinky.rpc.pb.h"
 
-namespace am {
+namespace sense {
 
 class BlinkyService final
     : public ::blinky::pw_rpc::nanopb::Blinky::Service<BlinkyService> {
@@ -44,4 +44,4 @@ class BlinkyService final
   Blinky blinky_;
 };
 
-}  // namespace am
+}  // namespace sense

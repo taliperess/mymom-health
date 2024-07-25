@@ -17,7 +17,7 @@
 #include "pw_status/status.h"
 #include "pw_sync/thread_notification.h"
 
-namespace am {
+namespace sense {
 
 class AirSensorFake : public AirSensor {
  public:
@@ -34,4 +34,4 @@ class AirSensorFake : public AirSensor {
   }
 };
 
-}  // namespace am
+}  // namespace sense

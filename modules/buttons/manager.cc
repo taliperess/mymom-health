@@ -21,7 +21,7 @@ using pw::chrono::SystemClock;
 using pw::digital_io::DigitalIn;
 using pw::digital_io::State;
 
-namespace am {
+namespace sense {
 State Debouncer::UpdateState(SystemClock::time_point now, State state) {
   if (state != last_input_) {
     last_update_ = now;
@@ -96,11 +96,11 @@ pw::Status ButtonManager::SampleButton(Button& button,
 }
 
 pw::Status ButtonManager::SampleButtons(SystemClock::time_point now) {
-  PW_TRY(SampleButton<am::ButtonA>(buttons_[0], now));
-  PW_TRY(SampleButton<am::ButtonB>(buttons_[1], now));
-  PW_TRY(SampleButton<am::ButtonX>(buttons_[2], now));
-  PW_TRY(SampleButton<am::ButtonY>(buttons_[3], now));
+  PW_TRY(SampleButton<sense::ButtonA>(buttons_[0], now));
+  PW_TRY(SampleButton<sense::ButtonB>(buttons_[1], now));
+  PW_TRY(SampleButton<sense::ButtonX>(buttons_[2], now));
+  PW_TRY(SampleButton<sense::ButtonY>(buttons_[3], now));
   return pw::OkStatus();
 }
 
-}  // namespace am
+}  // namespace sense

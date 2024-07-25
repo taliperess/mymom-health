@@ -29,7 +29,7 @@
 #include "pw_status/try.h"
 #include "pw_thread/sleep.h"
 
-namespace am {
+namespace sense {
 
 static constexpr pw::i2c::Address kAddress =
     pw::i2c::Address::SevenBit<BME68X_I2C_ADDR_HIGH>();
@@ -194,4 +194,4 @@ pw::Status Bme688::Check(int8_t result) {
   }
 }
 
-}  // namespace am
+}  // namespace sense

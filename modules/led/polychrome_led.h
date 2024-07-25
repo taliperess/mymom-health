@@ -17,7 +17,7 @@
 
 #include "modules/pwm/digital_out.h"
 
-namespace am {
+namespace sense {
 
 /// Interface for a multi-color LED.
 class PolychromeLed {
@@ -74,4 +74,4 @@ class PolychromeLed {
   uint16_t brightness_ = 0;
 };
 
-}  // namespace am
+}  // namespace sense

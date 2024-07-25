@@ -17,11 +17,11 @@
 #include "modules/pubsub/pubsub.h"
 #include "pw_assert/assert.h"
 
-namespace am {
+namespace sense {
 
 /// EdgeDetector that subscribes to sample events and publishes edges.
 ///
-///   - `PubSub`: Type of the PubSub object (`am::GenericPubSub<EventType>`)
+///   - `PubSub`: Type of the PubSub object (`sense::GenericPubSub<EventType>`)
 ///   - `Sample`: The sample type (e.g. `uint16_t`).
 ///   - `SampleEvent`: Event type to subscribe to for samples.
 ///   - `GetSample(SampleEvent)`: Returns the sample from the sample event.
@@ -62,4 +62,4 @@ class PubSubHysteresisEdgeDetector
   PubSub& pubsub_;
 };
 
-}  // namespace am
+}  // namespace sense

@@ -22,7 +22,7 @@
 #include "modules/blinky/blinky.h"
 #include "modules/worker/worker.h"
 
-namespace am {
+namespace sense {
 
 Blinky::Blinky() : timer_(pw::bind_member<&Blinky::ToggleCallback>(this)) {}
 
@@ -150,4 +150,4 @@ pw::Status Blinky::ScheduleToggle() {
   return pw::OkStatus();
 }
 
-}  // namespace am
+}  // namespace sense

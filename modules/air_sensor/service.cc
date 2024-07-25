@@ -16,7 +16,7 @@
 
 #include "pw_log/log.h"
 
-namespace am {
+namespace sense {
 
 void AirSensorService::Init(Worker& worker, AirSensor& air_sensor) {
   worker_ = &worker;
@@ -72,4 +72,4 @@ void AirSensorService::ScheduleSample() {
   worker_->RunOnce([this]() { sample_timer_.InvokeAfter(sample_interval_); });
 }
 
-}  // namespace am
+}  // namespace sense

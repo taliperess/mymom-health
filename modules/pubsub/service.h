@@ -16,7 +16,7 @@
 #include "modules/pubsub/pubsub_events.h"
 #include "modules/pubsub/pubsub_pb/pubsub.rpc.pb.h"
 
-namespace am {
+namespace sense {
 
 class PubSubService final
     : public ::pubsub::pw_rpc::nanopb::PubSub::Service<PubSubService> {
@@ -31,4 +31,4 @@ class PubSubService final
   ServerWriter<pubsub_Event> stream_;
 };
 
-}  // namespace am
+}  // namespace sense

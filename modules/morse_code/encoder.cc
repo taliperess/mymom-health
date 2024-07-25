@@ -20,7 +20,7 @@
 #include "pw_function/function.h"
 #include "pw_log/log.h"
 
-namespace am {
+namespace sense {
 
 Encoder::Encoder() : timer_(pw::bind_member<&Encoder::ToggleLed>(this)) {}
 
@@ -137,4 +137,4 @@ void Encoder::ToggleLed(pw::chrono::SystemClock::time_point) {
   worker_->RunOnce([this]() { ScheduleUpdate(); });
 }
 
-}  // namespace am
+}  // namespace sense

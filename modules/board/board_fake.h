@@ -15,7 +15,7 @@
 
 #include "modules/board/board.rpc.pb.h"
 
-namespace am {
+namespace sense {
 
 /// Implements and extends the ``Board`` interface to facilitate unit testing.
 class BoardFake : public Board {
@@ -39,4 +39,4 @@ class BoardFake : public Board {
   board_RebootType_Enum last_reboot_type_ = board_RebootType_Enum_UNKNOWN;
 };
 
-}  // namespace am
+}  // namespace sense

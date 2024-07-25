@@ -16,9 +16,9 @@
 
 #include "system/worker.h"
 
-namespace am::system {
+namespace sense::system {
 
-am::PubSub& PubSub() {
+sense::PubSub& PubSub() {
   constexpr size_t kMaxEvents = 20;
   constexpr size_t kMaxSubscribers = 10;
   static GenericPubSubBuffer<Event, kMaxEvents, kMaxSubscribers> pubsub(
@@ -26,4 +26,4 @@ am::PubSub& PubSub() {
   return pubsub;
 }
 
-}  // namespace am::system
+}  // namespace sense::system

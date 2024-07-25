@@ -14,7 +14,7 @@
 
 #include "modules/morse_code/service.h"
 
-namespace am {
+namespace sense {
 
 void MorseCodeService::Init(Worker& worker, Encoder::OutputFunction&& output) {
   encoder_.Init(worker, std::move(output));
@@ -29,4 +29,4 @@ pw::Status MorseCodeService::Send(const morse_code_SendRequest& request,
   return encoder_.Encode(request.msg, repeat, interval_ms);
 }
 
-}  // namespace am
+}  // namespace sense

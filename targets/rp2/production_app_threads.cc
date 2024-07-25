@@ -16,7 +16,7 @@
 #include "pw_thread_freertos/context.h"
 #include "pw_thread_freertos/options.h"
 
-namespace am {
+namespace sense {
 
 pw::thread::freertos::StaticContextWithStack<1024> sensor_thread_context;
 
@@ -29,4 +29,4 @@ const pw::thread::Options& SamplingThreadOptions() {
   return kOptions;
 }
 
-}  // namespace am
+}  // namespace sense

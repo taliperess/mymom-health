@@ -18,15 +18,15 @@
 #include "modules/pwm/digital_out_fake.h"
 #include "pw_chrono/system_clock.h"
 
-namespace am {
+namespace sense {
 
 class MonochromeLedFake : public MonochromeLed {
  public:
   static constexpr size_t kCapacity = 256;
 
-  using Clock = ::am::DigitalInOutFakeImpl::Clock;
-  using Event = ::am::DigitalInOutFakeImpl::Event;
-  using State = ::am::DigitalInOutFakeImpl::State;
+  using Clock = ::sense::DigitalInOutFakeImpl::Clock;
+  using Event = ::sense::DigitalInOutFakeImpl::Event;
+  using State = ::sense::DigitalInOutFakeImpl::State;
 
   MonochromeLedFake() : MonochromeLedFake(Clock::RealClock()) {}
 
@@ -42,4 +42,4 @@ class MonochromeLedFake : public MonochromeLed {
   PwmDigitalOutFake led_pwm_;
 };
 
-}  // namespace am
+}  // namespace sense

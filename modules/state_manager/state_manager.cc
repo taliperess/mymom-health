@@ -17,7 +17,7 @@
 #include "pw_assert/check.h"
 #include "pw_log/log.h"
 
-namespace am {
+namespace sense {
 void StateManager::Init() {
   pubsub_->Subscribe([this](Event event) {
     if (std::holds_alternative<ButtonA>(event)) {
@@ -119,4 +119,4 @@ const char* StateManager::StateString(State state) {
   return "UNKNOWN";
 }
 
-}  // namespace am
+}  // namespace sense

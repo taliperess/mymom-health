@@ -18,7 +18,7 @@
 
 #include "pw_log/log.h"
 
-namespace am::internal {
+namespace sense::internal {
 
 Edge BaseHysteresisEdgeDetector::UpdateState(Event event) {
   switch (state_) {
@@ -47,4 +47,4 @@ Edge BaseHysteresisEdgeDetector::UpdateState(Event event) {
   return Edge::kNone;
 }
 
-}  // namespace am::internal
+}  // namespace sense::internal

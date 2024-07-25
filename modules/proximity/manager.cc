@@ -16,11 +16,11 @@
 
 #include "pw_assert/check.h"
 
-namespace am {
+namespace sense {
 
 ProximityManager::ProximityManager(PubSub& pubsub,
                                    uint16_t inactive_threshold,
                                    uint16_t active_threshold)
     : edge_detector_(pubsub, inactive_threshold, active_threshold) {}
 
-}  // namespace am
+}  // namespace sense

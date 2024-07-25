@@ -14,7 +14,7 @@
 
 #include "modules/led/polychrome_led.h"
 
-namespace am {
+namespace sense {
 
 void PolychromeLed::TurnOff() {
   red_.Disable();
@@ -178,4 +178,4 @@ uint16_t PolychromeLed::GammaCorrect(uint32_t val) const {
   return u16;
 }
 
-}  // namespace am
+}  // namespace sense

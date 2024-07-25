@@ -30,7 +30,7 @@
 #include "system/system.h"
 #include "system/worker.h"
 
-namespace am {
+namespace sense {
 namespace {
 
 const std::array kColorRotationSteps{
@@ -54,7 +54,7 @@ void InitBoardService() {
 
   // The morse encoder will emit pubsub events to the state manager.
   static Encoder morse_encoder;
-  morse_encoder.Init(am::system::GetWorker(), [](bool turn_on) {
+  morse_encoder.Init(sense::system::GetWorker(), [](bool turn_on) {
     if (turn_on) {
       system::PubSub().Publish(LedValueMorseCodeMode(kMorseCodeLedColor));
     } else {
@@ -116,8 +116,8 @@ void InitProximitySensor() {
 }
 
 void InitAirSensor() {
-  static AirSensor& air_sensor = am::system::AirSensor();
-  static am::AirSensorService air_sensor_service;
+  static AirSensor& air_sensor = sense::system::AirSensor();
+  static sense::AirSensorService air_sensor_service;
   air_sensor_service.Init(system::GetWorker(), air_sensor);
   pw::System().rpc_server().RegisterService(air_sensor_service);
 }
@@ -143,6 +143,6 @@ void InitAirSensor() {
 }
 
 }  // namespace
-}  // namespace am
+}  // namespace sense
 
-int main() { am::InitializeApp(); }
+int main() { sense::InitializeApp(); }

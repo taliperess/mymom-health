@@ -16,7 +16,7 @@
 
 #include "pw_assert/check.h"
 
-namespace am::internal {
+namespace sense::internal {
 
 GenericTestWorker::GenericTestWorker(pw::work_queue::WorkQueue& work_queue)
     : work_queue_(&work_queue) {}
@@ -42,4 +42,4 @@ void GenericTestWorker::Stop() {
   work_queue_ = nullptr;
 }
 
-}  // namespace am::internal
+}  // namespace sense::internal

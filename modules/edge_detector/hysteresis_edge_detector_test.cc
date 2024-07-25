@@ -22,55 +22,55 @@
 namespace {
 
 TEST(HysteresisEdgeDetector, StartLow) {
-  am::HysteresisEdgeDetector<uint16_t> edge_detector(10, 10000);
+  sense::HysteresisEdgeDetector<uint16_t> edge_detector(10, 10000);
 
-  EXPECT_EQ(edge_detector.Update(123), am::Edge::kNone);
-  EXPECT_EQ(edge_detector.Update(0), am::Edge::kNone);  // starts low
-  EXPECT_EQ(edge_detector.Update(9999), am::Edge::kNone);
-  EXPECT_EQ(edge_detector.Update(10000), am::Edge::kRising);
-  EXPECT_EQ(edge_detector.Update(10001), am::Edge::kNone);
-  EXPECT_EQ(edge_detector.Update(500), am::Edge::kNone);
-  EXPECT_EQ(edge_detector.Update(1), am::Edge::kFalling);
+  EXPECT_EQ(edge_detector.Update(123), sense::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(0), sense::Edge::kNone);  // starts low
+  EXPECT_EQ(edge_detector.Update(9999), sense::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(10000), sense::Edge::kRising);
+  EXPECT_EQ(edge_detector.Update(10001), sense::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(500), sense::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(1), sense::Edge::kFalling);
 }
 
 TEST(HysteresisEdgeDetector, StartHigh) {
-  am::HysteresisEdgeDetector<uint16_t> edge_detector(100, 200);
+  sense::HysteresisEdgeDetector<uint16_t> edge_detector(100, 200);
 
-  EXPECT_EQ(edge_detector.Update(101), am::Edge::kNone);
-  EXPECT_EQ(edge_detector.Update(199), am::Edge::kNone);
-  EXPECT_EQ(edge_detector.Update(101), am::Edge::kNone);
-  EXPECT_EQ(edge_detector.Update(200), am::Edge::kNone);  // starts high
-  EXPECT_EQ(edge_detector.Update(101), am::Edge::kNone);
-  EXPECT_EQ(edge_detector.Update(100), am::Edge::kFalling);
-  EXPECT_EQ(edge_detector.Update(199), am::Edge::kNone);
-  EXPECT_EQ(edge_detector.Update(99), am::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(101), sense::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(199), sense::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(101), sense::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(200), sense::Edge::kNone);  // starts high
+  EXPECT_EQ(edge_detector.Update(101), sense::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(100), sense::Edge::kFalling);
+  EXPECT_EQ(edge_detector.Update(199), sense::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(99), sense::Edge::kNone);
 }
 
 TEST(HysteresisEdgeDetector, ImmediateFallingEdge) {
-  am::HysteresisEdgeDetector<uint16_t> edge_detector(100, 200);
+  sense::HysteresisEdgeDetector<uint16_t> edge_detector(100, 200);
 
-  EXPECT_EQ(edge_detector.Update(200), am::Edge::kNone);
-  EXPECT_EQ(edge_detector.Update(100), am::Edge::kFalling);
+  EXPECT_EQ(edge_detector.Update(200), sense::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(100), sense::Edge::kFalling);
 }
 
 TEST(HysteresisEdgeDetector, ImmediateRisingEdge) {
-  am::HysteresisEdgeDetector<uint16_t> edge_detector(100, 200);
+  sense::HysteresisEdgeDetector<uint16_t> edge_detector(100, 200);
 
-  EXPECT_EQ(edge_detector.Update(100), am::Edge::kNone);
-  EXPECT_EQ(edge_detector.Update(200), am::Edge::kRising);
+  EXPECT_EQ(edge_detector.Update(100), sense::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(200), sense::Edge::kRising);
 }
 
 TEST(HysteresisEdgeDetector, ChangingThresholdResetsState) {
-  am::HysteresisEdgeDetector<uint16_t> edge_detector(100, 200);
+  sense::HysteresisEdgeDetector<uint16_t> edge_detector(100, 200);
 
-  EXPECT_EQ(edge_detector.Update(0), am::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(0), sense::Edge::kNone);
   edge_detector.set_high_threshold(100);
-  EXPECT_EQ(edge_detector.Update(200), am::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(200), sense::Edge::kNone);
   edge_detector.set_low_threshold(0);
-  EXPECT_EQ(edge_detector.Update(0), am::Edge::kNone);
-  EXPECT_EQ(edge_detector.Update(100), am::Edge::kRising);
-  EXPECT_EQ(edge_detector.Update(1), am::Edge::kNone);
-  EXPECT_EQ(edge_detector.Update(0), am::Edge::kFalling);
+  EXPECT_EQ(edge_detector.Update(0), sense::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(100), sense::Edge::kRising);
+  EXPECT_EQ(edge_detector.Update(1), sense::Edge::kNone);
+  EXPECT_EQ(edge_detector.Update(0), sense::Edge::kFalling);
 }
 
 }  // namespace

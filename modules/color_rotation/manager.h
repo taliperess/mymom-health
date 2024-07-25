@@ -21,7 +21,7 @@
 #include "pw_chrono/system_timer.h"
 #include "pw_sync/interrupt_spin_lock.h"
 
-namespace am {
+namespace sense {
 namespace testing {
 /// Class that can be declared in tests that has access to private members
 /// of ColorRotationManager.
@@ -88,4 +88,4 @@ class ColorRotationManager {
 
   friend testing::ColorRotationManagerTester;
 };
-}  // namespace am
+}  // namespace sense

@@ -15,7 +15,7 @@
 
 #include "pw_result/result.h"
 
-namespace am {
+namespace sense {
 
 /// Represents a proximity sensor.
 class ProximitySensor {
@@ -46,4 +46,4 @@ class ProximitySensor {
   virtual pw::Result<uint16_t> DoReadSample() = 0;
 };
 
-}  // namespace am
+}  // namespace sense

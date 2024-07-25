@@ -26,7 +26,7 @@ using namespace std::literals::chrono_literals;
 struct TestEvent {
   int value;
 };
-using PubSub = am::GenericPubSub<TestEvent>;
+using PubSub = sense::GenericPubSub<TestEvent>;
 
 class PubSubTest : public ::testing::Test {
  protected:
@@ -39,7 +39,7 @@ class PubSubTest : public ::testing::Test {
 };
 
 TEST_F(PubSubTest, Publish_OneSubscriber) {
-  am::TestWorker<> worker;
+  sense::TestWorker<> worker;
   PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
   pubsub.Subscribe([this](TestEvent event) {
@@ -56,7 +56,7 @@ TEST_F(PubSubTest, Publish_OneSubscriber) {
 }
 
 TEST_F(PubSubTest, Publish_MultipleSubscribers) {
-  am::TestWorker<> worker;
+  sense::TestWorker<> worker;
   PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
   for (size_t i = 0; i < subscribers_buffer_.size(); ++i) {
@@ -85,7 +85,7 @@ TEST_F(PubSubTest, Publish_MultipleSubscribers) {
 }
 
 TEST_F(PubSubTest, Publish_MultipleEvents) {
-  am::TestWorker<> worker;
+  sense::TestWorker<> worker;
   PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
   pubsub.Subscribe([this](TestEvent event) {
@@ -118,7 +118,7 @@ TEST_F(PubSubTest, Publish_MultipleEvents) {
 }
 
 TEST_F(PubSubTest, Publish_MultipleEvents_QueueFull) {
-  am::TestWorker<> worker;
+  sense::TestWorker<> worker;
   PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
   worker.RunOnce([this]() {
@@ -150,7 +150,7 @@ TEST_F(PubSubTest, Publish_MultipleEvents_QueueFull) {
 }
 
 TEST_F(PubSubTest, Subscribe_Full) {
-  am::TestWorker<> worker;
+  sense::TestWorker<> worker;
   PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
   EXPECT_TRUE(pubsub.Subscribe([this](TestEvent) { notification_.release(); })
@@ -173,7 +173,7 @@ TEST_F(PubSubTest, Subscribe_Full) {
 }
 
 TEST_F(PubSubTest, Subscribe_Unsubscribe) {
-  am::TestWorker<> worker;
+  sense::TestWorker<> worker;
   PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
   auto token1 =
@@ -209,8 +209,8 @@ TEST_F(PubSubTest, Subscribe_Unsubscribe) {
 
 class PubSubAmEventsTest : public ::testing::Test {
  protected:
-  pw::InlineDeque<am::Event, 4> event_queue_;
-  std::array<am::PubSub::Subscriber, 4> subscribers_buffer_;
+  pw::InlineDeque<sense::Event, 4> event_queue_;
+  std::array<sense::PubSub::Subscriber, 4> subscribers_buffer_;
   float total_voc_ = 0;
   int events_processed_ = 0;
   pw::sync::TimedThreadNotification notification_;
@@ -218,19 +218,19 @@ class PubSubAmEventsTest : public ::testing::Test {
 };
 
 TEST_F(PubSubAmEventsTest, PublishEvent) {
-  am::TestWorker<> worker;
-  am::PubSub pubsub(worker, event_queue_, subscribers_buffer_);
+  sense::TestWorker<> worker;
+  sense::PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
   worker.RunOnce([this]() {
     // Block the work queue until all events are published.
     PW_ASSERT(work_queue_start_notification_.try_acquire_for(1s));
   });
 
-  pubsub.Subscribe([this](am::Event event) {
-    if (std::holds_alternative<am::VocSample>(event)) {
-      total_voc_ += std::get<am::VocSample>(event).voc_level;
-    } else if (std::holds_alternative<am::ButtonA>(event)) {
-      EXPECT_TRUE(std::get<am::ButtonA>(event).pressed());
+  pubsub.Subscribe([this](sense::Event event) {
+    if (std::holds_alternative<sense::VocSample>(event)) {
+      total_voc_ += std::get<sense::VocSample>(event).voc_level;
+    } else if (std::holds_alternative<sense::ButtonA>(event)) {
+      EXPECT_TRUE(std::get<sense::ButtonA>(event).pressed());
     } else {
       FAIL() << "Unexpected event type";
     }
@@ -240,10 +240,10 @@ TEST_F(PubSubAmEventsTest, PublishEvent) {
     }
   });
 
-  EXPECT_TRUE(pubsub.Publish(am::VocSample{.voc_level = 0.25f}));
-  EXPECT_TRUE(pubsub.Publish(am::VocSample{.voc_level = 0.50f}));
-  EXPECT_TRUE(pubsub.Publish(am::ButtonA(true)));
-  EXPECT_TRUE(pubsub.Publish(am::VocSample{.voc_level = 0.25}));
+  EXPECT_TRUE(pubsub.Publish(sense::VocSample{.voc_level = 0.25f}));
+  EXPECT_TRUE(pubsub.Publish(sense::VocSample{.voc_level = 0.50f}));
+  EXPECT_TRUE(pubsub.Publish(sense::ButtonA(true)));
+  EXPECT_TRUE(pubsub.Publish(sense::VocSample{.voc_level = 0.25}));
   work_queue_start_notification_.release();
 
   // This should time out as the fifth event never gets sent.
@@ -254,25 +254,25 @@ TEST_F(PubSubAmEventsTest, PublishEvent) {
 }
 
 TEST_F(PubSubAmEventsTest, SubscribeTo) {
-  am::TestWorker<> worker;
-  am::PubSub pubsub(worker, event_queue_, subscribers_buffer_);
+  sense::TestWorker<> worker;
+  sense::PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
   worker.RunOnce([this]() {
     // Block the work queue until all events are published.
     PW_ASSERT(work_queue_start_notification_.try_acquire_for(1s));
   });
 
-  pubsub.SubscribeTo<am::VocSample>([this](am::VocSample sample) {
+  pubsub.SubscribeTo<sense::VocSample>([this](sense::VocSample sample) {
     total_voc_ += sample.voc_level;
     if (++events_processed_ > 2) {
       notification_.release();
     }
   });
 
-  EXPECT_TRUE(pubsub.Publish(am::ButtonA(true)));
-  EXPECT_TRUE(pubsub.Publish(am::VocSample{.voc_level = 0.75f}));
-  EXPECT_TRUE(pubsub.Publish(am::ButtonA(true)));
-  EXPECT_TRUE(pubsub.Publish(am::VocSample{.voc_level = 0.25}));
+  EXPECT_TRUE(pubsub.Publish(sense::ButtonA(true)));
+  EXPECT_TRUE(pubsub.Publish(sense::VocSample{.voc_level = 0.75f}));
+  EXPECT_TRUE(pubsub.Publish(sense::ButtonA(true)));
+  EXPECT_TRUE(pubsub.Publish(sense::VocSample{.voc_level = 0.25}));
   work_queue_start_notification_.release();
 
   // This should time out as the fifth event never gets sent.

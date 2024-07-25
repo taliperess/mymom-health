@@ -16,7 +16,7 @@
 #include "modules/board/board.h"
 #include "pw_status/status.h"
 
-namespace am {
+namespace sense {
 
 class PicoBoard : public Board {
  public:
@@ -25,4 +25,4 @@ class PicoBoard : public Board {
   pw::Status Reboot(board_RebootType_Enum reboot_type) override;
 };
 
-}  // namespace am
+}  // namespace sense

@@ -38,7 +38,7 @@
 
 using pw::digital_io::Rp2040DigitalIn;
 
-namespace am::system {
+namespace sense::system {
 namespace {
 
 pw::i2c::Initiator& I2cInitiator() {
@@ -102,24 +102,24 @@ void Start() {
   PW_UNREACHABLE;
 }
 
-am::AirSensor& AirSensor() {
-  static Bme688 air_sensor(I2cInitiator(), am::system::GetWorker());
+sense::AirSensor& AirSensor() {
+  static Bme688 air_sensor(I2cInitiator(), sense::system::GetWorker());
   return air_sensor;
 }
 
-am::Board& Board() {
-  static ::am::PicoBoard board;
+sense::Board& Board() {
+  static ::sense::PicoBoard board;
   return board;
 }
 
-am::ButtonManager& ButtonManager() {
-  static ::am::ButtonManager manager(io_sw_a, io_sw_b, io_sw_x, io_sw_y);
+sense::ButtonManager& ButtonManager() {
+  static ::sense::ButtonManager manager(io_sw_a, io_sw_b, io_sw_x, io_sw_y);
   return manager;
 }
 
-am::ProximitySensor& ProximitySensor() {
+sense::ProximitySensor& ProximitySensor() {
   static Ltr559ProximitySensor ltr559(I2cInitiator());
   return ltr559;
 }
 
-}  // namespace am::system
+}  // namespace sense::system
