@@ -14,6 +14,7 @@
 """Runs a connected Pico Enviro+ Pack through a series of hardware tests."""
 
 import abc
+import argparse
 from dataclasses import dataclass
 from datetime import datetime
 import enum
@@ -317,9 +318,19 @@ def _run_tests(rpcs) -> bool:
     return True
 
 
-def main() -> int:
-    time = datetime.now().strftime('%Y%m%d%H%M%S')
-    log_file = Path(f'factory-logs-{time}.txt')
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        '--log-file',
+        type=Path,
+        help='File to which to write device logs. Must be an absolute path.',
+    )
+    return parser.parse_args()
+
+def main(log_file: Path | None) -> int:
+    if log_file is None:
+        time = datetime.now().strftime('%Y%m%d%H%M%S')
+        log_file = Path(f'factory-logs-{time}.txt')
 
     pw_cli.log.install(
         level=logging.DEBUG,
@@ -345,5 +356,4 @@ def main() -> int:
     return exit_code
 
 if __name__ == '__main__':
-    sys.exit(main())
-
+    sys.exit(main(**vars(_parse_args())))
