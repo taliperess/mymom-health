@@ -16,6 +16,7 @@
 import abc
 from dataclasses import dataclass
 from datetime import datetime
+import enum
 import logging
 from pathlib import Path
 import sys
@@ -75,6 +76,10 @@ class Test(abc.ABC):
     def prompt(self, message: str) -> None:
         """Prints a prompt for a user action."""
         print(f'{colors().yellow(">>>")} {message}')
+
+    def prompt_enter(self, message: str) -> None:
+        """Prints a prompt for a user action."""
+        input(f'{colors().yellow(">>>")} {message}\nPress Enter to continue...')
 
     def prompt_yn(self, message: str) -> bool:
         """Prints a prompt for a yes/no response from the user."""
@@ -212,12 +217,82 @@ class LedTest(Test):
         return True
 
 
+class Ltr559Test(Test):
+    _SENSOR_DARK_THRESHOLD = 20000
+
+    def __init__(self, rpcs):
+        super().__init__('Ltr559Test', rpcs)
+        self._factory_service = rpcs.factory.Factory
+
+    def run(self) -> bool:
+        status, _ = self._factory_service.StartTest(test=factory_pb2.Test.Type.LTR559)
+        assert status is Status.OK
+
+        result = self._test_ltr559()
+
+        status, _ = self._factory_service.EndTest(test=factory_pb2.Test.Type.LTR559)
+        assert status is Status.OK
+
+        return result
+
+    def _test_ltr559(self) -> bool:
+        self.prompt_enter('Place your Enviro+ pack in a lit area')
+
+        print('Getting initial sensor readings', end='', flush=True)
+
+        initial_value = 0
+        num_samples = 0
+
+        while num_samples < 5:
+            status, response = self._factory_service.SampleLtr559()
+            if status is not Status.OK:
+                return False
+
+            initial_value += response.value
+            num_samples += 1
+            print('.', end='', flush=True)
+
+        initial_value //= num_samples
+
+        print(colors().green(' DONE'))
+
+        self.prompt('Cover the light sensor')
+
+        if not self._sample_until(30, lambda value: value > Ltr559Test._SENSOR_DARK_THRESHOLD):
+            self.fail_test('ltr559_dark')
+            return False
+
+        self.pass_test('ltr559_dark')
+        self.prompt('Uncover the light sensor')
+
+        if not self._sample_until(30, lambda value: abs(value - initial_value) < 100):
+            self.fail_test('ltr559_bright')
+            return False
+
+        self.pass_test('ltr559_bright')
+        return True
+
+    def _sample_until(self, max_samples: int, predicate: Callable[[int], bool]) -> bool:
+        for _ in range(max_samples):
+            status, response = self._factory_service.SampleLtr559()
+            if status is not Status.OK:
+                return False
+
+            if predicate(response.value):
+                return True
+
+            time.sleep(0.1)
+
+        return False
+
+
 def _run_tests(rpcs) -> bool:
     print('\nStarting hardware tests')
 
     tests_to_run = [
         LedTest(rpcs),
         ButtonsTest(rpcs),
+        Ltr559Test(rpcs),
     ]
 
     all_passes = []
@@ -264,7 +339,7 @@ def main() -> int:
             if not _run_tests(device.rpcs):
                 exit_code = 1
         except KeyboardInterrupt:
-            print(colors().gray('\nCtrl-C detected, exiting.'))
+            print('\nCtrl-C detected, exiting.')
 
     print(f'Device logs written to {log_file.resolve()}')
     return exit_code

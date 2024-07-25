@@ -45,14 +45,8 @@ namespace {
       system::GetWorker(), system::MonochromeLed(), system::PolychromeLed());
   pw::System().rpc_server().RegisterService(blinky_service);
 
-  // Set up a proximity detector state machine.
-  constexpr uint16_t kInitialNearTheshold = 16384;
-  constexpr uint16_t kInitialFarTheshold = 512;
-  static ProximityManager proximity(
-      system::PubSub(), kInitialFarTheshold, kInitialNearTheshold);
-
-  static AirSensor& air_sensor = sense::system::AirSensor();
-  static sense::AirSensorService air_sensor_service;
+  static AirSensor& air_sensor = system::AirSensor();
+  static AirSensorService air_sensor_service;
   air_sensor_service.Init(system::GetWorker(), air_sensor);
   pw::System().rpc_server().RegisterService(air_sensor_service);
 
@@ -61,7 +55,7 @@ namespace {
   button_manager.Stop();
 
   FactoryService factory_service;
-  factory_service.Init(button_manager);
+  factory_service.Init(button_manager, system::ProximitySensor());
   pw::System().rpc_server().RegisterService(factory_service);
 
   PW_LOG_INFO("Enviro+ Pack Diagnostics app");

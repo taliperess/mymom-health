@@ -20,11 +20,14 @@ import "pw_protobuf_protos/common.proto";
 service Factory {
   rpc StartTest(StartTestRequest) returns (pw.protobuf.Empty);
   rpc EndTest(EndTestRequest) returns (pw.protobuf.Empty);
+
+  rpc SampleLtr559(pw.protobuf.Empty) returns (Ltr559Sample);
 }
 
 message Test {
   enum Type {
     BUTTONS = 0;
+    LTR559 = 1;
   }
 }
 
@@ -34,4 +37,8 @@ message StartTestRequest {
 
 message EndTestRequest {
   Test.Type test = 1;
+}
+
+message Ltr559Sample {
+  uint32 value = 1;
 }

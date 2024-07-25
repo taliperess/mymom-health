@@ -14,17 +14,28 @@
 
 #include "apps/factory/service.h"
 
+#define PW_LOG_MODULE_NAME "FACT"
+
+#include "pw_log/log.h"
+
 namespace sense {
 
-void FactoryService::Init(ButtonManager& button_manager) {
+void FactoryService::Init(ButtonManager& button_manager,
+                          ProximitySensor& proximity_sensor) {
   button_manager_ = &button_manager;
+  proximity_sensor_ = &proximity_sensor;
 }
 
 pw::Status FactoryService::StartTest(const factory_StartTestRequest& request,
                                      pw_protobuf_Empty&) {
   switch (request.test) {
     case factory_Test_Type_BUTTONS:
+      PW_LOG_INFO("Configured for buttons test");
       button_manager_->Start();
+      break;
+    case factory_Test_Type_LTR559:
+      PW_LOG_INFO("Configured for LTR559 test");
+      proximity_sensor_->Enable();
       break;
   }
 
@@ -37,8 +48,22 @@ pw::Status FactoryService::EndTest(const factory_EndTestRequest& request,
     case factory_Test_Type_BUTTONS:
       button_manager_->Stop();
       break;
+    case factory_Test_Type_LTR559:
+      proximity_sensor_->Disable();
+      break;
   }
 
+  return pw::OkStatus();
+}
+
+pw::Status FactoryService::SampleLtr559(const pw_protobuf_Empty&,
+                                        factory_Ltr559Sample& response) {
+  pw::Result<uint16_t> result = proximity_sensor_->ReadSample();
+  if (!result.ok()) {
+    return result.status();
+  }
+
+  response.value = result.value();
   return pw::OkStatus();
 }
 

@@ -15,21 +15,26 @@
 
 #include "apps/factory/factory_pb/factory.rpc.pb.h"
 #include "modules/buttons/manager.h"
+#include "modules/proximity/sensor.h"
 
 namespace sense {
 
 class FactoryService final
     : public ::factory::pw_rpc::nanopb::Factory::Service<FactoryService> {
  public:
-  void Init(ButtonManager& button_manager);
+  void Init(ButtonManager& button_manager, ProximitySensor& proximity_sensor);
 
   pw::Status StartTest(const factory_StartTestRequest& request,
                        pw_protobuf_Empty&);
 
   pw::Status EndTest(const factory_EndTestRequest& request, pw_protobuf_Empty&);
 
+  pw::Status SampleLtr559(const pw_protobuf_Empty&,
+                          factory_Ltr559Sample& response);
+
  private:
   ButtonManager* button_manager_;
+  ProximitySensor* proximity_sensor_;
 };
 
 }  // namespace sense

@@ -84,7 +84,11 @@ cc_library(
     deps = [
         ":nanopb_rpc",
         "//modules/buttons:manager",
+        "//modules/proximity:sensor",
     ],
+    implementation_deps = [
+        "@pigweed//pw_log",
+    ]
 )
 
 proto_library(
