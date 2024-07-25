@@ -60,13 +60,13 @@ git_override(
 
 git_override(
     module_name = "pigweed",
-    commit = "dc6b2ce2be29663f859011ef6df33158e34ff9d2",
+    commit = "c19ffc5a4fc9d8d1f2ca88f8311300af41eeaabe",
     remote = "https://pigweed-internal.googlesource.com/pigweed/pigweed",
 )
 
 git_override(
     module_name = "pw_toolchain",
-    commit = "dc6b2ce2be29663f859011ef6df33158e34ff9d2",
+    commit = "c19ffc5a4fc9d8d1f2ca88f8311300af41eeaabe",
     remote = "https://pigweed-internal.googlesource.com/pigweed/pigweed",
     strip_prefix = "pw_toolchain_bazel",
 )
