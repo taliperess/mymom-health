@@ -22,6 +22,7 @@ platform(
         "@freertos//:disable_task_statics",
         "@pigweed//pw_build/constraints/rtos:freertos",
         "@pigweed//pw_build/constraints/chipset:rp2040",  # TODO: https://pwbug.dev/343487589 - Use Pico SDK constraints.
+        "@pigweed//pw_cpu_exception:enabled",
         "@pigweed//pw_interrupt_cortex_m:backend",
         "@platforms//os:none",
     ],
@@ -101,7 +102,9 @@ cc_library(
         "//system:worker",
         "@pico-sdk//src/rp2_common/cmsis:cmsis_core",
         "@pico-sdk//src/rp2_common/hardware_adc",
+        "@pico-sdk//src/rp2_common/hardware_exception:hardware_exception",
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pigweed//pw_cpu_exception:entry_backend_impl",
         "@pigweed//pw_channel",
         "@pigweed//pw_channel:rp2_stdio_channel",
         "@pigweed//pw_digital_io_rp2040",
@@ -119,6 +122,19 @@ cc_library(
     srcs = ["production_app_threads.cc"],
     implementation_deps = ["@pigweed//pw_thread_freertos:thread"],
     deps = ["//apps/production:threads_headers"],
+)
+
+cc_library(
+    name = "device_handler",
+    srcs = [
+        "device_handler.cc",
+    ],
+    includes = ["public"],
+    deps = [
+        "@pigweed//pw_cpu_exception_cortex_m:snapshot",
+        "@pigweed//pw_system:device_handler.facade",
+        "@pico-sdk//src/rp2_common/hardware_watchdog:hardware_watchdog",
+    ],
 )
 
 cc_library(

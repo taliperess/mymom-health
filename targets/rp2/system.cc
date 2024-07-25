@@ -18,10 +18,12 @@
 #include "device/ltr559_light_and_prox_sensor.h"
 #include "device/pico_board.h"
 #include "hardware/adc.h"
+#include "hardware/exception.h"
 #include "modules/air_sensor/air_sensor.h"
 #include "modules/buttons/manager.h"
 #include "pico/stdlib.h"
 #include "pw_channel/rp2_stdio_channel.h"
+#include "pw_cpu_exception/entry.h"
 #include "pw_digital_io_rp2040/digital_io.h"
 #include "pw_i2c_rp2040/initiator.h"
 #include "pw_multibuf/simple_allocator.h"
@@ -92,6 +94,9 @@ void Init() {
   setup_default_uart();
   stdio_usb_init();
   adc_init();
+
+  // Install the CPU exception handler.
+  exception_set_exclusive_handler(HARDFAULT_EXCEPTION, pw_cpu_exception_Entry);
 }
 
 void Start() {
