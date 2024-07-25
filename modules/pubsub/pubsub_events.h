@@ -96,8 +96,14 @@ class LedValueColorRotationMode : public LedValue {
 };
 class LedValueMorseCodeMode : public LedValue {
  public:
-  using LedValue::LedValue;
-  explicit LedValueMorseCodeMode(const LedValue& parent) : LedValue(parent) {}
+  explicit LedValueMorseCodeMode(const LedValue& parent, bool pattern_finished)
+      : LedValue(parent), pattern_finished_(pattern_finished) {}
+
+  /// True if this LED color update is the final for the encoded phrase.
+  [[nodiscard]] bool pattern_finished() const { return pattern_finished_; }
+
+ private:
+  bool pattern_finished_;
 };
 class LedValueProximityMode : public LedValue {
  public:

@@ -49,19 +49,20 @@ pw::Status Encoder::Encode(std::string_view msg,
   {
     std::lock_guard lock(lock_);
     is_on_ = false;
-    msg_ = msg;
-    msg_offset_ = 0;
-    repeat_ = repeat;
+    state_.msg_ = msg;
+    state_.msg_offset_ = 0;
+    state_.repeat_ = repeat;
     interval_ = interval;
+    output_(false, state_);
   }
-  output_(false);
   worker_->RunOnce([this]() { ScheduleUpdate(); });
   return pw::OkStatus();
 }
 
 bool Encoder::IsIdle() const {
   std::lock_guard lock(lock_);
-  return repeat_ == 0 && msg_offset_ == msg_.size() && num_bits_ == 0;
+  return state_.repeat_ == 0 && state_.msg_offset_ == state_.msg_.size() &&
+         state_.num_bits_ == 0;
 }
 
 void Encoder::ScheduleUpdate() {
@@ -69,15 +70,15 @@ void Encoder::ScheduleUpdate() {
   bool want_on = false;
   while (true) {
     std::lock_guard lock(lock_);
-    if (num_bits_ == 0 && !EnqueueNextLocked()) {
+    if (state_.num_bits_ == 0 && !EnqueueNextLocked()) {
       return;
     }
-    want_on = (bits_ % 2) != 0;
+    want_on = (state_.bits_ % 2) != 0;
     if (want_on != is_on_) {
       break;
     }
-    bits_ >>= 1;
-    --num_bits_;
+    state_.bits_ >>= 1;
+    --state_.num_bits_;
     interval += interval_;
   }
 
@@ -85,24 +86,24 @@ void Encoder::ScheduleUpdate() {
 }
 
 bool Encoder::EnqueueNextLocked() {
-  bits_ = 0;
-  num_bits_ = 0;
+  state_.bits_ = 0;
+  state_.num_bits_ = 0;
   char c;
 
   // Try to get the next character, repeating the message as requested and
   // merging consecutive whitespace characters.
   bool needs_word_break = false;
   while (true) {
-    if (msg_offset_ == msg_.size()) {
-      if (--repeat_ == 0) {
+    if (state_.msg_offset_ == state_.msg_.size()) {
+      if (--state_.repeat_ == 0) {
         return false;
       }
       needs_word_break = true;
-      msg_offset_ = 0;
+      state_.msg_offset_ = 0;
     }
-    c = msg_[msg_offset_++];
+    c = state_.msg_[state_.msg_offset_++];
     if (c == '\0') {
-      msg_offset_ = msg_.size();
+      state_.msg_offset_ = state_.msg_.size();
       continue;
     }
     if (!isspace(c)) {
@@ -114,7 +115,7 @@ bool Encoder::EnqueueNextLocked() {
   if (needs_word_break) {
     // Words are separated by 7 dits worth of blanks.
     // The previous symbol ended with 3 blanks, so add 4 more.
-    num_bits_ += 4;
+    state_.num_bits_ += 4;
   }
 
   // Encode the character.
@@ -123,16 +124,16 @@ bool Encoder::EnqueueNextLocked() {
     it = internal::kEncodings.find('?');
   }
   const internal::Encoding& encoding = it->second;
-  bits_ |= encoding.bits << num_bits_;
-  num_bits_ += encoding.num_bits;
-  return num_bits_ != 0;
+  state_.bits_ |= encoding.bits << state_.num_bits_;
+  state_.num_bits_ += encoding.num_bits;
+  return state_.num_bits_ != 0;
 }
 
 void Encoder::ToggleLed(pw::chrono::SystemClock::time_point) {
   {
     std::lock_guard lock(lock_);
     is_on_ = !is_on_;
-    output_(is_on_);
+    output_(is_on_, state_);
   }
   worker_->RunOnce([this]() { ScheduleUpdate(); });
 }

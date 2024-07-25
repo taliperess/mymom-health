@@ -27,6 +27,12 @@ message LedValue {
   uint32 g = 2;
   uint32 b = 3;
 }
+
+message MorseCodeLedValue {
+  LedValue led = 1;
+  bool pattern_finished = 2;
+}
+
 message Event {
   // This definition must be kept up to date with
   // modules/pubsub/pubsub_events.h.
@@ -40,7 +46,7 @@ message Event {
     uint32 proximity_level = 7;
     uint32 air_quality = 8;
     LedValue led_value_color_rotation = 9;
-    LedValue led_value_morse_code = 10;
+    MorseCodeLedValue led_value_morse_code = 10;
     LedValue led_value_proximity = 11;
     LedValue led_value_air_quality = 12;
   }

@@ -141,8 +141,7 @@ class GenericPubSub {
   // copyable & destructible.
   template <typename T>
   static constexpr bool kValidEvent =
-      std::is_trivially_copyable_v<T> && std::is_trivially_destructible_v<T> &&
-      std::is_standard_layout_v<T>;
+      std::is_trivially_copyable_v<T> && std::is_trivially_destructible_v<T>;
 
   template <typename T>
   struct EventsAreValid : std::bool_constant<kValidEvent<T>> {};

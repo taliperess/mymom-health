@@ -87,7 +87,32 @@ class Encoder final {
       pw::chrono::SystemClock::for_at_least(
           std::chrono::milliseconds(kDefaultIntervalMs));
 
-  using OutputFunction = pw::Function<void(bool)>;
+  /// State of the encoder. Passed to each `OutputFunction` call.
+  class State {
+   public:
+    State(const State&) = delete;
+    State& operator=(const State&) = delete;
+
+    /// True if this is the last LED toggle of the encoded phrase. If the
+    /// encoder is repeating, this is true at the end of each repeated
+    /// message.
+    [[nodiscard]] bool message_finished() const {
+      return msg_offset_ == msg_.size() && num_bits_ == 1;
+    };
+
+   private:
+    friend class Encoder;
+
+    constexpr State() = default;
+
+    std::string_view msg_;
+    size_t msg_offset_ = 0;
+    size_t repeat_ = 1;
+    uint32_t bits_ = 0;
+    size_t num_bits_ = 0;
+  };
+
+  using OutputFunction = pw::Function<void(bool turn_on, const State& status)>;
 
   Encoder();
 
@@ -108,7 +133,7 @@ class Encoder final {
   /// each word.
   ///
   /// @param  request       Message to emit in Morse code.
-  /// @param  repeat        Number of times to repeat the message.
+  /// @param  repeat        Number of times to repeat the message; 0 is forever
   /// @param  interval_ms   Duration of a "dit" in milliseconds.
   pw::Status Encode(std::string_view request,
                     uint32_t repeat,
@@ -137,13 +162,10 @@ class Encoder final {
   OutputFunction output_;
 
   mutable pw::sync::InterruptSpinLock lock_;
-  std::string_view msg_ PW_GUARDED_BY(lock_);
-  size_t msg_offset_ PW_GUARDED_BY(lock_) = 0;
-  size_t repeat_ PW_GUARDED_BY(lock_) = 1;
+
+  State state_ PW_GUARDED_BY(lock_);
   pw::chrono::SystemClock::duration interval_ PW_GUARDED_BY(lock_) =
       kDefaultInterval;
-  uint32_t bits_ PW_GUARDED_BY(lock_) = 0;
-  size_t num_bits_ PW_GUARDED_BY(lock_) = 0;
   bool is_on_ PW_GUARDED_BY(lock_) = false;
 };
 

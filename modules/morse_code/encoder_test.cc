@@ -46,6 +46,8 @@ class MorseCodeEncoderTest : public ::testing::Test {
       : clock_(pw::chrono::VirtualSystemClock::RealClock()) {}
 
   void Expect(std::string_view msg) {
+    EXPECT_EQ(end_of_pattern_count_, expected_messages_);
+
     auto& events = led_.events();
     auto event = events.begin();
 
@@ -126,25 +128,48 @@ class MorseCodeEncoderTest : public ::testing::Test {
     }
   }
 
-  void FakeLedOutput(bool turn_on) {
+  auto LedOutput() {
+    return [this](bool turn_on, const Encoder::State& state) {
+      FakeLedOutput(turn_on, state.message_finished());
+    };
+  }
+
+  Encoder encoder_;
+  uint32_t interval_ms_ = kIntervalMs;
+
+  // Number of messages encoded before the next Expect() call.
+  int expected_messages_ = 1;
+
+ private:
+  void FakeLedOutput(bool turn_on, bool pattern_finished) {
     if (turn_on) {
       led_.TurnOn();
     } else {
       led_.TurnOff();
     }
+
+    // Track how many times the last bit in the pattern is seen.
+    if (pattern_finished) {
+      end_of_pattern_count_ += 1;
+      EXPECT_LE(end_of_pattern_count_, expected_messages_);
+    } else if (expected_messages_ == 0u) {
+      EXPECT_EQ(end_of_pattern_count_, expected_messages_);
+    } else {
+      EXPECT_LT(end_of_pattern_count_, expected_messages_);
+    }
   }
 
   pw::chrono::VirtualSystemClock& clock_;
-  Encoder encoder_;
   MonochromeLedFake led_;
-  uint32_t interval_ms_ = kIntervalMs;
+  int end_of_pattern_count_ = 0;
 };
 
 // Unit tests.
 
 TEST_F(MorseCodeEncoderTest, EncodeEmpty) {
   TestWorker<> worker;
-  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
+  encoder_.Init(worker, LedOutput());
+  expected_messages_ = 0;
   EXPECT_EQ(encoder_.Encode("", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
@@ -153,7 +178,7 @@ TEST_F(MorseCodeEncoderTest, EncodeEmpty) {
 
 TEST_F(MorseCodeEncoderTest, EncodeOneLetter) {
   TestWorker<> worker;
-  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
+  encoder_.Init(worker, LedOutput());
   EXPECT_EQ(encoder_.Encode("E", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
@@ -162,7 +187,7 @@ TEST_F(MorseCodeEncoderTest, EncodeOneLetter) {
 
 TEST_F(MorseCodeEncoderTest, EncodeOneWord) {
   TestWorker<> worker;
-  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
+  encoder_.Init(worker, LedOutput());
   EXPECT_EQ(encoder_.Encode("PARIS", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
@@ -171,7 +196,7 @@ TEST_F(MorseCodeEncoderTest, EncodeOneWord) {
 
 TEST_F(MorseCodeEncoderTest, EncodeHelloWorld) {
   TestWorker<> worker;
-  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
+  encoder_.Init(worker, LedOutput());
   EXPECT_EQ(encoder_.Encode("hello world", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
@@ -181,10 +206,12 @@ TEST_F(MorseCodeEncoderTest, EncodeHelloWorld) {
 
 // TODO(b/352327457): Without simulated time, this test is too slow to run every
 // case on device.
-#ifdef AM_MORSE_CODE_ENCODER_TEST_FULL
+#if defined(AM_MORSE_CODE_ENCODER_TEST_FULL) && AM_MORSE_CODE_ENCODER_TEST_FULL
+
 TEST_F(MorseCodeEncoderTest, EncodeRepeated) {
   TestWorker<> worker;
-  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
+  encoder_.Init(worker, LedOutput());
+  expected_messages_ = 2;
   EXPECT_EQ(encoder_.Encode("hello", 2, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
@@ -193,7 +220,7 @@ TEST_F(MorseCodeEncoderTest, EncodeRepeated) {
 
 TEST_F(MorseCodeEncoderTest, EncodeSlow) {
   TestWorker<> worker;
-  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
+  encoder_.Init(worker, LedOutput());
   interval_ms_ = 25;
   EXPECT_EQ(encoder_.Encode("hello", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
@@ -203,7 +230,7 @@ TEST_F(MorseCodeEncoderTest, EncodeSlow) {
 
 TEST_F(MorseCodeEncoderTest, EncodeConsecutiveWhitespace) {
   TestWorker<> worker;
-  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
+  encoder_.Init(worker, LedOutput());
   EXPECT_EQ(encoder_.Encode("hello    world", 1, interval_ms_), pw::OkStatus());
   SleepUntilDone();
   worker.Stop();
@@ -212,14 +239,18 @@ TEST_F(MorseCodeEncoderTest, EncodeConsecutiveWhitespace) {
 
 TEST_F(MorseCodeEncoderTest, EncodeInvalidChars) {
   TestWorker<> worker;
-  encoder_.Init(worker, [this](bool turn_on) { FakeLedOutput(turn_on); });
+  encoder_.Init(worker, LedOutput());
   char s[2];
   s[1] = 0;
+
+  expected_messages_ = 0;
+
   for (char c = 127; c != 0; --c) {
     if (isspace(c) || isalnum(c) || c == '?' || c == '@') {
       continue;
     }
     s[0] = c;
+    expected_messages_ += 1;
     EXPECT_EQ(encoder_.Encode(s, 1, interval_ms_), pw::OkStatus());
     SleepUntilDone();
     Expect("..--..");

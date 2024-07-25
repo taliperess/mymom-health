@@ -56,8 +56,10 @@ pubsub_Event EventToProto(const Event& event) {
         LedValueToProto(std::get<LedValueColorRotationMode>(event));
   } else if (std::holds_alternative<LedValueMorseCodeMode>(event)) {
     proto.which_type = pubsub_Event_led_value_morse_code_tag;
-    proto.type.led_value_morse_code =
-        LedValueToProto(std::get<LedValueMorseCodeMode>(event));
+    const auto& morse = std::get<LedValueMorseCodeMode>(event);
+    proto.type.led_value_morse_code.led = LedValueToProto(morse);
+    proto.type.led_value_morse_code.pattern_finished = morse.pattern_finished();
+    LedValueToProto(std::get<LedValueMorseCodeMode>(event));
   } else if (std::holds_alternative<LedValueProximityMode>(event)) {
     proto.which_type = pubsub_Event_led_value_proximity_tag;
     proto.type.led_value_proximity =
@@ -98,7 +100,8 @@ pw::Result<Event> ProtoToEvent(const pubsub_Event& proto) {
           LedValueFromProto(proto.type.led_value_color_rotation));
     case pubsub_Event_led_value_morse_code_tag:
       return LedValueMorseCodeMode(
-          LedValueFromProto(proto.type.led_value_morse_code));
+          LedValueFromProto(proto.type.led_value_morse_code.led),
+          proto.type.led_value_morse_code.pattern_finished);
     case pubsub_Event_led_value_proximity_tag:
       return LedValueProximityMode(
           LedValueFromProto(proto.type.led_value_proximity));

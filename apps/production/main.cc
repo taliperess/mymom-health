@@ -54,13 +54,16 @@ void InitBoardService() {
 
   // The morse encoder will emit pubsub events to the state manager.
   static Encoder morse_encoder;
-  morse_encoder.Init(sense::system::GetWorker(), [](bool turn_on) {
-    if (turn_on) {
-      system::PubSub().Publish(LedValueMorseCodeMode(kMorseCodeLedColor));
-    } else {
-      system::PubSub().Publish(LedValueMorseCodeMode(0, 0, 0));
-    }
-  });
+  morse_encoder.Init(system::GetWorker(),
+                     [](bool turn_on, const Encoder::State& state) {
+                       if (turn_on) {
+                         system::PubSub().Publish(LedValueMorseCodeMode(
+                             kMorseCodeLedColor, state.message_finished()));
+                       } else {
+                         system::PubSub().Publish(LedValueMorseCodeMode(
+                             LedValue(0, 0, 0), state.message_finished()));
+                       }
+                     });
   morse_encoder.Encode("PW",
                        /*repeat=*/0,
                        Encoder::kDefaultIntervalMs);
