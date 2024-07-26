@@ -20,10 +20,18 @@
 
 namespace sense {
 
-void FactoryService::Init(ButtonManager& button_manager,
+void FactoryService::Init(Board& board,
+                          ButtonManager& button_manager,
                           ProximitySensor& proximity_sensor) {
+  board_ = &board;
   button_manager_ = &button_manager;
   proximity_sensor_ = &proximity_sensor;
+}
+
+pw::Status FactoryService::GetDeviceInfo(const pw_protobuf_Empty&,
+                                         factory_DeviceInfo& response) {
+  response.flash_id = board_->UniqueFlashId();
+  return pw::OkStatus();
 }
 
 pw::Status FactoryService::StartTest(const factory_StartTestRequest& request,

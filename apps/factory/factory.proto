@@ -18,10 +18,15 @@ package factory;
 import "pw_protobuf_protos/common.proto";
 
 service Factory {
+  rpc GetDeviceInfo(pw.protobuf.Empty) returns (DeviceInfo);
   rpc StartTest(StartTestRequest) returns (pw.protobuf.Empty);
   rpc EndTest(EndTestRequest) returns (pw.protobuf.Empty);
 
   rpc SampleLtr559(pw.protobuf.Empty) returns (Ltr559Sample);
+}
+
+message DeviceInfo {
+  uint64 flash_id = 1;
 }
 
 message Test {

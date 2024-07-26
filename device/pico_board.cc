@@ -15,7 +15,9 @@
 #include "device/pico_board.h"
 
 #include "hardware/adc.h"
+#include "hardware/flash.h"
 #include "pico/bootrom.h"
+#include "pw_bytes/endian.h"
 
 namespace sense {
 
@@ -47,6 +49,12 @@ pw::Status PicoBoard::Reboot(board_RebootType_Enum reboot_type) {
 
   reset_usb_boot(0, disable_interface_mask);
   return pw::OkStatus();
+}
+
+uint64_t PicoBoard::UniqueFlashId() const {
+  std::array<uint8_t, 8> flash_id;
+  flash_get_unique_id(flash_id.data());
+  return pw::bytes::ReadInOrder<uint64_t>(pw::endian::little, flash_id);
 }
 
 }  // namespace sense

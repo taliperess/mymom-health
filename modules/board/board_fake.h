@@ -34,7 +34,10 @@ class BoardFake : public Board {
     return pw::OkStatus();
   }
 
+  uint64_t UniqueFlashId() const override { return kFakeFlashId; }
+
  private:
+  static constexpr uint64_t kFakeFlashId = 0x0000aabbccddeeff;
   float internal_temperature_ = 20.0f;
   board_RebootType_Enum last_reboot_type_ = board_RebootType_Enum_UNKNOWN;
 };

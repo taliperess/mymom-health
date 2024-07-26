@@ -23,6 +23,7 @@ class PicoBoard : public Board {
   PicoBoard();
   float ReadInternalTemperature() override;
   pw::Status Reboot(board_RebootType_Enum reboot_type) override;
+  uint64_t UniqueFlashId() const override;
 };
 
 }  // namespace sense

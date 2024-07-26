@@ -17,7 +17,6 @@ import abc
 import argparse
 from dataclasses import dataclass
 from datetime import datetime
-import enum
 import logging
 from pathlib import Path
 import sys
@@ -28,6 +27,7 @@ from typing import Callable, Tuple
 from factory_pb import factory_pb2
 from pubsub_pb import pubsub_pb2
 from pw_cli.color import colors
+from pw_rpc.callback_client import RpcError
 import pw_cli.log
 from pw_status import Status
 
@@ -288,7 +288,7 @@ class Ltr559Test(Test):
 
 
 def _run_tests(rpcs) -> bool:
-    print('\nStarting hardware tests')
+    print(colors().green('\nStarting hardware tests.'))
 
     tests_to_run = [
         LedTest(rpcs),
@@ -347,9 +347,27 @@ def main(log_file: Path | None) -> int:
         print('Connected to attached device')
 
         try:
+            _, device_info = device.rpcs.factory.Factory.GetDeviceInfo()
+        except RpcError as e:
+            if e.status is Status.NOT_FOUND:
+                print(colors().red('No factory service exists on the connected device.'), file=sys.stderr)
+                print('', file=sys.stderr)
+                print('Make sure that your Pico device is running an up-to-date factory app:', file=sys.stderr)
+                print('', file=sys.stderr)
+                print('  bazelisk run //apps/factory:flash', file=sys.stderr)
+                print('', file=sys.stderr)
+            else:
+                print(f'Failed to query device info: {e}', file=sys.stderr)
+            return 1
+
+        print(f'Device flash ID: {colors().bold_white(f"{device_info.flash_id:x}")}')
+
+        try:
             if not _run_tests(device.rpcs):
                 exit_code = 1
         except KeyboardInterrupt:
+            # Turn off the LED if it was on when tests were interrupted.
+            device.rpcs.blinky.Blinky.SetRgb(hex=0, brightness=0)
             print('\nCtrl-C detected, exiting.')
 
     print(f'Device logs written to {log_file.resolve()}')

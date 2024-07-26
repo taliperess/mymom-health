@@ -60,6 +60,10 @@ cc_library(
     name = "pico_board",
     srcs = ["pico_board.cc"],
     hdrs = ["pico_board.h"],
+    implementation_deps = [
+        "@pico-sdk//src/rp2_common/hardware_flash",
+        "@pigweed//pw_bytes",
+    ],
     deps = [
         "//modules/board",
         "@pico-sdk//src/rp2_common/hardware_adc",

@@ -14,6 +14,7 @@
 #pragma once
 
 #include "apps/factory/factory_pb/factory.rpc.pb.h"
+#include "modules/board/board.h"
 #include "modules/buttons/manager.h"
 #include "modules/proximity/sensor.h"
 
@@ -22,7 +23,12 @@ namespace sense {
 class FactoryService final
     : public ::factory::pw_rpc::nanopb::Factory::Service<FactoryService> {
  public:
-  void Init(ButtonManager& button_manager, ProximitySensor& proximity_sensor);
+  void Init(Board& board,
+            ButtonManager& button_manager,
+            ProximitySensor& proximity_sensor);
+
+  pw::Status GetDeviceInfo(const pw_protobuf_Empty&,
+                           factory_DeviceInfo& response);
 
   pw::Status StartTest(const factory_StartTestRequest& request,
                        pw_protobuf_Empty&);
@@ -33,6 +39,7 @@ class FactoryService final
                           factory_Ltr559Sample& response);
 
  private:
+  Board* board_;
   ButtonManager* button_manager_;
   ProximitySensor* proximity_sensor_;
 };

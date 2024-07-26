@@ -13,6 +13,8 @@
 // the License.
 #pragma once
 
+#include <cstdint>
+
 #include "modules/board/board.rpc.pb.h"
 #include "pw_status/status.h"
 
@@ -35,6 +37,9 @@ class Board {
   /// @param  reboot_types  Indicates whether to disable the picoboot interface,
   /// mass storage interface, or neither (cold boot) upon reboot.
   virtual pw::Status Reboot(board_RebootType_Enum reboot_type) = 0;
+
+  /// Returns the serial number of the board's flash.
+  virtual uint64_t UniqueFlashId() const = 0;
 
  protected:
   Board() = default;
