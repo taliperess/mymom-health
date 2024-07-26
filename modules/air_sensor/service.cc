@@ -54,12 +54,14 @@ void AirSensorService::SampleCallback(pw::chrono::SystemClock::time_point) {
   float pressure = air_sensor_->pressure();
   float humidity = air_sensor_->humidity();
   float gas_resistance = air_sensor_->gas_resistance();
+  uint16_t score = air_sensor_->GetScore();
 
   pw::Status status = sample_writer_.Write({
       .temperature = temperature,
       .pressure = pressure,
       .humidity = humidity,
       .gas_resistance = gas_resistance,
+      .score = score,
   });
   if (status.ok()) {
     ScheduleSample();

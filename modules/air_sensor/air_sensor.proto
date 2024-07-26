@@ -24,10 +24,20 @@ service AirSensor {
 }
 
 message Measurement {
+  // Ambient air temperature.
   float temperature = 1;
+
+  // Barometic pressure.
   float pressure = 2;
+
+  // Relative humidity.
   float humidity = 3;
+
+  // Electrical resistance, in ohms.
   float gas_resistance = 4;
+
+  // Air quality score, ranging from 0 (terrible) to 1023 (excellent).
+  uint32 score = 5;
 }
 
 message MeasureStreamRequest {
