@@ -68,6 +68,8 @@ pubsub_Event EventToProto(const Event& event) {
     proto.which_type = pubsub_Event_led_value_air_quality_tag;
     proto.type.led_value_air_quality =
         LedValueToProto(std::get<LedValueAirQualityMode>(event));
+  } else if (std::holds_alternative<DemoModeTimerExpired>(event)) {
+    proto.which_type = pubsub_Event_demo_mode_timer_expired_tag;
   } else if (std::holds_alternative<ProximityStateChange>(event)) {
     proto.which_type = pubsub_Event_proximity_tag;
     proto.type.proximity = std::get<ProximityStateChange>(event).proximity;
@@ -77,6 +79,13 @@ pubsub_Event EventToProto(const Event& event) {
   } else if (std::holds_alternative<AirQuality>(event)) {
     proto.which_type = pubsub_Event_air_quality_tag;
     proto.type.air_quality = std::get<AirQuality>(event).score;
+  } else if (std::holds_alternative<MorseEncodeRequest>(event)) {
+    proto.which_type = pubsub_Event_morse_encode_request_tag;
+    const auto& morse = std::get<MorseEncodeRequest>(event);
+    auto& msg = proto.type.morse_encode_request.msg;
+    msg[morse.message.copy(proto.type.morse_encode_request.msg,
+                           sizeof(msg) - 1)] = '\0';
+    proto.type.morse_encode_request.repeat = morse.repeat;
   } else {
     PW_LOG_WARN("Unimplemented pubsub service event");
   }

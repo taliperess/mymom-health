@@ -90,6 +90,7 @@ proto_library(
     import_prefix = "pubsub_pb",
     strip_import_prefix = "/modules/pubsub",
     deps = [
+        "//modules/morse_code:proto",
         "@pigweed//pw_protobuf:common_proto",
     ],
 )

@@ -18,11 +18,23 @@ cc_library(
     name = "state_manager",
     srcs = ["state_manager.cc"],
     hdrs = ["state_manager.h"],
+    implementation_deps = [
+        "@pigweed//pw_log",
+        "@pigweed//pw_string:format",
+    ],
     deps = [
+        ":common_base_union",
         "//modules/led:polychrome_led",
         "//modules/pubsub:events",
         "//modules/worker",
         "@pigweed//pw_assert",
-        "@pigweed//pw_log",
+        "@pigweed//pw_chrono:system_timer",
+        "@pigweed//pw_string:string",
     ],
+)
+
+cc_library(
+    name = "common_base_union",
+    hdrs = ["common_base_union.h"],
+    visibility = ["//visibility:private"],
 )

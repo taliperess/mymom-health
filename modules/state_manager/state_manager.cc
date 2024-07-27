@@ -16,107 +16,90 @@
 
 #include "pw_assert/check.h"
 #include "pw_log/log.h"
+#include "pw_string/format.h"
 
 namespace sense {
+
 void StateManager::Init() {
-  pubsub_->Subscribe([this](Event event) {
-    if (std::holds_alternative<ButtonA>(event)) {
-      HandleButtonPress(kProximity, std::get<ButtonA>(event).pressed());
-    } else if (std::holds_alternative<ButtonB>(event)) {
-      HandleButtonPress(kTemperature, std::get<ButtonB>(event).pressed());
-    } else if (std::holds_alternative<ButtonX>(event)) {
-      HandleButtonPress(kMorseCode, std::get<ButtonX>(event).pressed());
-    } else if (std::holds_alternative<ButtonY>(event)) {
-      HandleButtonPress(kColorRotation, std::get<ButtonY>(event).pressed());
-    } else {
-      HandleStateEvent(event);
-    }
-  });
+  pubsub_->Subscribe([this](Event event) { Update(event); });
 }
 
-void StateManager::HandleButtonPress(State button_state, bool pressed) {
+void StateManager::Update(Event event) {
+  switch (static_cast<EventType>(event.index())) {
+    case kAlarmStateChange:
+    case kProximityStateChange:
+    case kProximitySample:
+      break;  // ignore these events
+    case kButtonA:
+      HandleButtonPress(std::get<ButtonA>(event).pressed(),
+                        &State::ButtonAReleased);
+      break;
+    case kButtonB:
+      HandleButtonPress(std::get<ButtonB>(event).pressed(),
+                        &State::ButtonBReleased);
+      break;
+    case kButtonX:
+      HandleButtonPress(std::get<ButtonX>(event).pressed(),
+                        &State::ButtonXReleased);
+      break;
+    case kButtonY:
+      HandleButtonPress(std::get<ButtonY>(event).pressed(),
+                        &State::ButtonYReleased);
+      break;
+    case kLedValueColorRotationMode:
+      state_.get().ColorRotationModeLedValue(
+          std::get<LedValueColorRotationMode>(event));
+      break;
+    case kLedValueMorseCodeMode:
+      state_.get().MorseCodeModeLedValue(
+          std::get<LedValueMorseCodeMode>(event));
+      break;
+    case kLedValueProximityMode:
+      state_.get().ProximityModeLedValue(
+          std::get<LedValueProximityMode>(event));
+      break;
+    case kLedValueAirQualityMode:
+      state_.get().AirQualityModeLedValue(
+          std::get<LedValueAirQualityMode>(event));
+      break;
+    case kDemoModeTimerExpired:
+      state_.get().DemoModeTimerExpired();
+      break;
+    case kAirQuality:
+      last_air_quality_score_ = std::get<AirQuality>(event).score;
+      break;
+    case kMorseEncodeRequest:
+      break;  // ignore these events
+  }
+}
+
+void StateManager::HandleButtonPress(bool pressed, void (State::*function)()) {
   if (pressed) {
-    state_ = kButtonPressed;
-    led_->SetColor(0xff0000);
-    led_->SetBrightness(255);
+    led_.Override(0xffffff, 255);  // Bright white while pressed.
   } else {
-    led_->SetColor(0xffffff);
-    SetState(button_state);
+    led_.EndOverride();
+    (state_.get().*function)();
   }
 }
 
-void StateManager::SetState(State state) {
-  PW_CHECK(state != kButtonPressed);
+void StateManager::StartMorseReadout() {
+  pw::Status status = pw::string::FormatOverwrite(
+      air_quality_score_string_, "%hu", last_air_quality_score_);
+  PW_CHECK_OK(status);
+  pubsub_->Publish(
+      MorseEncodeRequest{.message = air_quality_score_string_, .repeat = 1});
+}
 
-  state_ = state;
-  PW_LOG_INFO("State set to %s", StateString(state_));
-
-  switch (state_) {
-    case kProximity:
-      led_->SetColor(0xffffff);
-      break;
-    case kTemperature:
-      break;
-    case kMorseCode:
-      break;
-    case kColorRotation:
-      break;
-    case kButtonPressed:
-      PW_UNREACHABLE;
+void StateManager::MorseReadout::MorseCodeModeLedValue(
+    LedValueMorseCodeMode value) {
+  manager().led_.SetColor(value);
+  if (value.pattern_finished()) {
+    manager().SetState<AirQualityMode>();
   }
 }
 
-void StateManager::HandleStateEvent(Event& event) {
-  switch (state_) {
-    case kProximity:
-      if (std::holds_alternative<LedValueProximityMode>(event)) {
-        SetLed(std::get<LedValueProximityMode>(event));
-      }
-      break;
-    case kTemperature:
-      if (std::holds_alternative<LedValueAirQualityMode>(event)) {
-        SetLed(std::get<LedValueAirQualityMode>(event));
-      }
-      break;
-    case kMorseCode:
-      if (std::holds_alternative<LedValueMorseCodeMode>(event)) {
-        SetLed(std::get<LedValueMorseCodeMode>(event));
-      }
-      break;
-    case kColorRotation:
-      if (std::holds_alternative<LedValueColorRotationMode>(event)) {
-        SetLed(std::get<LedValueColorRotationMode>(event));
-      }
-      break;
-    case kButtonPressed:
-      // Ignore events in a transition state.
-      return;
-  }
-}
-
-void StateManager::HandleProximityEvent(ProximityStateChange& event) {
-  if (event.proximity) {
-    led_->SetBrightness(255);
-  } else {
-    led_->SetBrightness(64);
-  }
-}
-
-const char* StateManager::StateString(State state) {
-  switch (state) {
-    case kProximity:
-      return "PROXIMITY";
-    case kTemperature:
-      return "TEMPERATURE";
-    case kMorseCode:
-      return "MORSE_CODE";
-    case kColorRotation:
-      return "COLOR_ROTATION";
-    case kButtonPressed:
-      return "BUTTON_PRESSED";
-  }
-
-  return "UNKNOWN";
+void StateManager::LogStateChange(const char* old_state) const {
+  PW_LOG_INFO("StateManager: %s -> %s", old_state, state_.get().name());
 }
 
 }  // namespace sense

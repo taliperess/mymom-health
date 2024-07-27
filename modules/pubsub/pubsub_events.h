@@ -16,6 +16,7 @@
 #include <variant>
 
 #include "modules/pubsub/pubsub.h"
+#include "pw_preprocessor/arguments.h"
 
 namespace sense {
 
@@ -116,7 +117,15 @@ class LedValueAirQualityMode : public LedValue {
   explicit LedValueAirQualityMode(const LedValue& parent) : LedValue(parent) {}
 };
 
-// This definition must be kept up to date with modules/pubsub/pubsub.proto.
+struct DemoModeTimerExpired {};
+
+struct MorseEncodeRequest {
+  std::string_view message;
+  uint32_t repeat;
+};
+
+// This definition must be kept up to date with modules/pubsub/pubsub.proto and
+// the EventType enum.
 using Event = std::variant<AlarmStateChange,
                            ButtonA,
                            ButtonB,
@@ -126,9 +135,33 @@ using Event = std::variant<AlarmStateChange,
                            LedValueMorseCodeMode,
                            LedValueProximityMode,
                            LedValueAirQualityMode,
+                           DemoModeTimerExpired,
                            ProximityStateChange,
                            ProximitySample,
-                           AirQuality>;
+                           AirQuality,
+                           MorseEncodeRequest>;
+
+// Index versions of Event variants, to support finding the event
+enum EventType : size_t {
+  kAlarmStateChange,
+  kButtonA,
+  kButtonB,
+  kButtonX,
+  kButtonY,
+  kLedValueColorRotationMode,
+  kLedValueMorseCodeMode,
+  kLedValueProximityMode,
+  kLedValueAirQualityMode,
+  kDemoModeTimerExpired,
+  kProximityStateChange,
+  kProximitySample,
+  kAirQuality,
+  kMorseEncodeRequest,
+  kLastEventType = kMorseEncodeRequest,
+};
+
+static_assert(kLastEventType + 1 == std::variant_size_v<Event>,
+              "The EventTypes enum must match the Event variant");
 
 // PubSub using Sense events.
 using PubSub = GenericPubSub<Event>;

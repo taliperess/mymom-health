@@ -16,6 +16,7 @@ syntax = "proto3";
 package pubsub;
 
 import "pw_protobuf_protos/common.proto";
+import "morse_code.proto";
 
 service PubSub {
   rpc Publish(Event) returns (pw.protobuf.Empty);
@@ -49,5 +50,7 @@ message Event {
     MorseCodeLedValue led_value_morse_code = 10;
     LedValue led_value_proximity = 11;
     LedValue led_value_air_quality = 12;
+    pw.protobuf.Empty demo_mode_timer_expired = 13;
+    morse_code.SendRequest morse_encode_request = 14;
   }
 }

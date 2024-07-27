@@ -35,11 +35,11 @@ namespace {
 
 const std::array kColorRotationSteps{
     ColorRotationManager::Step{
-        .r = 0xd6, .g = 0x02, .b = 0x70, .num_cycles = 2500},
+        .r = 0xd6, .g = 0x02, .b = 0x70, .num_cycles = 50},
     ColorRotationManager::Step{
-        .r = 0x9b, .g = 0x4f, .b = 0x96, .num_cycles = 2500},
+        .r = 0x9b, .g = 0x4f, .b = 0x96, .num_cycles = 50},
     ColorRotationManager::Step{
-        .r = 0x00, .g = 0x38, .b = 0xa8, .num_cycles = 2500},
+        .r = 0x00, .g = 0x38, .b = 0xa8, .num_cycles = 50},
 };
 
 constexpr LedValue kMorseCodeLedColor(0, 255, 255);
@@ -64,9 +64,14 @@ void InitBoardService() {
                              LedValue(0, 0, 0), state.message_finished()));
                        }
                      });
-  morse_encoder.Encode("PW",
-                       /*repeat=*/0,
-                       Encoder::kDefaultIntervalMs);
+
+  system::PubSub().Subscribe([](Event event) {
+    if (std::holds_alternative<MorseEncodeRequest>(event)) {
+      const MorseEncodeRequest& request = std::get<MorseEncodeRequest>(event);
+      morse_encoder.Encode(
+          request.message, request.repeat, Encoder::kDefaultIntervalMs);
+    }
+  });
 
   static BoardService board_service;
   board_service.Init(system::GetWorker(), system::Board());
