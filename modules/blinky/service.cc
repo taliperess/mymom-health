@@ -17,10 +17,11 @@
 
 namespace sense {
 
-void BlinkyService::Init(Worker& worker,
+void BlinkyService::Init(pw::async2::Dispatcher& dispatcher,
+                         pw::Allocator& allocator,
                          MonochromeLed& monochrome_led,
                          PolychromeLed& polychrome_led) {
-  blinky_.Init(worker, monochrome_led, polychrome_led);
+  blinky_.Init(dispatcher, allocator, monochrome_led, polychrome_led);
   // Start binking once every 1000ms.
   blinky_.Blink(/*blink_count=*/0, /*interval_ms=*/1000);
 }

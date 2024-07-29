@@ -16,11 +16,15 @@
 
 #include "modules/led/monochrome_led_fake.h"
 #include "modules/led/polychrome_led_fake.h"
-#include "modules/worker/test_worker.h"
+#include "pw_allocator/testing.h"
+#include "pw_async2/dispatcher.h"
 #include "pw_thread/sleep.h"
 #include "pw_unit_test/framework.h"
 
 namespace sense {
+
+using AllocatorForTest = ::pw::allocator::test::AllocatorForTest<256>;
+using ::pw::async2::Dispatcher;
 
 // Test fixtures.
 
@@ -58,6 +62,8 @@ class BlinkyTest : public ::testing::Test {
         .count();
   }
 
+  AllocatorForTest allocator_;
+  Dispatcher dispatcher_;
   pw::chrono::VirtualSystemClock& clock_;
   MonochromeLedFake monochrome_led_;
   PolychromeLedFake polychrome_led_;
@@ -66,9 +72,8 @@ class BlinkyTest : public ::testing::Test {
 // Unit tests.
 
 TEST_F(BlinkyTest, Toggle) {
-  TestWorker<> worker;
   Blinky blinky;
-  blinky.Init(worker, monochrome_led_, polychrome_led_);
+  blinky.Init(dispatcher_, allocator_, monochrome_led_, polychrome_led_);
 
   auto start = clock_.now();
   blinky.Toggle();
@@ -78,7 +83,6 @@ TEST_F(BlinkyTest, Toggle) {
   blinky.Toggle();
   pw::this_thread::sleep_for(kInterval * 3);
   blinky.Toggle();
-  worker.Stop();
 
   auto event = FirstActive();
   ASSERT_NE(event, monochrome_led_.events().end());
@@ -102,16 +106,15 @@ TEST_F(BlinkyTest, Toggle) {
 }
 
 TEST_F(BlinkyTest, Blink) {
-  TestWorker worker;
   Blinky blinky;
-  blinky.Init(worker, monochrome_led_, polychrome_led_);
+  blinky.Init(dispatcher_, allocator_, monochrome_led_, polychrome_led_);
 
   auto start = clock_.now();
   EXPECT_EQ(blinky.Blink(1, kIntervalMs), pw::OkStatus());
   while (!blinky.IsIdle()) {
+    dispatcher_.RunUntilStalled().IgnorePoll();
     pw::this_thread::sleep_for(kInterval);
   }
-  worker.Stop();
 
   auto event = FirstActive();
   ASSERT_NE(event, monochrome_led_.events().end());
@@ -125,16 +128,15 @@ TEST_F(BlinkyTest, Blink) {
 }
 
 TEST_F(BlinkyTest, BlinkMany) {
-  TestWorker<> worker;
   Blinky blinky;
-  blinky.Init(worker, monochrome_led_, polychrome_led_);
+  blinky.Init(dispatcher_, allocator_, monochrome_led_, polychrome_led_);
 
   auto start = clock_.now();
   EXPECT_EQ(blinky.Blink(100, kIntervalMs), pw::OkStatus());
   while (!blinky.IsIdle()) {
+    dispatcher_.RunUntilStalled().IgnorePoll();
     pw::this_thread::sleep_for(kInterval);
   }
-  worker.Stop();
 
   // Every "on" and "off" is recorded.
   EXPECT_GE(monochrome_led_.events().size(), 200);
@@ -142,16 +144,15 @@ TEST_F(BlinkyTest, BlinkMany) {
 }
 
 TEST_F(BlinkyTest, BlinkSlow) {
-  TestWorker<> worker;
   Blinky blinky;
-  blinky.Init(worker, monochrome_led_, polychrome_led_);
+  blinky.Init(dispatcher_, allocator_, monochrome_led_, polychrome_led_);
 
   auto start = clock_.now();
   EXPECT_EQ(blinky.Blink(1, kIntervalMs * 32), pw::OkStatus());
   while (!blinky.IsIdle()) {
+    dispatcher_.RunUntilStalled().IgnorePoll();
     pw::this_thread::sleep_for(kInterval);
   }
-  worker.Stop();
 
   auto event = FirstActive();
   ASSERT_NE(event, monochrome_led_.events().end());

@@ -41,8 +41,10 @@ namespace {
   pw::System().rpc_server().RegisterService(pubsub_service);
 
   static sense::BlinkyService blinky_service;
-  blinky_service.Init(
-      system::GetWorker(), system::MonochromeLed(), system::PolychromeLed());
+  blinky_service.Init(pw::System().dispatcher(),
+                      pw::System().allocator(),
+                      system::MonochromeLed(),
+                      system::PolychromeLed());
   pw::System().rpc_server().RegisterService(blinky_service);
 
   static AirSensor& air_sensor = system::AirSensor();

@@ -15,13 +15,16 @@
 
 #include "modules/blinky/blinky.h"
 #include "modules/blinky/blinky_pb/blinky.rpc.pb.h"
+#include "pw_allocator/allocator.h"
+#include "pw_async2/dispatcher.h"
 
 namespace sense {
 
 class BlinkyService final
     : public ::blinky::pw_rpc::nanopb::Blinky::Service<BlinkyService> {
  public:
-  void Init(Worker& worker,
+  void Init(pw::async2::Dispatcher& dispatcher,
+            pw::Allocator& allocator,
             MonochromeLed& monochrome_led,
             PolychromeLed& polychrome_led);
 

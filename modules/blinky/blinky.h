@@ -17,10 +17,12 @@
 
 #include "modules/led/monochrome_led.h"
 #include "modules/led/polychrome_led.h"
+#include "modules/timer_future/timer_future.h"
 #include "modules/worker/worker.h"
+#include "pw_allocator/allocator.h"
+#include "pw_async2/coro_or_else_task.h"
+#include "pw_async2/dispatcher.h"
 #include "pw_chrono/system_clock.h"
-#include "pw_chrono/system_timer.h"
-#include "pw_function/function.h"
 #include "pw_status/status.h"
 #include "pw_sync/interrupt_spin_lock.h"
 #include "pw_sync/lock_annotations.h"
@@ -36,18 +38,15 @@ class Blinky final {
           std::chrono::milliseconds(kDefaultIntervalMs));
 
   Blinky();
-
   ~Blinky();
 
   /// Injects this object's dependencies.
   ///
   /// This method MUST be called before using any other method.
-  void Init(Worker& worker,
+  void Init(pw::async2::Dispatcher& dispatcher,
+            pw::Allocator& allocator,
             MonochromeLed& monochrome_led,
             PolychromeLed& polychrome_led);
-
-  /// Returns the currently configured interval for one blink.
-  pw::chrono::SystemClock::duration interval() const;
 
   /// Turns the LED on if it is off, and off if it is on.
   void Toggle() PW_LOCKS_EXCLUDED(lock_);
@@ -78,21 +77,19 @@ class Blinky final {
   bool IsIdle() const PW_LOCKS_EXCLUDED(lock_);
 
  private:
-  /// Adds a toggle callback to the work queue.
-  pw::Status ScheduleToggle() PW_LOCKS_EXCLUDED(lock_);
+  /// Creates a blinking coroutine.
+  pw::async2::Coro<pw::Status> BlinkLoop(
+      pw::async2::CoroContext&,
+      uint32_t blink_count,
+      pw::chrono::SystemClock::duration interval) PW_LOCKS_EXCLUDED(lock_);
 
-  /// Callback for the timer to toggle the LED.
-  void ToggleCallback(pw::chrono::SystemClock::time_point);
-
-  Worker* worker_ = nullptr;
-  MonochromeLed* monochrome_led_ = nullptr;
-  PolychromeLed* polychrome_led_ = nullptr;
-  pw::chrono::SystemTimer timer_;
-
+  pw::async2::Dispatcher* dispatcher_;
+  pw::Allocator* allocator_;
   mutable pw::sync::InterruptSpinLock lock_;
-  uint32_t num_toggles_ PW_GUARDED_BY(lock_) = 0;
-  pw::chrono::SystemClock::duration interval_ PW_GUARDED_BY(lock_) =
-      kDefaultInterval;
+  MonochromeLed* monochrome_led_ PW_GUARDED_BY(lock_) = nullptr;
+  PolychromeLed* polychrome_led_ PW_GUARDED_BY(lock_) = nullptr;
+  AsyncTimer timer_;
+  mutable pw::async2::CoroOrElseTask blink_task_;
 };
 
 }  // namespace sense

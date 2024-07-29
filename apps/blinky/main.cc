@@ -32,7 +32,10 @@ int main() {
   rpc_server.RegisterService(board_service);
 
   static sense::BlinkyService blinky_service;
-  blinky_service.Init(worker, monochrome_led, polychrome_led);
+  blinky_service.Init(pw::System().dispatcher(),
+                      pw::System().allocator(),
+                      monochrome_led,
+                      polychrome_led);
   rpc_server.RegisterService(blinky_service);
 
   PW_LOG_INFO("Started blinky app; waiting for RPCs...");

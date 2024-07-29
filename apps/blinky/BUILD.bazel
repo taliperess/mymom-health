@@ -94,7 +94,8 @@ RP2040_CONSOLE_COMMON_ARGS = [
 ]
 
 RP2350_CONSOLE_COMMON_ARGS = [
-    a.replace("rp2040", "rp2350") for a in RP2040_CONSOLE_COMMON_ARGS
+    a.replace("rp2040", "rp2350")
+    for a in RP2040_CONSOLE_COMMON_ARGS
 ]
 
 native_binary(
@@ -106,7 +107,6 @@ native_binary(
         "//:pw_console_config",
     ],
 )
-
 
 native_binary(
     name = "rp2350_console",

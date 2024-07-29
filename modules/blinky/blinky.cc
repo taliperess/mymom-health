@@ -12,25 +12,62 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 #include "blinky.h"
-#define PW_LOG_MODULE_NAME "BLINKY"
+// FIXME
+// #define PW_LOG_MODULE_NAME "BLINKY"
 
 #include <mutex>
 
+#include "modules/blinky/blinky.h"
+#include "pw_async2/coro.h"
 #include "pw_log/log.h"
 #include "pw_preprocessor/compiler.h"
 
-#include "modules/blinky/blinky.h"
-#include "modules/worker/worker.h"
-
 namespace sense {
 
-Blinky::Blinky() : timer_(pw::bind_member<&Blinky::ToggleCallback>(this)) {}
+using ::pw::Allocator;
+using ::pw::OkStatus;
+using ::pw::Status;
+using ::pw::async2::Coro;
+using ::pw::async2::CoroContext;
+using ::pw::async2::Dispatcher;
+using ::pw::sync::InterruptSpinLock;
 
-void Blinky::Init(Worker& worker,
+Coro<Status> Blinky::BlinkLoop(CoroContext&,
+                               uint32_t blink_count,
+                               pw::chrono::SystemClock::duration interval) {
+  for (uint32_t blinked = 0; blinked < blink_count || blink_count == 0;
+       ++blinked) {
+    {
+      std::lock_guard lock(lock_);
+      monochrome_led_->TurnOff();
+    }
+    co_await timer_.WaitFor(interval);
+    {
+      std::lock_guard lock(lock_);
+      monochrome_led_->TurnOn();
+    }
+    co_await timer_.WaitFor(interval);
+  }
+  {
+    std::lock_guard lock(lock_);
+    monochrome_led_->TurnOff();
+  }
+  co_return OkStatus();
+}
+
+Blinky::Blinky()
+    : blink_task_(Coro<Status>::Empty(), [](Status) {
+        PW_LOG_ERROR("Failed to allocate blink loop coroutine.");
+      }) {}
+
+void Blinky::Init(Dispatcher& dispatcher,
+                  Allocator& allocator,
                   MonochromeLed& monochrome_led,
                   PolychromeLed& polychrome_led) {
-  worker_ = &worker;
+  dispatcher_ = &dispatcher;
+  allocator_ = &allocator;
 
+  std::lock_guard lock(lock_);
   monochrome_led_ = &monochrome_led;
   monochrome_led_->TurnOff();
 
@@ -38,27 +75,17 @@ void Blinky::Init(Worker& worker,
   polychrome_led_->TurnOff();
 }
 
-Blinky::~Blinky() { timer_.Cancel(); }
-
-pw::chrono::SystemClock::duration Blinky::interval() const {
-  std::lock_guard lock(lock_);
-  return interval_;
-}
+Blinky::~Blinky() { blink_task_.Deregister(); }
 
 void Blinky::Toggle() {
-  timer_.Cancel();
+  blink_task_.Deregister();
   PW_LOG_INFO("Toggling LED");
-  {
-    std::lock_guard lock(lock_);
-    monochrome_led_->Toggle();
-    if (num_toggles_ > 0) {
-      --num_toggles_;
-    }
-  }
+  std::lock_guard lock(lock_);
+  monochrome_led_->Toggle();
 }
 
 void Blinky::SetLed(bool on) {
-  timer_.Cancel();
+  blink_task_.Deregister();
   std::lock_guard lock(lock_);
   if (on) {
     PW_LOG_INFO("Setting LED on");
@@ -69,39 +96,27 @@ void Blinky::SetLed(bool on) {
   }
 }
 
-void Blinky::ToggleCallback(pw::chrono::SystemClock::time_point) {
-  Toggle();
-  return ScheduleToggle().IgnoreError();
-}
-
 pw::Status Blinky::Blink(uint32_t blink_count, uint32_t interval_ms) {
-  uint32_t num_toggles;
-  if (PW_MUL_OVERFLOW(blink_count, 2, &num_toggles)) {
-    num_toggles = 0;
-  }
-  if (num_toggles == 0) {
+  if (blink_count == 0) {
     PW_LOG_INFO("Blinking forever at a %ums interval", interval_ms);
-    num_toggles = std::numeric_limits<uint32_t>::max();
   } else {
     PW_LOG_INFO(
-        "Blinking %u times at a %ums interval", num_toggles / 2, interval_ms);
+        "Blinking %u times at a %ums interval", blink_count, interval_ms);
   }
+
   pw::chrono::SystemClock::duration interval =
       pw::chrono::SystemClock::for_at_least(
           std::chrono::milliseconds(interval_ms));
 
-  timer_.Cancel();
-  {
-    std::lock_guard lock(lock_);
-    monochrome_led_->TurnOff();
-    num_toggles_ = num_toggles;
-    interval_ = interval;
-  }
-  return ScheduleToggle();
+  blink_task_.Deregister();
+  CoroContext coro_cx(*allocator_);
+  blink_task_.SetCoro(BlinkLoop(coro_cx, blink_count, interval));
+  dispatcher_->Post(blink_task_);
+  return OkStatus();
 }
 
 void Blinky::Pulse(uint32_t interval_ms) {
-  timer_.Cancel();
+  blink_task_.Deregister();
   PW_LOG_INFO("Pulsing forever at a %ums interval", interval_ms);
   std::lock_guard lock(lock_);
   monochrome_led_->Pulse(interval_ms);
@@ -111,7 +126,7 @@ void Blinky::SetRgb(uint8_t red,
                     uint8_t green,
                     uint8_t blue,
                     uint8_t brightness) {
-  timer_.Cancel();
+  blink_task_.Deregister();
   PW_LOG_INFO("Setting RGB LED with red=0x%02x, green=0x%02x, blue=0x%02x",
               red,
               green,
@@ -123,7 +138,7 @@ void Blinky::SetRgb(uint8_t red,
 }
 
 void Blinky::Rainbow(uint32_t interval_ms) {
-  timer_.Cancel();
+  blink_task_.Deregister();
   PW_LOG_INFO("Cycling through rainbow at a %ums interval", interval_ms);
   std::lock_guard lock(lock_);
   polychrome_led_->Rainbow(interval_ms);
@@ -131,23 +146,7 @@ void Blinky::Rainbow(uint32_t interval_ms) {
 
 bool Blinky::IsIdle() const {
   std::lock_guard lock(lock_);
-  return num_toggles_ == 0;
-}
-
-pw::Status Blinky::ScheduleToggle() {
-  uint32_t num_toggles;
-  {
-    std::lock_guard lock(lock_);
-    num_toggles = num_toggles_;
-  }
-  // Scheduling the timer again might not be safe from this context, so instead
-  // just defer to the work queue.
-  if (num_toggles > 0) {
-    worker_->RunOnce([this]() { timer_.InvokeAfter(interval()); });
-  } else {
-    PW_LOG_INFO("Stopped blinking");
-  }
-  return pw::OkStatus();
+  return !blink_task_.IsRegistered();
 }
 
 }  // namespace sense
