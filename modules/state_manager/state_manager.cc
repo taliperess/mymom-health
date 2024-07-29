@@ -73,7 +73,7 @@ void StateManager::Update(Event event) {
   }
 }
 
-void StateManager::HandleButtonPress(bool pressed, void (State::*function)()) {
+void StateManager::HandleButtonPress(bool pressed, void (State::* function)()) {
   if (pressed) {
     led_.Override(0xffffff, 255);  // Bright white while pressed.
   } else {

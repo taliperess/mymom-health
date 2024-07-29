@@ -74,21 +74,15 @@ class HysteresisEdgeDetector : public internal::BaseHysteresisEdgeDetector {
   explicit constexpr HysteresisEdgeDetector(Sample low_threshold,
                                             Sample high_threshold)
       : low_threshold_(low_threshold), high_threshold_(high_threshold) {
-    CheckThresholds();
+    PW_ASSERT(low_threshold_ <= high_threshold_);
   }
 
-  /// Sets the low threshold, which is inclusive.
-  void set_low_threshold(Sample low_threshold) {
+  /// Sets the low and high thresholds, inclusive.
+  void set_low_and_high_thresholds(Sample low_threshold, Sample high_threshold) {
+    PW_ASSERT(low_threshold_ <= high_threshold_);
     low_threshold_ = low_threshold;
-    ResetState();
-    CheckThresholds();
-  }
-
-  /// Sets the high threshold, which is inclusive.
-  void set_high_threshold(Sample high_threshold) {
     high_threshold_ = high_threshold;
     ResetState();
-    CheckThresholds();
   }
 
   Edge Update(Sample sample) {
@@ -102,10 +96,6 @@ class HysteresisEdgeDetector : public internal::BaseHysteresisEdgeDetector {
   }
 
  private:
-  constexpr void CheckThresholds() {
-    PW_ASSERT(low_threshold_ <= high_threshold_);
-  }
-
   Sample low_threshold_;
   Sample high_threshold_;
 };

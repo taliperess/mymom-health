@@ -27,6 +27,9 @@ cc_library(
     srcs = ["air_sensor.cc"],
     hdrs = ["air_sensor.h"],
     deps = [
+        "//modules/edge_detector:hysteresis_edge_detector",
+        "//modules/pubsub:events",
+        "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_metric:metric",
         "@pigweed//pw_result",
         "@pigweed//pw_status",
@@ -53,6 +56,10 @@ pw_cc_test(
     deps = [
         ":air_sensor",
         ":air_sensor_fake",
+        "//modules/pubsub:events",
+        "//modules/worker:test_worker",
+        "@pigweed//pw_chrono:simulated_system_clock",
+        "@pigweed//pw_sync:timed_thread_notification",
         "@pigweed//pw_thread:test_thread_context",
         "@pigweed//pw_thread:thread",
         "@pigweed//pw_unit_test",

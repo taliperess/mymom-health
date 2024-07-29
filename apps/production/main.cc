@@ -23,6 +23,7 @@
 #include "modules/pubsub/service.h"
 #include "modules/sampling_thread/sampling_thread.h"
 #include "modules/state_manager/state_manager.h"
+#include "pw_assert/check.h"
 #include "pw_log/log.h"
 #include "pw_system/system.h"
 #include "pw_thread/detached_thread.h"

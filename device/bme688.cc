@@ -82,7 +82,8 @@ static void Delay(uint32_t interval_us, void* context) {
 }
 
 Bme688::Bme688(pw::i2c::Initiator& initiator, Worker& worker)
-    : worker_(worker),
+    : AirSensor(),
+      worker_(worker),
       i2c_device_(initiator,
                   kAddress,
                   pw::endian::native,

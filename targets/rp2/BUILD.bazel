@@ -155,3 +155,12 @@ cc_library(
         "@pigweed//pw_system:extra_platform_libs",
     ],
 )
+
+# Several tests store `TestWorker` thread contexts in their unit test object.
+# Since these thread stacks are currently 32k, the test objects may be large.
+cc_library(
+    name = "64k_unit_tests",
+    defines = [
+        "PW_UNIT_TEST_CONFIG_MEMORY_POOL_SIZE=65536",
+    ],
+)

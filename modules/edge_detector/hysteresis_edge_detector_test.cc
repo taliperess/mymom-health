@@ -64,9 +64,9 @@ TEST(HysteresisEdgeDetector, ChangingThresholdResetsState) {
   sense::HysteresisEdgeDetector<uint16_t> edge_detector(100, 200);
 
   EXPECT_EQ(edge_detector.Update(0), sense::Edge::kNone);
-  edge_detector.set_high_threshold(100);
+  edge_detector.set_low_and_high_thresholds(100, 100);
   EXPECT_EQ(edge_detector.Update(200), sense::Edge::kNone);
-  edge_detector.set_low_threshold(0);
+  edge_detector.set_low_and_high_thresholds(0, 100);
   EXPECT_EQ(edge_detector.Update(0), sense::Edge::kNone);
   EXPECT_EQ(edge_detector.Update(100), sense::Edge::kRising);
   EXPECT_EQ(edge_detector.Update(1), sense::Edge::kNone);

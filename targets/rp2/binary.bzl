@@ -32,6 +32,7 @@ _COMMON_FLAGS = merge_flags_for_transition_impl(
         "@pico-sdk//bazel/config:PICO_CLIB": "@pigweed//targets/rp2040:pico_sdk_clib_select",
         "@pico-sdk//bazel/config:PICO_TOOLCHAIN": "clang",
         "@pigweed//pw_toolchain:cortex-m_toolchain_kind": "clang",
+        "@pigweed//pw_unit_test:config_override": "//targets/rp2:64k_unit_tests",
     }
 )
 

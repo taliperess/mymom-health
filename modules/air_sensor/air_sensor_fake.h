@@ -56,10 +56,10 @@ class AirSensorFake : public AirSensor {
   }
 
   bool autopublish_ = true;
-  float temperature_;
-  float pressure_;
-  float humidity_;
-  float gas_resistance_;
+  float temperature_ = AirSensor::kDefaultTemperature;
+  float pressure_ = AirSensor::kDefaultPressure;
+  float humidity_ = AirSensor::kDefaultHumidity;
+  float gas_resistance_ = AirSensor::kDefaultGasResistance;
   pw::sync::InterruptSpinLock lock_;
   pw::sync::ThreadNotification* notification_ PW_GUARDED_BY(lock_) = nullptr;
 };

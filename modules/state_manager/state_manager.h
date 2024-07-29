@@ -208,7 +208,7 @@ class StateManager {
   // Respond to a PubSub event.
   void Update(Event event);
 
-  void HandleButtonPress(bool pressed, void (State::*function)());
+  void HandleButtonPress(bool pressed, void (State::* function)());
 
   template <typename StateType>
   void SetState() {
