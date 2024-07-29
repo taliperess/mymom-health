@@ -15,21 +15,6 @@
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "manager",
-    srcs = ["manager.cc"],
-    hdrs = ["manager.h"],
-    implementation_deps = [
-        "@pigweed//pw_assert",
-        "@pigweed//pw_log",
-    ],
-    deps = [
-        "//modules/edge_detector:pubsub",
-        "//modules/pubsub:events",
-        "@pigweed//pw_chrono:system_clock",
-    ],
-)
-
-cc_library(
     name = "sensor",
     hdrs = ["sensor.h"],
     deps = [

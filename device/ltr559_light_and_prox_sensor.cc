@@ -19,6 +19,13 @@
 #include "pw_log/log.h"
 
 namespace sense {
+namespace {
+
+// Constants from the manufacturer.
+constexpr int kChannel0Constants[] = {17743, 42785, 5926, 0};
+constexpr int kChannel1Constants[] = {-11059, 19548, -1185, 0};
+
+}  // namespace
 
 Ltr559LightAndProxSensor::Ltr559LightAndProxSensor(
     pw::i2c::Initiator& i2c_initiator,
@@ -38,7 +45,34 @@ pw::Result<uint16_t> Ltr559LightAndProxSensor::ReadProximitySample() {
   return sample & 0x3FFu;  // mask to the 11-bit sample
 }
 
-pw::Result<uint16_t> Ltr559ProximitySensor::DoReadSample() {
+pw::Result<float> Ltr559LightAndProxSensor::ReadLightSampleLux() {
+  uint16_t channels_1_0_samples[2] = {};
+  const auto& [channel_1, channel_0] = channels_1_0_samples;
+  PW_TRY(device_.ReadRegisters16(
+      kAlsDataCh1Address, channels_1_0_samples, timeout_));
+
+  // Calculate the lux from the two channels based on a formula from the
+  // manufacturer.
+  const int ratio = (channel_1 + channel_0 == 0)
+                        ? 101
+                        : (channel_1 * 100 / (channel_1 + channel_0));
+  const int index = ratio < 45 ? 0 : ratio < 64 ? 1 : ratio < 85 ? 2 : 3;
+
+  float lux = channel_0 * kChannel0Constants[index] -
+              channel_1 * kChannel1Constants[index];
+  lux /= (kDefaultIntegrationTimeMillis / 100);
+  lux /= kDefaultGain;
+  lux /= 10000;
+  return lux;
+}
+
+pw::Result<Ltr559LightAndProxSensor::Info> Ltr559LightAndProxSensor::ReadIds() {
+  uint8_t ids[2];
+  PW_TRY(device_.ReadRegisters8(kPartIdAddress, ids, timeout_));
+  return Info{.part_id = ids[0], .manufacturer_id = ids[1]};
+}
+
+pw::Result<uint16_t> Ltr559ProxAndLightSensorImpl::DoReadProxSample() {
   // Readings are 11-bit unsigned integers. Scale them to 16 bits.
   PW_TRY_ASSIGN(uint16_t raw_sample, sensor_.ReadProximitySample());
   PW_LOG_DEBUG("LTR-559 sample: %4hu (0x%4hx), scaled: %5u",

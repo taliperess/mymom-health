@@ -13,29 +13,29 @@
 // the License.
 #pragma once
 
-#include "modules/proximity/sensor.h"
+#include "modules/light/sensor.h"
 
 namespace sense {
 
 /// Fake proximity sensor.
-class FakeProximitySensor final : public ProximitySensor {
+class FakeAmbientLightSensor final : public AmbientLightSensor {
  public:
-  constexpr FakeProximitySensor() = default;
+  constexpr FakeAmbientLightSensor() = default;
 
-  void set_sample(uint16_t sample) { sample_ = sample; }
+  void set_sample(float sample) { sample_ = sample; }
 
   void set_sample_error(pw::Status error) {
-    sample_ = pw::Result<uint16_t>(error);
+    sample_ = pw::Result<float>(error);
   }
 
  private:
-  pw::Status DoEnableProximitySensor() override { return pw::OkStatus(); }
+  pw::Status DoEnableLightSensor() override { return pw::OkStatus(); }
 
-  pw::Status DoDisableProximitySensor() override { return pw::OkStatus(); }
+  pw::Status DoDisableLightSensor() override { return pw::OkStatus(); }
 
-  pw::Result<uint16_t> DoReadProxSample() override { return sample_; }
+  pw::Result<float> DoReadLightSampleLux() override { return sample_; }
 
-  pw::Result<uint16_t> sample_;
+  pw::Result<float> sample_;
 };
 
 }  // namespace sense

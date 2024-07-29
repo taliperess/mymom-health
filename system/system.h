@@ -18,6 +18,7 @@
 #include "modules/buttons/manager.h"
 #include "modules/led/monochrome_led.h"
 #include "modules/led/polychrome_led.h"
+#include "modules/light/sensor.h"
 #include "modules/proximity/sensor.h"
 
 // The functions in this file return specific implementations of singleton types
@@ -34,6 +35,8 @@ void Init();
 AirSensor& AirSensor();
 
 ProximitySensor& ProximitySensor();
+
+AmbientLightSensor& AmbientLightSensor();
 
 Board& Board();
 

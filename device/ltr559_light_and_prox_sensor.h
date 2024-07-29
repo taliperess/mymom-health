@@ -16,6 +16,7 @@
 #include <chrono>
 #include <utility>
 
+#include "modules/light/sensor.h"
 #include "modules/proximity/sensor.h"
 #include "pw_chrono/system_clock.h"
 #include "pw_i2c/address.h"
@@ -40,6 +41,16 @@ class Ltr559LightAndProxSensor {
                            pw::chrono::SystemClock::duration timeout =
                                std::chrono::milliseconds(100));
 
+  /// Enables the ambient light sensor.
+  pw::Status EnableLight() {
+    return device_.WriteRegister(kAlsContrAddress, std::byte{0x01}, timeout_);
+  }
+
+  pw::Status DisableLight() {
+    return device_.WriteRegister(kAlsContrAddress, std::byte{0}, timeout_);
+  }
+
+  /// Enables the proximity sensor.
   pw::Status EnableProximity() {
     return device_.WriteRegister(kPsContrAddress, std::byte{0x03}, timeout_);
   }
@@ -48,29 +59,64 @@ class Ltr559LightAndProxSensor {
     return device_.WriteRegister(kPsContrAddress, std::byte{0}, timeout_);
   }
 
+  struct Info {
+    uint8_t part_id;
+    uint8_t manufacturer_id;
+  };
+
+  pw::Result<Info> ReadIds();
+
   pw::Result<uint16_t> ReadProximitySample();
 
+  pw::Result<float> ReadLightSampleLux();
+
  private:
+  static constexpr uint8_t kAlsContrAddress = 0x80;
   static constexpr uint8_t kPsContrAddress = 0x81;
+
+  // 0x86: PART_ID
+  // 0x87: MANUFAC_ID
+  static constexpr uint8_t kPartIdAddress = 0x86;
+
+  // 0x88-89: ALS_DATA_CH1
+  // 0x8A-8B: ALS_DATA_CH0
+  static constexpr uint8_t kAlsDataCh1Address = 0x88;
+
+  static constexpr int kDefaultIntegrationTimeMillis = 100;
+  static constexpr int kDefaultGain = 1;
 
   pw::i2c::Initiator& i2c_initiator_;
   pw::i2c::RegisterDevice device_;
   pw::chrono::SystemClock::duration timeout_;
 };
 
-// LTR559 that inmplements the generic ProximitySensor interface.
-class Ltr559ProximitySensor final : public ProximitySensor {
+// LTR559 that implements the generic ProximitySensor and AmbientLightSensor
+// interfaces.
+class Ltr559ProxAndLightSensorImpl final : public AmbientLightSensor,
+                                           public ProximitySensor {
  public:
   template <typename... Args>
-  explicit Ltr559ProximitySensor(Args&&... args)
+  explicit Ltr559ProxAndLightSensorImpl(Args&&... args)
       : sensor_(std::forward<Args>(args)...) {}
 
  private:
-  pw::Status DoEnable() override { return sensor_.EnableProximity(); }
+  pw::Status DoEnableProximitySensor() override {
+    return sensor_.EnableProximity();
+  }
 
-  pw::Status DoDisable() override { return sensor_.DisableProximity(); }
+  pw::Status DoDisableProximitySensor() override {
+    return sensor_.DisableProximity();
+  }
 
-  pw::Result<uint16_t> DoReadSample() override;
+  pw::Status DoEnableLightSensor() override { return sensor_.EnableLight(); }
+
+  pw::Status DoDisableLightSensor() override { return sensor_.DisableLight(); }
+
+  pw::Result<uint16_t> DoReadProxSample() override;
+
+  pw::Result<float> DoReadLightSampleLux() override {
+    return sensor_.ReadLightSampleLux();
+  }
 
   Ltr559LightAndProxSensor sensor_;
 };

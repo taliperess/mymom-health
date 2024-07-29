@@ -1,3 +1,4 @@
+
 // Copyright 2024 The Pigweed Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -17,33 +18,27 @@
 
 namespace sense {
 
-/// Represents a proximity sensor.
-class ProximitySensor {
+/// Represents an ambient light sensor.
+class AmbientLightSensor {
  public:
   /// Starts the sensor so that ReadSample() will return data at the device's
   /// configured interval.
-  pw::Status Enable() { return DoEnableProximitySensor(); }
+  pw::Status Enable() { return DoEnableLightSensor(); }
 
   /// Stops the sensor. ReadSample() will no longer return new samples.
-  pw::Status Disable() { return DoDisableProximitySensor(); }
+  pw::Status Disable() { return DoDisableLightSensor(); }
 
-  /// Reads a sample. Sample values range from 0 to 65535. Proximity sensors
-  /// must scale their values to span this range.
-  ///
-  /// Proximity sensors may not be capable of reporting reliable, calibrated
-  /// distances. Readings may vary significantly depending on the materials
-  /// involved. Users should characterize proximity sensors in their desired use
-  /// case to understand these values.
-  virtual pw::Result<uint16_t> ReadSample() { return DoReadProxSample(); }
+  /// Reads an ambient light sample in lux.
+  virtual pw::Result<float> ReadSampleLux() { return DoReadLightSampleLux(); }
 
  protected:
   // Prohibit polymorphic destruction for now.
-  ~ProximitySensor() = default;
+  ~AmbientLightSensor() = default;
 
  private:
-  virtual pw::Status DoEnableProximitySensor() = 0;
-  virtual pw::Status DoDisableProximitySensor() = 0;
-  virtual pw::Result<uint16_t> DoReadProxSample() = 0;
+  virtual pw::Status DoEnableLightSensor() = 0;
+  virtual pw::Status DoDisableLightSensor() = 0;
+  virtual pw::Result<float> DoReadLightSampleLux() = 0;
 };
 
 }  // namespace sense

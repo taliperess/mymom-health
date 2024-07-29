@@ -47,6 +47,7 @@ cc_library(
         "@pigweed//pw_log",
     ],
     deps = [
+        "//modules/light:sensor",
         "//modules/proximity:sensor",
         "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_i2c:initiator",

@@ -16,6 +16,7 @@
 
 #include "modules/air_sensor/air_sensor_fake.h"
 #include "modules/board/board_fake.h"
+#include "modules/light/fake_sensor.h"
 #include "modules/proximity/fake_sensor.h"
 #include "pw_assert/check.h"
 #include "pw_digital_io/digital_io.h"
@@ -73,6 +74,11 @@ sense::Board& Board() {
 sense::ButtonManager& ButtonManager() {
   static ::sense::ButtonManager manager(io_sw_a, io_sw_b, io_sw_x, io_sw_y);
   return manager;
+}
+
+sense::AmbientLightSensor& AmbientLightSensor() {
+  static ::sense::FakeAmbientLightSensor fake_light;
+  return fake_light;
 }
 
 sense::ProximitySensor& ProximitySensor() {

@@ -59,6 +59,11 @@ pw::i2c::Initiator& I2cInitiator() {
   return i2c0_bus;
 }
 
+Ltr559ProxAndLightSensorImpl& Ltr559() {
+  static Ltr559ProxAndLightSensorImpl sensor(I2cInitiator());
+  return sensor;
+}
+
 }  // namespace
 
 namespace {
@@ -122,9 +127,8 @@ sense::ButtonManager& ButtonManager() {
   return manager;
 }
 
-sense::ProximitySensor& ProximitySensor() {
-  static Ltr559ProximitySensor ltr559(I2cInitiator());
-  return ltr559;
-}
+sense::AmbientLightSensor& AmbientLightSensor() { return Ltr559(); }
+
+sense::ProximitySensor& ProximitySensor() { return Ltr559(); }
 
 }  // namespace sense::system
