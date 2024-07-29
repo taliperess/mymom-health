@@ -26,7 +26,8 @@
           [
             "test",
             "--config=tsan",
-            "//..."
+            "//...",
+            "--runs_per_test=10"
           ],
           [
             "test",
