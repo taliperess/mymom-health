@@ -43,7 +43,8 @@ class Bme688 : public AirSensor {
   Worker& worker_;
   pw::i2c::RegisterDevice i2c_device_;
   pw::chrono::SystemTimer get_data_;
-  pw::sync::ThreadNotification* notification_ = nullptr;
+  pw::sync::InterruptSpinLock lock_;
+  pw::sync::ThreadNotification* notification_ PW_GUARDED_BY(lock_) = nullptr;
 };
 
 }  // namespace sense

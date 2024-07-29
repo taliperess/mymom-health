@@ -126,10 +126,13 @@ pw::Status Bme688::DoInit() {
 
 pw::Status Bme688::DoMeasure(pw::sync::ThreadNotification& notification) {
   get_data_.Cancel();
-  if (notification_ != nullptr) {
-    notification_->release();
+  {
+    std::lock_guard lock(lock_);
+    if (notification_ != nullptr) {
+      notification_->release();
+    }
+    notification_ = &notification;
   }
-  notification_ = &notification;
 
   heater_.enable = BME68X_ENABLE;
   heater_.heatr_temp = kHeaterTemperature;
@@ -155,6 +158,7 @@ void Bme688::GetDataCallback(pw::chrono::SystemClock::time_point) {
       n != 0) {
     Update(data.temperature, data.pressure, data.humidity, data.gas_resistance);
   }
+  std::lock_guard lock(lock_);
   notification_->release();
   notification_ = nullptr;
 }

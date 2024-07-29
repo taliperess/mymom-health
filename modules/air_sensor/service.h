@@ -40,6 +40,8 @@ class AirSensorService final
   void MeasureStream(const air_sensor_MeasureStreamRequest& request,
                      ServerWriter<air_sensor_Measurement>& writer);
 
+  pw::Status LogMetrics(const pw_protobuf_Empty&, pw_protobuf_Empty&);
+
  private:
   void SampleCallback(pw::chrono::SystemClock::time_point);
 

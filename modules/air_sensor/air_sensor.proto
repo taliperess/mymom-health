@@ -21,6 +21,8 @@ service AirSensor {
   rpc Measure(pw.protobuf.Empty) returns (Measurement);
 
   rpc MeasureStream(MeasureStreamRequest) returns (stream Measurement);
+
+  rpc LogMetrics(pw.protobuf.Empty) returns (pw.protobuf.Empty);
 }
 
 message Measurement {

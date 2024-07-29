@@ -49,6 +49,12 @@ void AirSensorService::MeasureStream(
   ScheduleSample();
 }
 
+pw::Status AirSensorService::LogMetrics(const pw_protobuf_Empty&,
+                                        pw_protobuf_Empty&) {
+  air_sensor_->LogMetrics();
+  return pw::OkStatus();
+}
+
 void AirSensorService::SampleCallback(pw::chrono::SystemClock::time_point) {
   float temperature = air_sensor_->temperature();
   float pressure = air_sensor_->pressure();

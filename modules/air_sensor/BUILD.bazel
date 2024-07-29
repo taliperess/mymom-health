@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+load("@pigweed//pw_build:pigweed.bzl", "pw_cc_test")
 load(
     "@pigweed//pw_protobuf_compiler:pw_proto_library.bzl",
     "nanopb_proto_library",
@@ -25,10 +26,8 @@ cc_library(
     name = "air_sensor",
     srcs = ["air_sensor.cc"],
     hdrs = ["air_sensor.h"],
-    implementation_deps = [
-    ],
     deps = [
-        "@pigweed//pw_log",
+        "@pigweed//pw_metric:metric",
         "@pigweed//pw_result",
         "@pigweed//pw_status",
         "@pigweed//pw_sync:interrupt_spin_lock",
@@ -42,8 +41,21 @@ cc_library(
     hdrs = ["air_sensor_fake.h"],
     deps = [
         ":air_sensor",
+        "@pigweed//pw_assert",
         "@pigweed//pw_status",
         "@pigweed//pw_sync:thread_notification",
+    ],
+)
+
+pw_cc_test(
+    name = "air_sensor_test",
+    srcs = ["air_sensor_test.cc"],
+    deps = [
+        ":air_sensor",
+        ":air_sensor_fake",
+        "@pigweed//pw_thread:test_thread_context",
+        "@pigweed//pw_thread:thread",
+        "@pigweed//pw_unit_test",
     ],
 )
 
