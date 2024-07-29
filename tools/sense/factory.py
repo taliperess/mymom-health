@@ -221,6 +221,27 @@ class LedTest(Test):
 class Ltr559Test(Test):
     _SENSOR_DARK_THRESHOLD = 20000
 
+    @dataclass
+    class Samples:
+        count: int = 0
+        total_value: int = 0
+        min_value: int = 0
+        max_value: int = 0
+
+        @property
+        def mean_value(self) -> float:
+            return self.total_value / self.count
+
+        def update(self, value: int) -> None:
+            self.count += 1
+            self.total_value += value
+            self.min_value = min(self.min_value, value)
+            self.max_value = max(self.max_value, value)
+
+        def __str__(self) -> str:
+            return (f'{self.count} total samples; min: {self.min_value}, '
+                    f'max: {self.max_value}, mean: {self.mean_value}')
+
     def __init__(self, rpcs):
         super().__init__('Ltr559Test', rpcs)
         self._factory_service = rpcs.factory.Factory
@@ -241,50 +262,67 @@ class Ltr559Test(Test):
 
         print('Getting initial sensor readings', end='', flush=True)
 
-        initial_value = 0
-        num_samples = 0
+        baseline_samples = Ltr559Test.Samples()
 
-        while num_samples < 5:
+        while baseline_samples.count < 5:
             status, response = self._factory_service.SampleLtr559()
             if status is not Status.OK:
                 return False
 
-            initial_value += response.value
-            num_samples += 1
+            baseline_samples.update(response.value)
             print('.', end='', flush=True)
 
-        initial_value //= num_samples
-
         print(colors().green(' DONE'))
+        print(baseline_samples)
 
+        print('')
         self.prompt('Cover the light sensor')
 
-        if not self._sample_until(30, lambda value: value > Ltr559Test._SENSOR_DARK_THRESHOLD):
+        success, samples = self._sample_until(
+            50,
+            lambda value: value > Ltr559Test._SENSOR_DARK_THRESHOLD,
+        )
+        print(samples)
+        if not success:
             self.fail_test('ltr559_dark')
             return False
 
         self.pass_test('ltr559_dark')
+        print('')
         self.prompt('Uncover the light sensor')
 
-        if not self._sample_until(30, lambda value: abs(value - initial_value) < 100):
+        success, samples = self._sample_until(
+            50,
+            lambda value: abs(value - baseline_samples.mean_value) < 100,
+        )
+        print(samples)
+        if not success:
             self.fail_test('ltr559_bright')
             return False
 
         self.pass_test('ltr559_bright')
         return True
 
-    def _sample_until(self, max_samples: int, predicate: Callable[[int], bool]) -> bool:
-        for _ in range(max_samples):
+    def _sample_until(self, max_samples: int, predicate: Callable[[int], bool]) -> Tuple[bool, Samples]:
+        samples = Ltr559Test.Samples()
+        recent_samples = [None for _ in range(5)]
+
+        for i in range(max_samples):
             status, response = self._factory_service.SampleLtr559()
             if status is not Status.OK:
-                return False
+                return False, samples
 
-            if predicate(response.value):
-                return True
+            recent_samples[i % len(recent_samples)] = response.value
+            samples.update(response.value)
+
+            if i >= len(recent_samples):
+                moving_average = sum(recent_samples) / len(recent_samples)
+                if predicate(moving_average):
+                    return True, samples
 
             time.sleep(0.1)
 
-        return False
+        return False, samples
 
 
 def _run_tests(rpcs) -> bool:
@@ -299,8 +337,8 @@ def _run_tests(rpcs) -> bool:
     all_passes = []
     all_failures = []
 
-    for test in tests_to_run:
-        start_msg = f'Running test {test.name}'
+    for num, test in enumerate(tests_to_run):
+        start_msg = f'[{num + 1}/{len(tests_to_run)}] Running test {test.name}'
         print('')
         print('=' * len(start_msg))
         print(start_msg)
