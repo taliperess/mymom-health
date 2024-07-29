@@ -43,8 +43,6 @@ const std::array kColorRotationSteps{
         .r = 0x00, .g = 0x38, .b = 0xa8, .num_cycles = 50},
 };
 
-constexpr LedValue kMorseCodeLedColor(0, 255, 255);
-
 void InitBoardService() {
   static StateManager state_manager(system::PubSub(), system::PolychromeLed());
   state_manager.Init();
@@ -57,22 +55,17 @@ void InitBoardService() {
   static Encoder morse_encoder;
   morse_encoder.Init(system::GetWorker(),
                      [](bool turn_on, const Encoder::State& state) {
-                       if (turn_on) {
-                         system::PubSub().Publish(LedValueMorseCodeMode(
-                             kMorseCodeLedColor, state.message_finished()));
-                       } else {
-                         system::PubSub().Publish(LedValueMorseCodeMode(
-                             LedValue(0, 0, 0), state.message_finished()));
-                       }
+                       system::PubSub().Publish(MorseCodeValue{
+                           .turn_on = turn_on,
+                           .message_finished = state.message_finished(),
+                       });
                      });
 
-  system::PubSub().Subscribe([](Event event) {
-    if (std::holds_alternative<MorseEncodeRequest>(event)) {
-      const MorseEncodeRequest& request = std::get<MorseEncodeRequest>(event);
-      morse_encoder.Encode(
-          request.message, request.repeat, Encoder::kDefaultIntervalMs);
-    }
-  });
+  system::PubSub().SubscribeTo<MorseEncodeRequest>(
+      [](MorseEncodeRequest request) {
+        morse_encoder.Encode(
+            request.message, request.repeat, Encoder::kDefaultIntervalMs);
+      });
 
   static BoardService board_service;
   board_service.Init(system::GetWorker(), system::Board());
@@ -101,33 +94,32 @@ void InitProximitySensor() {
     const uint8_t value = static_cast<uint8_t>(event.sample >> 8);
     system::PubSub().Publish(LedValueProximityMode(value, value, value));
   });
-
-  // Publish LED values based on gas resistance samples.
-  system::PubSub().SubscribeTo<AirQuality>([](AirQuality event) {
-    uint8_t red = 0;
-    uint8_t green = 0;
-    uint8_t blue = 0;
-    if (event.score < 0x100) {
-      red = 0xff;
-      green = event.score;
-    } else if (event.score < 0x200) {
-      red = static_cast<uint8_t>(0xff - (event.score - 0x100));
-      green = 0xff;
-    } else if (event.score < 0x300) {
-      green = 0xff;
-      blue = event.score - 0x200;
-    } else {
-      green = static_cast<uint8_t>(0xff - (event.score - 0x300));
-      blue = 0xff;
-    }
-    system::PubSub().Publish(LedValueAirQualityMode(red, green, blue));
-  });
 }
 
 void InitAirSensor() {
   static AirSensor& air_sensor = sense::system::AirSensor();
   static sense::AirSensorService air_sensor_service;
   air_sensor_service.Init(system::GetWorker(), air_sensor);
+
+  // Publish LED values based on gas resistance samples.
+  system::PubSub().SubscribeTo<AirQuality>([](AirQuality event) {
+    system::PubSub().Publish(
+        LedValueAirQualityMode(AirSensor::GetLedValue(event.score)));
+  });
+
+  // Update the alarm threshold based on button presses.
+  system::PubSub().SubscribeTo<AirQualityThreshold>(
+      [](AirQualityThreshold event) {
+        system::AirSensor().SetThresholds(event.alarm, event.silence);
+      });
+
+  system::PubSub().SubscribeTo<AlarmSilenceRequest>(
+      [](AlarmSilenceRequest request) {
+        auto duration = pw::chrono::SystemClock::for_at_least(
+            std::chrono::seconds(request.seconds));
+        system::AirSensor().Silence(duration);
+      });
+
   pw::System().rpc_server().RegisterService(air_sensor_service);
 }
 

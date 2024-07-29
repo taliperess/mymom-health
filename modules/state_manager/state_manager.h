@@ -13,6 +13,7 @@
 // the License.
 #pragma once
 
+#include "modules/air_sensor/air_sensor.h"
 #include "modules/led/polychrome_led.h"
 #include "modules/pubsub/pubsub_events.h"
 #include "modules/state_manager/common_base_union.h"
@@ -93,29 +94,51 @@ class StateManager {
       std::chrono::seconds(30);
 
   static constexpr uint8_t kDefaultBrightness = 220;
+  static constexpr uint16_t kThresholdIncrement = 128;
+  static constexpr uint16_t kMaxThreshold = 768;
 
   // Represents a state in the Sense app state machine.
   class State {
    public:
-    constexpr State(StateManager& manager, const char* name)
-        : manager_(manager), name_(name) {}
+    State(StateManager& manager, const char* name)
+        : manager_(manager), name_(name) {
+      manager_.led_.SetBrightness(kDefaultBrightness);
+    }
 
     virtual ~State() = default;
 
     // Name of the state for logging.
     const char* name() const { return name_; }
 
+    // Events for handling alarms.
+    virtual void AlarmStateChanged(bool alarm) {
+      if (manager_.alarmed_ == alarm) {
+        return;
+      }
+      manager_.alarmed_ = alarm;
+      if (alarm) {
+        manager_.SetState<AirQualityAlarmMode>();
+      } else {
+        manager_.SetState<AirQualityMode>();
+      }
+    }
+
     // Events for releasing buttons.
-    virtual void ButtonAReleased() {}
-    virtual void ButtonBReleased() {}
+    virtual void ButtonAReleased() {
+      manager_.SetState<AirQualityThresholdMode>();
+    }
+    virtual void ButtonBReleased() {
+      manager_.SetState<AirQualityThresholdMode>();
+    }
     virtual void ButtonXReleased() {}
     virtual void ButtonYReleased() {}
 
     // Events for requested LED values from other components.
     virtual void ProximityModeLedValue(const LedValue&) {}
     virtual void AirQualityModeLedValue(const LedValue&) {}
-    virtual void MorseCodeModeLedValue(LedValueMorseCodeMode) {}
     virtual void ColorRotationModeLedValue(const LedValue&) {}
+
+    virtual void MorseCodeEdge(const MorseCodeValue&) {}
 
     // Demo mode returns to air quality mode after a specified time.
     virtual void DemoModeTimerExpired() {}
@@ -128,9 +151,26 @@ class StateManager {
     const char* name_;
   };
 
+  // Base class for all demo states to handle button behavior and timer.
+  class TimeoutState : public State {
+   public:
+    TimeoutState(StateManager& manager,
+              const char* name,
+              pw::chrono::SystemClock::duration timeout)
+        : State(manager, name) {
+      manager.demo_mode_timer_.InvokeAfter(timeout);
+    }
+
+    void ButtonYReleased() override { manager().SetState<MorseReadout>(); }
+
+    void DemoModeTimerExpired() override {
+      manager().SetState<AirQualityMode>();
+    }
+  };
+
   class AirQualityMode final : public State {
    public:
-    constexpr AirQualityMode(StateManager& manager)
+    AirQualityMode(StateManager& manager)
         : State(manager, "AirQualityMode") {}
 
     void ButtonXReleased() override { manager().SetState<ProximityDemo>(); }
@@ -141,36 +181,63 @@ class StateManager {
     }
   };
 
+  class AirQualityThresholdMode final : public TimeoutState {
+   public:
+    static constexpr auto kThresholdModeTimeout =
+        pw::chrono::SystemClock::for_at_least(std::chrono::seconds(3));
+
+    AirQualityThresholdMode(StateManager& manager)
+        : TimeoutState(manager, "AirQualityThresholdMode", kThresholdModeTimeout) {
+      manager.DisplayThreshold();
+    }
+
+    void ButtonAReleased() override {
+      manager().IncrementThreshold(kThresholdModeTimeout);
+    }
+
+    void ButtonBReleased() override {
+      manager().DecrementThreshold(kThresholdModeTimeout);
+    }
+  };
+
+  class AirQualityAlarmMode final : public State {
+   public:
+    AirQualityAlarmMode(StateManager& manager)
+        : State(manager, "AirQualityAlarmMode") {
+      manager.StartMorseReadout(/* repeat: */ true);
+    }
+
+    void ButtonYReleased() override {
+      manager().pubsub_->Publish(AlarmSilenceRequest{.seconds = 60});
+    }
+    void AirQualityModeLedValue(const LedValue& value) override {
+      manager().led_.SetColor(value);
+    }
+    void MorseCodeEdge(const MorseCodeValue& value) override {
+      manager().led_.SetBrightness(value.turn_on ? kDefaultBrightness : 0);
+    }
+  };
+
   class MorseReadout final : public State {
    public:
     MorseReadout(StateManager& manager) : State(manager, "MorseReadout") {
-      manager.StartMorseReadout();
+      manager.StartMorseReadout(/* repeat: */ false);
     }
 
     void ButtonXReleased() override { manager().SetState<ProximityDemo>(); }
     void ButtonYReleased() override { manager().SetState<AirQualityMode>(); }
-
-    void MorseCodeModeLedValue(LedValueMorseCodeMode value) override;
-  };
-
-  // Base class for all demo states to handle button behavior and timer.
-  class DemoState : public State {
-   public:
-    DemoState(StateManager& manager, const char* name) : State(manager, name) {
-      manager.demo_mode_timer_.InvokeAfter(kDemoModeTimeout);
-    }
-
-    void ButtonYReleased() override { manager().SetState<MorseReadout>(); }
-
-    void DemoModeTimerExpired() override {
-      manager().SetState<AirQualityMode>();
+    void MorseCodeEdge(const MorseCodeValue& value) override {
+      manager().led_.SetBrightness(value.turn_on ? kDefaultBrightness : 0);
+      if (value.message_finished) {
+        manager().SetState<AirQualityMode>();
+      }
     }
   };
 
-  class ProximityDemo final : public DemoState {
+  class ProximityDemo final : public TimeoutState {
    public:
     ProximityDemo(StateManager& manager)
-        : DemoState(manager, "ProximityDemo") {}
+        : TimeoutState(manager, "ProximityDemo", kDemoModeTimeout) {}
 
     void ButtonXReleased() override { manager().SetState<MorseCodeDemo>(); }
 
@@ -179,24 +246,26 @@ class StateManager {
     }
   };
 
-  class MorseCodeDemo final : public DemoState {
+  class MorseCodeDemo final : public TimeoutState {
    public:
-    MorseCodeDemo(StateManager& manager) : DemoState(manager, "MorseCodeDemo") {
+    MorseCodeDemo(StateManager& manager)
+        : TimeoutState(manager, "MorseCodeDemo", kDemoModeTimeout) {
+      manager.led_.SetColor(LedValue(0, 255, 255));
       manager.pubsub_->Publish(
           MorseEncodeRequest{.message = "PW", .repeat = 0});
     }
 
     void ButtonXReleased() override { manager().SetState<ColorRotationDemo>(); }
 
-    void MorseCodeModeLedValue(LedValueMorseCodeMode value) override {
-      manager().led_.SetColor(value);
+    void MorseCodeEdge(const MorseCodeValue& value) override {
+      manager().led_.SetBrightness(value.turn_on ? kDefaultBrightness : 0);
     }
   };
 
-  class ColorRotationDemo final : public DemoState {
+  class ColorRotationDemo final : public TimeoutState {
    public:
     ColorRotationDemo(StateManager& manager)
-        : DemoState(manager, "ColorRotationDemo") {}
+        : TimeoutState(manager, "ColorRotationDemo", kDemoModeTimeout) {}
 
     void ButtonXReleased() override { manager().SetState<ProximityDemo>(); }
 
@@ -220,13 +289,21 @@ class StateManager {
 
   void LogStateChange(const char* old_state) const;
 
-  void StartMorseReadout();
+  void StartMorseReadout(bool repeat);
+
+  void DisplayThreshold();
+
+  void IncrementThreshold(pw::chrono::SystemClock::duration timeout);
+
+  void DecrementThreshold(pw::chrono::SystemClock::duration timeout);
 
   PubSub* pubsub_;
   LedOutputStateMachine led_;
 
   CommonBaseUnion<State,
                   AirQualityMode,
+                  AirQualityThresholdMode,
+                  AirQualityAlarmMode,
                   MorseReadout,
                   ProximityDemo,
                   MorseCodeDemo,
@@ -235,7 +312,9 @@ class StateManager {
 
   pw::chrono::SystemTimer demo_mode_timer_;
 
-  uint16_t last_air_quality_score_ = 768;
+  bool alarmed_ = false;
+  uint16_t current_threshold_ = AirSensor::kDefaultTheshold;
+  uint16_t last_air_quality_score_ = AirSensor::kAverageScore;
   pw::InlineString<4> air_quality_score_string_;
 };
 

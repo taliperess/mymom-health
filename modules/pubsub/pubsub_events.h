@@ -73,6 +73,20 @@ struct AirQuality {
   uint16_t score;
 };
 
+/// Air quality thresholds.
+///
+/// When the score falls below `alarm`, the air sensor will trigger an alarm.
+/// When the score rises above `silence`, the air sensor will silence the alarm.
+struct AirQualityThreshold {
+  uint16_t alarm;
+  uint16_t silence;
+};
+
+/// Request to suppress alarms for some time, regardless of air quality score.
+struct AlarmSilenceRequest {
+  uint16_t seconds;
+};
+
 class LedValue {
  public:
   explicit constexpr LedValue(uint8_t r, uint8_t g, uint8_t b)
@@ -82,6 +96,8 @@ class LedValue {
   constexpr uint8_t r() const { return r_; }
   constexpr uint8_t g() const { return g_; }
   constexpr uint8_t b() const { return b_; }
+
+  constexpr bool is_off() const { return r_ == 0 && g_ == 0 && b_ == 0; }
 
  private:
   uint8_t r_;
@@ -95,22 +111,13 @@ class LedValueColorRotationMode : public LedValue {
   explicit LedValueColorRotationMode(const LedValue& parent)
       : LedValue(parent) {}
 };
-class LedValueMorseCodeMode : public LedValue {
- public:
-  explicit LedValueMorseCodeMode(const LedValue& parent, bool pattern_finished)
-      : LedValue(parent), pattern_finished_(pattern_finished) {}
 
-  /// True if this LED color update is the final for the encoded phrase.
-  [[nodiscard]] bool pattern_finished() const { return pattern_finished_; }
-
- private:
-  bool pattern_finished_;
-};
 class LedValueProximityMode : public LedValue {
  public:
   using LedValue::LedValue;
   explicit LedValueProximityMode(const LedValue& parent) : LedValue(parent) {}
 };
+
 class LedValueAirQualityMode : public LedValue {
  public:
   using LedValue::LedValue;
@@ -124,40 +131,49 @@ struct MorseEncodeRequest {
   uint32_t repeat;
 };
 
+struct MorseCodeValue {
+  bool turn_on;
+  bool message_finished;
+};
+
 // This definition must be kept up to date with modules/pubsub/pubsub.proto and
 // the EventType enum.
 using Event = std::variant<AlarmStateChange,
+                           AlarmSilenceRequest,
                            ButtonA,
                            ButtonB,
                            ButtonX,
                            ButtonY,
                            LedValueColorRotationMode,
-                           LedValueMorseCodeMode,
                            LedValueProximityMode,
                            LedValueAirQualityMode,
                            DemoModeTimerExpired,
                            ProximityStateChange,
                            ProximitySample,
                            AirQuality,
-                           MorseEncodeRequest>;
+                           AirQualityThreshold,
+                           MorseEncodeRequest,
+                           MorseCodeValue>;
 
 // Index versions of Event variants, to support finding the event
 enum EventType : size_t {
   kAlarmStateChange,
+  kAlarmSilenceRequest,
   kButtonA,
   kButtonB,
   kButtonX,
   kButtonY,
   kLedValueColorRotationMode,
-  kLedValueMorseCodeMode,
   kLedValueProximityMode,
   kLedValueAirQualityMode,
   kDemoModeTimerExpired,
   kProximityStateChange,
   kProximitySample,
   kAirQuality,
+  kAirQualityThreshold,
   kMorseEncodeRequest,
-  kLastEventType = kMorseEncodeRequest,
+  kMorseCodeValue,
+  kLastEventType = kMorseCodeValue,
 };
 
 static_assert(kLastEventType + 1 == std::variant_size_v<Event>,

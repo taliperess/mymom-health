@@ -18,11 +18,32 @@
 #include <mutex>
 
 #include "pw_assert/check.h"
+#include "pw_log/log.h"
 #include "pw_status/try.h"
 
 namespace sense {
 
 static constexpr float kHumidityFactor = 0.04f;
+
+LedValue AirSensor::GetLedValue(uint16_t score) {
+  uint8_t red = 0;
+  uint8_t green = 0;
+  uint8_t blue = 0;
+  if (score < 0x100) {
+    red = 0xff;
+    green = score;
+  } else if (score < 0x200) {
+    red = static_cast<uint8_t>(0xff - (score - 0x100));
+    green = 0xff;
+  } else if (score < 0x300) {
+    green = 0xff;
+    blue = score - 0x200;
+  } else {
+    green = static_cast<uint8_t>(0xff - (score - 0x300));
+    blue = 0xff;
+  }
+  return LedValue(red, green, blue);
+}
 
 AirSensor::AirSensor() : edge_detector_(0, 0) {
   SetThresholds(Score::kYellow, Score::kLightGreen);
@@ -63,6 +84,8 @@ pw::Status AirSensor::Init(PubSub& pubsub,
 void AirSensor::SetThresholds(uint16_t alarm, uint16_t silence) {
   std::lock_guard lock(lock_);
   edge_detector_.set_low_and_high_thresholds(alarm, silence);
+  PW_LOG_INFO(
+      "Air quality thresholds set: alarm at %u, silence at %u", alarm, silence);
   edge_detector_.Update(kMaxScore);
 }
 

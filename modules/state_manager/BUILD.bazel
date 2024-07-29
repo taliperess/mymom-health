@@ -24,6 +24,7 @@ cc_library(
     ],
     deps = [
         ":common_base_union",
+        "//modules/air_sensor",
         "//modules/led:polychrome_led",
         "//modules/pubsub:events",
         "//modules/worker",

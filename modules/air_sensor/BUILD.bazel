@@ -26,6 +26,9 @@ cc_library(
     name = "air_sensor",
     srcs = ["air_sensor.cc"],
     hdrs = ["air_sensor.h"],
+    implementation_deps = [
+        "@pigweed//pw_log",
+    ],
     deps = [
         "//modules/edge_detector:hysteresis_edge_detector",
         "//modules/pubsub:events",

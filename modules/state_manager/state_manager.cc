@@ -26,10 +26,12 @@ void StateManager::Init() {
 
 void StateManager::Update(Event event) {
   switch (static_cast<EventType>(event.index())) {
+    case kAirQuality:
+      last_air_quality_score_ = std::get<AirQuality>(event).score;
+      break;
     case kAlarmStateChange:
-    case kProximityStateChange:
-    case kProximitySample:
-      break;  // ignore these events
+      state_.get().AlarmStateChanged(std::get<AlarmStateChange>(event).alarm);
+      break;
     case kButtonA:
       HandleButtonPress(std::get<ButtonA>(event).pressed(),
                         &State::ButtonAReleased);
@@ -50,10 +52,6 @@ void StateManager::Update(Event event) {
       state_.get().ColorRotationModeLedValue(
           std::get<LedValueColorRotationMode>(event));
       break;
-    case kLedValueMorseCodeMode:
-      state_.get().MorseCodeModeLedValue(
-          std::get<LedValueMorseCodeMode>(event));
-      break;
     case kLedValueProximityMode:
       state_.get().ProximityModeLedValue(
           std::get<LedValueProximityMode>(event));
@@ -65,10 +63,14 @@ void StateManager::Update(Event event) {
     case kDemoModeTimerExpired:
       state_.get().DemoModeTimerExpired();
       break;
-    case kAirQuality:
-      last_air_quality_score_ = std::get<AirQuality>(event).score;
+    case kMorseCodeValue:
+      state_.get().MorseCodeEdge(std::get<MorseCodeValue>(event));
       break;
+    case kAlarmSilenceRequest:
+    case kAirQualityThreshold:
     case kMorseEncodeRequest:
+    case kProximityStateChange:
+    case kProximitySample:
       break;  // ignore these events
   }
 }
@@ -82,20 +84,43 @@ void StateManager::HandleButtonPress(bool pressed, void (State::* function)()) {
   }
 }
 
-void StateManager::StartMorseReadout() {
+void StateManager::StartMorseReadout(bool repeat) {
   pw::Status status = pw::string::FormatOverwrite(
       air_quality_score_string_, "%hu", last_air_quality_score_);
   PW_CHECK_OK(status);
-  pubsub_->Publish(
-      MorseEncodeRequest{.message = air_quality_score_string_, .repeat = 1});
+  pubsub_->Publish(MorseEncodeRequest{.message = air_quality_score_string_,
+                                      .repeat = repeat ? 0u : 1u});
 }
 
-void StateManager::MorseReadout::MorseCodeModeLedValue(
-    LedValueMorseCodeMode value) {
-  manager().led_.SetColor(value);
-  if (value.pattern_finished()) {
-    manager().SetState<AirQualityMode>();
+void StateManager::DisplayThreshold() {
+  led_.SetColor(AirSensor::GetLedValue(current_threshold_));
+}
+
+void StateManager::IncrementThreshold(
+    pw::chrono::SystemClock::duration timeout) {
+  demo_mode_timer_.Cancel();
+  uint16_t candidate_threshold = current_threshold_ + kThresholdIncrement;
+  current_threshold_ = candidate_threshold < kMaxThreshold ? candidate_threshold : kMaxThreshold;
+  pubsub_->Publish(AirQualityThreshold{
+      .alarm = current_threshold_,
+      .silence = static_cast<uint16_t>(current_threshold_ + kThresholdIncrement),
+  });
+  DisplayThreshold();
+  demo_mode_timer_.InvokeAfter(timeout);
+}
+
+void StateManager::DecrementThreshold(
+    pw::chrono::SystemClock::duration timeout) {
+  demo_mode_timer_.Cancel();
+  if (current_threshold_ > 0) {
+    current_threshold_ -= kThresholdIncrement;
   }
+  pubsub_->Publish(AirQualityThreshold{
+      .alarm = current_threshold_,
+      .silence = static_cast<uint16_t>(current_threshold_ + kThresholdIncrement),
+  });
+  DisplayThreshold();
+  demo_mode_timer_.InvokeAfter(timeout);
 }
 
 void StateManager::LogStateChange(const char* old_state) const {

@@ -54,12 +54,6 @@ pubsub_Event EventToProto(const Event& event) {
     proto.which_type = pubsub_Event_led_value_color_rotation_tag;
     proto.type.led_value_color_rotation =
         LedValueToProto(std::get<LedValueColorRotationMode>(event));
-  } else if (std::holds_alternative<LedValueMorseCodeMode>(event)) {
-    proto.which_type = pubsub_Event_led_value_morse_code_tag;
-    const auto& morse = std::get<LedValueMorseCodeMode>(event);
-    proto.type.led_value_morse_code.led = LedValueToProto(morse);
-    proto.type.led_value_morse_code.pattern_finished = morse.pattern_finished();
-    LedValueToProto(std::get<LedValueMorseCodeMode>(event));
   } else if (std::holds_alternative<LedValueProximityMode>(event)) {
     proto.which_type = pubsub_Event_led_value_proximity_tag;
     proto.type.led_value_proximity =
@@ -79,6 +73,14 @@ pubsub_Event EventToProto(const Event& event) {
   } else if (std::holds_alternative<AirQuality>(event)) {
     proto.which_type = pubsub_Event_air_quality_tag;
     proto.type.air_quality = std::get<AirQuality>(event).score;
+  } else if (std::holds_alternative<AirQualityThreshold>(event)) {
+    proto.which_type = pubsub_Event_air_quality_threshold_tag;
+    auto& air_quality_threshold = std::get<AirQualityThreshold>(event);
+    proto.type.air_quality_threshold.alarm = air_quality_threshold.alarm;
+    proto.type.air_quality_threshold.silence = air_quality_threshold.silence;
+  } else if (std::holds_alternative<AlarmSilenceRequest>(event)) {
+    proto.which_type = pubsub_Event_alarm_silence_tag;
+    proto.type.alarm_silence = std::get<AlarmSilenceRequest>(event).seconds;
   } else if (std::holds_alternative<MorseEncodeRequest>(event)) {
     proto.which_type = pubsub_Event_morse_encode_request_tag;
     const auto& morse = std::get<MorseEncodeRequest>(event);
@@ -86,6 +88,11 @@ pubsub_Event EventToProto(const Event& event) {
     msg[morse.message.copy(proto.type.morse_encode_request.msg,
                            sizeof(msg) - 1)] = '\0';
     proto.type.morse_encode_request.repeat = morse.repeat;
+  } else if (std::holds_alternative<MorseCodeValue>(event)) {
+    proto.which_type = pubsub_Event_morse_code_value_tag;
+    const auto& morse = std::get<MorseCodeValue>(event);
+    proto.type.morse_code_value.turn_on = morse.turn_on;
+    proto.type.morse_code_value.message_finished = morse.message_finished;
   } else {
     PW_LOG_WARN("Unimplemented pubsub service event");
   }
@@ -107,10 +114,11 @@ pw::Result<Event> ProtoToEvent(const pubsub_Event& proto) {
     case pubsub_Event_led_value_color_rotation_tag:
       return LedValueColorRotationMode(
           LedValueFromProto(proto.type.led_value_color_rotation));
-    case pubsub_Event_led_value_morse_code_tag:
-      return LedValueMorseCodeMode(
-          LedValueFromProto(proto.type.led_value_morse_code.led),
-          proto.type.led_value_morse_code.pattern_finished);
+    case pubsub_Event_morse_code_value_tag:
+      return MorseCodeValue{
+          .turn_on = proto.type.morse_code_value.turn_on,
+          .message_finished = proto.type.morse_code_value.message_finished,
+      };
     case pubsub_Event_led_value_proximity_tag:
       return LedValueProximityMode(
           LedValueFromProto(proto.type.led_value_proximity));
@@ -121,6 +129,9 @@ pw::Result<Event> ProtoToEvent(const pubsub_Event& proto) {
       return ProximityStateChange{.proximity = proto.type.proximity};
     case pubsub_Event_air_quality_tag:
       return AirQuality{.score = static_cast<uint16_t>(proto.type.air_quality)};
+    case pubsub_Event_alarm_silence_tag:
+      return AlarmSilenceRequest{
+          .seconds = static_cast<uint16_t>(proto.type.alarm_silence)};
     default:
       return pw::Status::Unimplemented();
   }
