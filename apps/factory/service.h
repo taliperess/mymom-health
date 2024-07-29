@@ -16,6 +16,7 @@
 #include "apps/factory/factory_pb/factory.rpc.pb.h"
 #include "modules/board/board.h"
 #include "modules/buttons/manager.h"
+#include "modules/light/sensor.h"
 #include "modules/proximity/sensor.h"
 
 namespace sense {
@@ -25,7 +26,8 @@ class FactoryService final
  public:
   void Init(Board& board,
             ButtonManager& button_manager,
-            ProximitySensor& proximity_sensor);
+            ProximitySensor& proximity_sensor,
+            AmbientLightSensor& ambient_light_sensor);
 
   pw::Status GetDeviceInfo(const pw_protobuf_Empty&,
                            factory_DeviceInfo& response);
@@ -35,13 +37,17 @@ class FactoryService final
 
   pw::Status EndTest(const factory_EndTestRequest& request, pw_protobuf_Empty&);
 
-  pw::Status SampleLtr559(const pw_protobuf_Empty&,
-                          factory_Ltr559Sample& response);
+  pw::Status SampleLtr559Prox(const pw_protobuf_Empty&,
+                              factory_Ltr559ProxSample& response);
+
+  pw::Status SampleLtr559Light(const pw_protobuf_Empty&,
+                               factory_Ltr559LightSample& response);
 
  private:
   Board* board_;
   ButtonManager* button_manager_;
   ProximitySensor* proximity_sensor_;
+  AmbientLightSensor* ambient_light_sensor_;
 };
 
 }  // namespace sense

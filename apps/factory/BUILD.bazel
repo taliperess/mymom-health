@@ -88,6 +88,7 @@ cc_library(
         ":nanopb_rpc",
         "//modules/board",
         "//modules/buttons:manager",
+        "//modules/light:sensor",
         "//modules/proximity:sensor",
     ],
 )

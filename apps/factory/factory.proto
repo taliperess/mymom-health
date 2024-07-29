@@ -22,7 +22,8 @@ service Factory {
   rpc StartTest(StartTestRequest) returns (pw.protobuf.Empty);
   rpc EndTest(EndTestRequest) returns (pw.protobuf.Empty);
 
-  rpc SampleLtr559(pw.protobuf.Empty) returns (Ltr559Sample);
+  rpc SampleLtr559Prox(pw.protobuf.Empty) returns (Ltr559ProxSample);
+  rpc SampleLtr559Light(pw.protobuf.Empty) returns (Ltr559LightSample);
 }
 
 message DeviceInfo {
@@ -32,7 +33,8 @@ message DeviceInfo {
 message Test {
   enum Type {
     BUTTONS = 0;
-    LTR559 = 1;
+    LTR559_PROX = 1;
+    LTR559_LIGHT = 2;
   }
 }
 
@@ -44,6 +46,11 @@ message EndTestRequest {
   Test.Type test = 1;
 }
 
-message Ltr559Sample {
+message Ltr559ProxSample {
+  // Raw 16-bit sensor ADC reading.
   uint32 value = 1;
+}
+
+message Ltr559LightSample {
+  float lux = 1;
 }

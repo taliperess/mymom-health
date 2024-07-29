@@ -27,7 +27,7 @@ from typing import Callable, Tuple
 from factory_pb import factory_pb2
 from pubsub_pb import pubsub_pb2
 from pw_cli.color import colors
-from pw_rpc.callback_client import RpcError
+from pw_rpc.callback_client import RpcError, RpcTimeout
 import pw_cli.log
 from pw_status import Status
 
@@ -219,20 +219,22 @@ class LedTest(Test):
 
 
 class Ltr559Test(Test):
-    _SENSOR_DARK_THRESHOLD = 20000
+    _PROX_NEAR_THRESHOLD = 20000
+    _LIGHT_DARK_THRESHOLD = 0.5
+    _LIGHT_BRIGHT_THRESHOLD = 4000
 
     @dataclass
     class Samples:
         count: int = 0
-        total_value: int = 0
-        min_value: int = 0
-        max_value: int = 0
+        total_value: float = 0
+        min_value: float = 0
+        max_value: float = 0
 
         @property
         def mean_value(self) -> float:
             return self.total_value / self.count
 
-        def update(self, value: int) -> None:
+        def update(self, value: float) -> None:
             self.count += 1
             self.total_value += value
             self.min_value = min(self.min_value, value)
@@ -247,25 +249,41 @@ class Ltr559Test(Test):
         self._factory_service = rpcs.factory.Factory
 
     def run(self) -> bool:
-        status, _ = self._factory_service.StartTest(test=factory_pb2.Test.Type.LTR559)
-        assert status is Status.OK
+        status, _ = self._factory_service.StartTest(test=factory_pb2.Test.Type.LTR559_PROX)
+        if status is not Status.OK:
+            return False
 
-        result = self._test_ltr559()
+        print(colors().bold_white('\nSet LTR599 to proximity mode.'))
+        result = self._test_prox()
 
-        status, _ = self._factory_service.EndTest(test=factory_pb2.Test.Type.LTR559)
-        assert status is Status.OK
+        status, _ = self._factory_service.EndTest(test=factory_pb2.Test.Type.LTR559_PROX)
+        if status is not Status.OK:
+            return False
+
+        if not result:
+            return False
+
+        status, _ = self._factory_service.StartTest(test=factory_pb2.Test.Type.LTR559_LIGHT)
+        if status is not Status.OK:
+            return False
+
+        print(colors().bold_white('\nSet LTR599 to ambient light mode.'))
+        result = self._test_light()
+
+        status, _ = self._factory_service.EndTest(test=factory_pb2.Test.Type.LTR559_LIGHT)
+        if status is not Status.OK:
+            return False
 
         return result
 
-    def _test_ltr559(self) -> bool:
+    def _test_prox(self) -> bool:
         self.prompt_enter('Place your Enviro+ pack in a lit area')
-
         print('Getting initial sensor readings', end='', flush=True)
 
         baseline_samples = Ltr559Test.Samples()
 
         while baseline_samples.count < 5:
-            status, response = self._factory_service.SampleLtr559()
+            status, response = self._factory_service.SampleLtr559Prox()
             if status is not Status.OK:
                 return False
 
@@ -275,45 +293,120 @@ class Ltr559Test(Test):
         print(colors().green(' DONE'))
         print(baseline_samples)
 
-        print('')
+        print()
+        self.prompt('Fully cover the light sensor')
+
+        success, samples = self._sample_until(
+            50,
+            self._factory_service.SampleLtr559Prox,
+            lambda value: value > Ltr559Test._PROX_NEAR_THRESHOLD,
+        )
+        print(samples)
+        if not success:
+            self.fail_test('ltr559_prox_near')
+            return False
+
+        self.pass_test('ltr559_prox_near')
+        print()
+        self.prompt('Fully uncover the light sensor')
+
+        success, samples = self._sample_until(
+            50,
+            self._factory_service.SampleLtr559Prox,
+            lambda value: abs(value - baseline_samples.mean_value) < 200,
+        )
+        print(samples)
+        if not success:
+            self.fail_test('ltr559_prox_far')
+            return False
+
+        self.pass_test('ltr559_prox_far')
+        return True
+
+    def _test_light(self) -> bool:
+        self.prompt_enter('Place your Enviro+ pack in an area with neutral light')
+        print('Getting initial sensor readings', end='', flush=True)
+
+        baseline_samples = Ltr559Test.Samples()
+
+        while baseline_samples.count < 5:
+            status, response = self._factory_service.SampleLtr559Light()
+            if status is not Status.OK:
+                return False
+
+            baseline_samples.update(response.lux)
+            print('.', end='', flush=True)
+
+        print(colors().green(' DONE'))
+        print(baseline_samples)
+
+        print()
         self.prompt('Cover the light sensor')
 
         success, samples = self._sample_until(
-            50,
-            lambda value: value > Ltr559Test._SENSOR_DARK_THRESHOLD,
+            100,
+            self._factory_service.SampleLtr559Light,
+            lambda value: value < Ltr559Test._LIGHT_DARK_THRESHOLD,
+            field='lux',
         )
         print(samples)
         if not success:
-            self.fail_test('ltr559_dark')
+            self.fail_test('ltr559_light_dark')
             return False
 
-        self.pass_test('ltr559_dark')
-        print('')
-        self.prompt('Uncover the light sensor')
+        self.pass_test('ltr559_light_dark')
+
+        print()
+        self.prompt('Shine a light directly at the light sensor')
 
         success, samples = self._sample_until(
-            50,
-            lambda value: abs(value - baseline_samples.mean_value) < 100,
+            100,
+            self._factory_service.SampleLtr559Light,
+            lambda value: abs(value - baseline_samples.mean_value) > Ltr559Test._LIGHT_BRIGHT_THRESHOLD,
+            field='lux',
         )
         print(samples)
         if not success:
-            self.fail_test('ltr559_bright')
+            self.fail_test('ltr559_light_bright')
             return False
 
-        self.pass_test('ltr559_bright')
+        self.pass_test('ltr559_light_bright')
+
+        print()
+        self.prompt('Return the light sensor to its original position')
+
+        success, samples = self._sample_until(
+            100,
+            self._factory_service.SampleLtr559Light,
+            lambda value: abs(value - baseline_samples.mean_value) < 2,
+            field='lux',
+        )
+        print(samples)
+        if not success:
+            self.fail_test('ltr559_light_neutral')
+            return False
+
+        self.pass_test('ltr559_light_neutral')
         return True
 
-    def _sample_until(self, max_samples: int, predicate: Callable[[int], bool]) -> Tuple[bool, Samples]:
+    def _sample_until(
+            self,
+            max_samples: int,
+            sample_rpc_method,
+            predicate: Callable[[int], bool],
+            field: str = 'value',
+        ) -> Tuple[bool, Samples]:
         samples = Ltr559Test.Samples()
         recent_samples = [None for _ in range(5)]
 
         for i in range(max_samples):
-            status, response = self._factory_service.SampleLtr559()
+            status, response = sample_rpc_method()
             if status is not Status.OK:
                 return False, samples
 
-            recent_samples[i % len(recent_samples)] = response.value
-            samples.update(response.value)
+            value = getattr(response, field)
+            recent_samples[i % len(recent_samples)] = value
+            samples.update(value)
 
             if i >= len(recent_samples):
                 moving_average = sum(recent_samples) / len(recent_samples)
@@ -339,7 +432,7 @@ def _run_tests(rpcs) -> bool:
 
     for num, test in enumerate(tests_to_run):
         start_msg = f'[{num + 1}/{len(tests_to_run)}] Running test {test.name}'
-        print('')
+        print()
         print('=' * len(start_msg))
         print(start_msg)
         print('=' * len(start_msg))
@@ -396,6 +489,9 @@ def main(log_file: Path | None) -> int:
                 print('', file=sys.stderr)
             else:
                 print(f'Failed to query device info: {e}', file=sys.stderr)
+            return 1
+        except RpcTimeout as e:
+            print(f'Timed out while trying to query device info: {e}', file=sys.stderr)
             return 1
 
         print(f'Device flash ID: {colors().bold_white(f"{device_info.flash_id:x}")}')

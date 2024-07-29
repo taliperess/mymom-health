@@ -55,8 +55,10 @@ namespace {
   button_manager.Stop();
 
   FactoryService factory_service;
-  factory_service.Init(
-      system::Board(), button_manager, system::ProximitySensor());
+  factory_service.Init(system::Board(),
+                       button_manager,
+                       system::ProximitySensor(),
+                       system::AmbientLightSensor());
   pw::System().rpc_server().RegisterService(factory_service);
 
   PW_LOG_INFO("Enviro+ Pack Diagnostics app");
