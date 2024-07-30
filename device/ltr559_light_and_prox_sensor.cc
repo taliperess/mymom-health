@@ -21,7 +21,8 @@
 namespace sense {
 namespace {
 
-// Constants from the manufacturer.
+// Constants from the manufacturer used to convert the ambient light sensor's
+// two ADC channels to lux values.
 constexpr int kChannel0Constants[] = {17743, 42785, 5926, 0};
 constexpr int kChannel1Constants[] = {-11059, 19548, -1185, 0};
 

@@ -13,6 +13,8 @@
 // the License.
 #pragma once
 
+#include <cmath>
+
 #include "modules/air_sensor/air_sensor.h"
 #include "modules/led/polychrome_led.h"
 #include "modules/pubsub/pubsub_events.h"
@@ -84,7 +86,7 @@ class StateManager {
  public:
   StateManager(PubSub& pubsub, PolychromeLed& led)
       : pubsub_(&pubsub),
-        led_(led, kDefaultBrightness),
+        led_(led, brightness_),
         state_(*this),
         demo_mode_timer_(
             [this](auto) { pubsub_->Publish(DemoModeTimerExpired{}); }) {}
@@ -96,7 +98,11 @@ class StateManager {
   static constexpr pw::chrono::SystemClock::duration kDemoModeTimeout =
       std::chrono::seconds(30);
 
-  static constexpr uint8_t kDefaultBrightness = 220;
+  // LED brightness varies based on ambient light readings.
+  static constexpr uint8_t kMinBrightness = 20;
+  static constexpr uint8_t kDefaultBrightness = 160;
+  static constexpr uint8_t kMaxBrightness = 255;
+
   static constexpr uint16_t kThresholdIncrement = 128;
   static constexpr uint16_t kMaxThreshold = 768;
 
@@ -105,7 +111,7 @@ class StateManager {
    public:
     State(StateManager& manager, const char* name)
         : manager_(manager), name_(name) {
-      manager_.led_.SetBrightness(kDefaultBrightness);
+      manager_.led_.SetBrightness(manager_.brightness_);
     }
 
     virtual ~State() = default;
@@ -135,6 +141,11 @@ class StateManager {
     }
     virtual void ButtonXReleased() {}
     virtual void ButtonYReleased() {}
+
+    // Ambient light sensor updates determine LED brightess by default.
+    virtual void AmbientLightUpdate() {
+      manager().UpdateBrightnessFromAmbientLight();
+    }
 
     virtual void ProximitySample(uint16_t) {}
 
@@ -218,7 +229,7 @@ class StateManager {
       manager().led_.SetColor(value);
     }
     void MorseCodeEdge(const MorseCodeValue& value) override {
-      manager().led_.SetBrightness(value.turn_on ? kDefaultBrightness : 0);
+      manager().led_.SetBrightness(value.turn_on ? manager().brightness_ : 0);
     }
   };
 
@@ -231,7 +242,7 @@ class StateManager {
     void ButtonXReleased() override { manager().SetState<ProximityDemo>(); }
     void ButtonYReleased() override { manager().SetState<AirQualityMode>(); }
     void MorseCodeEdge(const MorseCodeValue& value) override {
-      manager().led_.SetBrightness(value.turn_on ? kDefaultBrightness : 0);
+      manager().led_.SetBrightness(value.turn_on ? manager().brightness_ : 0);
       if (value.message_finished) {
         manager().SetState<AirQualityMode>();
       }
@@ -245,7 +256,15 @@ class StateManager {
       manager.led_.SetColor(LedValue(255, 255, 255));
     }
 
+    ~ProximityDemo() {
+      // Recalculate the brightness value since updates were paused.
+      manager().UpdateBrightnessFromAmbientLight();
+    }
+
     void ButtonXReleased() override { manager().SetState<MorseCodeDemo>(); }
+
+    // Ignore ambient light updates since proximity drives brightness.
+    void AmbientLightUpdate() override {}
 
     void ProximitySample(uint16_t value) override;
   };
@@ -262,7 +281,7 @@ class StateManager {
     void ButtonXReleased() override { manager().SetState<ColorRotationDemo>(); }
 
     void MorseCodeEdge(const MorseCodeValue& value) override {
-      manager().led_.SetBrightness(value.turn_on ? kDefaultBrightness : 0);
+      manager().led_.SetBrightness(value.turn_on ? manager().brightness_ : 0);
     }
   };
 
@@ -301,6 +320,19 @@ class StateManager {
 
   void DecrementThreshold(pw::chrono::SystemClock::duration timeout);
 
+  void UpdateAverageAmbientLight(float ambient_light_sample_lux);
+
+  // Recalculates the brightness level when the ambient light changes.
+  void UpdateBrightnessFromAmbientLight();
+
+  bool alarmed_ = false;
+  IntegerSimpleMovingAverager<uint16_t, 5> prox_samples_;
+  float ambient_light_lux_ = NAN;  // exponential moving averaged mean lux
+  uint8_t brightness_ = kDefaultBrightness;
+  uint16_t current_threshold_ = AirSensor::kDefaultTheshold;
+  uint16_t last_air_quality_score_ = AirSensor::kAverageScore;
+  pw::InlineString<4> air_quality_score_string_;
+
   PubSub* pubsub_;
   LedOutputStateMachine led_;
 
@@ -315,12 +347,6 @@ class StateManager {
       state_;
 
   pw::chrono::SystemTimer demo_mode_timer_;
-
-  bool alarmed_ = false;
-  IntegerSimpleMovingAverager<uint16_t, 5> prox_samples_;
-  uint16_t current_threshold_ = AirSensor::kDefaultTheshold;
-  uint16_t last_air_quality_score_ = AirSensor::kAverageScore;
-  pw::InlineString<4> air_quality_score_string_;
 };
 
 }  // namespace sense

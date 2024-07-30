@@ -40,6 +40,16 @@ void ReadProximity() {
   system::PubSub().Publish(ProximitySample{*sample});
 }
 
+void ReadAmbientLight() {
+  pw::Result<float> sample = system::AmbientLightSensor().ReadSampleLux();
+  if (!sample.ok()) {
+    PW_LOG_WARN("Failed to read ambient light sensor sample: %s",
+                sample.status().str());
+    return;
+  }
+  system::PubSub().Publish(AmbientLightSample{*sample});
+}
+
 void ReadAirSensor() {
   auto& air_sensor = system::AirSensor();
 
@@ -59,6 +69,8 @@ void ReadAirSensor() {
 void SamplingLoop() {
   auto& pubsub = system::PubSub();
   auto& clock = pw::chrono::VirtualSystemClock::RealClock();
+
+  PW_CHECK_OK(system::AmbientLightSensor().Enable());
   PW_CHECK_OK(system::ProximitySensor().Enable());
   PW_CHECK_OK(system::AirSensor().Init(pubsub, clock));
 
@@ -68,6 +80,7 @@ void SamplingLoop() {
     deadline += kPeriod;
     pw::this_thread::sleep_until(deadline);
 
+    ReadAmbientLight();
     ReadProximity();
     ReadAirSensor();
   }

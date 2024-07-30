@@ -66,6 +66,10 @@ pubsub_Event EventToProto(const Event& event) {
   } else if (std::holds_alternative<ProximitySample>(event)) {
     proto.which_type = pubsub_Event_proximity_level_tag;
     proto.type.proximity_level = std::get<ProximitySample>(event).sample;
+  } else if (std::holds_alternative<AmbientLightSample>(event)) {
+    proto.which_type = pubsub_Event_ambient_light_lux_tag;
+    proto.type.ambient_light_lux =
+        std::get<AmbientLightSample>(event).sample_lux;
   } else if (std::holds_alternative<AirQuality>(event)) {
     proto.which_type = pubsub_Event_air_quality_tag;
     proto.type.air_quality = std::get<AirQuality>(event).score;

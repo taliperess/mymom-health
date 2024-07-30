@@ -14,6 +14,8 @@
 
 #include "modules/state_manager/state_manager.h"
 
+#include <cmath>
+
 #include "pw_assert/check.h"
 #include "pw_log/log.h"
 #include "pw_string/format.h"
@@ -86,6 +88,10 @@ void StateManager::Update(Event event) {
     case kMorseCodeValue:
       state_.get().MorseCodeEdge(std::get<MorseCodeValue>(event));
       break;
+    case kAmbientLightSample:
+      UpdateAverageAmbientLight(std::get<AmbientLightSample>(event).sample_lux);
+      state_.get().AmbientLightUpdate();
+      break;
     case kAlarmSilenceRequest:
     case kAirQualityThreshold:
     case kMorseEncodeRequest:
@@ -96,7 +102,7 @@ void StateManager::Update(Event event) {
 
 void StateManager::HandleButtonPress(bool pressed, void (State::*function)()) {
   if (pressed) {
-    led_.Override(0xffffff, 255);  // Bright white while pressed.
+    led_.Override(0xffffff, 160);  // Bright white while pressed.
   } else {
     led_.EndOverride();
     (state_.get().*function)();
@@ -143,6 +149,38 @@ void StateManager::DecrementThreshold(
   });
   DisplayThreshold();
   demo_mode_timer_.InvokeAfter(timeout);
+}
+
+void StateManager::UpdateAverageAmbientLight(float ambient_light_sample_lux) {
+  static constexpr float kDecayFactor = 0.25;
+  if (std::isnan(ambient_light_lux_)) {
+    ambient_light_lux_ = ambient_light_sample_lux;
+  } else {
+    ambient_light_lux_ +=
+        (ambient_light_sample_lux - ambient_light_lux_) * kDecayFactor;
+  }
+}
+
+void StateManager::UpdateBrightnessFromAmbientLight() {
+  static constexpr float kMinLux = 40.f;
+  static constexpr float kMaxLux = 3000.f;
+
+  if (ambient_light_lux_ < kMinLux) {
+    brightness_ = kMinBrightness;
+  } else if (ambient_light_lux_ > kMaxLux) {
+    brightness_ = kMaxBrightness;
+  } else {
+    constexpr float kBrightnessRange = kMaxBrightness - kMinBrightness;
+    brightness_ = static_cast<uint8_t>(
+        std::lround((ambient_light_lux_ - kMinLux) / (kMaxLux - kMinLux) *
+                    kBrightnessRange) +
+        kMinBrightness);
+  }
+
+  PW_LOG_DEBUG(
+      "Ambient light: mean=%.1f, led=%hhu", ambient_light_lux_, brightness_);
+
+  led_.SetBrightness(brightness_);
 }
 
 void StateManager::LogStateChange(const char* old_state) const {

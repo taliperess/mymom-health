@@ -64,5 +64,6 @@ message Event {
     morse_code.SendRequest morse_encode_request = 14;
     AirQualityThreshold air_quality_threshold = 15;
     uint32 alarm_silence = 16;
+    float ambient_light_lux = 17;
   }
 }

@@ -67,6 +67,11 @@ struct ProximitySample {
   uint16_t sample;
 };
 
+/// New ambient light sample in lux.
+struct AmbientLightSample {
+  float sample_lux;
+};
+
 /// Air quality score that combines relative humidity and gas resistance values.
 struct AirQuality {
   /// 10 bit value ranging from 0 (very poor) to 1023 (excellent).
@@ -143,6 +148,7 @@ using Event = std::variant<AlarmStateChange,
                            DemoModeTimerExpired,
                            ProximityStateChange,
                            ProximitySample,
+                           AmbientLightSample,
                            AirQuality,
                            AirQualityThreshold,
                            MorseEncodeRequest,
@@ -161,6 +167,7 @@ enum EventType : size_t {
   kDemoModeTimerExpired,
   kProximityStateChange,
   kProximitySample,
+  kAmbientLightSample,
   kAirQuality,
   kAirQualityThreshold,
   kMorseEncodeRequest,
