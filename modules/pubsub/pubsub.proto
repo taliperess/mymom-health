@@ -57,12 +57,11 @@ message Event {
     uint32 proximity_level = 7;
     uint32 air_quality = 8;
     MorseCodeValue morse_code_value = 9;
-    LedValue led_value_proximity = 10;
-    LedValue led_value_air_quality = 11;
-    pw.protobuf.Empty demo_mode_timer_expired = 12;
-    morse_code.SendRequest morse_encode_request = 13;
-    AirQualityThreshold air_quality_threshold = 14;
-    uint32 alarm_silence = 15;
-    float ambient_light_lux = 16;
+    LedValue led_value_air_quality = 10;
+    pw.protobuf.Empty demo_mode_timer_expired = 11;
+    morse_code.SendRequest morse_encode_request = 12;
+    AirQualityThreshold air_quality_threshold = 13;
+    uint32 alarm_silence = 14;
+    float ambient_light_lux = 15;
   }
 }
