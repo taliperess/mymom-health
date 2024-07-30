@@ -101,6 +101,13 @@ build:presubmit -- \
 common --verbose_failures
 test --test_output=errors
 
+# Suppress the DEBUG: log messages from bazel. We get spammy DEBUG:
+# messages from rules_python.
+#
+# TODO: https://github.com/bazelbuild/rules_python/issues/1818 - Re-enable DEBUG
+# messages once rules_python stops spamming us.
+common --ui_event_filters=-debug
+
 # Remote cache
 # ============
 # Use the remote cache. This will only work for users who have permission to
