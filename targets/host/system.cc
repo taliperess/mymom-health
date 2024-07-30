@@ -14,6 +14,9 @@
 
 #include "system/system.h"
 
+#include <signal.h>
+#include <stdio.h>
+
 #include "modules/air_sensor/air_sensor_fake.h"
 #include "modules/board/board_fake.h"
 #include "modules/light/fake_sensor.h"
@@ -27,6 +30,22 @@
 
 using pw::digital_io::DigitalIn;
 using pw::digital_io::State;
+
+extern "C" {
+
+void CtrlCSignalHandler(int /* ignored */) {
+  printf("\nCtrl-C received; simulator exiting immediately...\n");
+  exit(0);
+}
+
+}  // extern "C"
+
+void InstallCtrlCSignalHandler() {
+  // Catch Ctrl-C to force a 0 exit code (success) to avoid signaling an error
+  // for intentional exits. For example, VSCode shows an alarming dialog on
+  // non-zero exit, which is confusing for users intentionally quitting.
+  signal(SIGINT, CtrlCSignalHandler);
+}
 
 namespace {
 class VirtualInput : public DigitalIn {
@@ -52,11 +71,26 @@ namespace sense::system {
 void Init() {}
 
 void Start() {
+  InstallCtrlCSignalHandler();
+  printf("=====================================\n");
+  printf("=== Pigweed Sense: Host Simulator ===\n");
+  printf("=====================================\n");
+  printf("Simulator is now running. To connect with a console,\n");
+  printf("either run one in a new terminal:\n");
+  printf("\n");
+  printf("   $ bazelisk run //<app>:simulator_console\n");
+  printf("\n");
+  printf("where <app> is e.g. blinky, factory, or production, or launch\n");
+  printf("one from VSCode under the 'Bazel Build Targets' explorer tab.\n");
+  printf("\n");
+  printf("Press Ctrl-C to exit\n");
+
   static std::byte channel_buffer[16384];
   static pw::multibuf::SimpleAllocator multibuf_alloc(channel_buffer,
                                                       pw::System().allocator());
   static StreamChannel channel(
       multibuf_alloc, pw::system::GetReader(), pw::system::GetWriter());
+
   pw::SystemStart(channel);
   PW_UNREACHABLE;
 }
