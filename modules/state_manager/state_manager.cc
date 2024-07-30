@@ -115,6 +115,7 @@ void StateManager::StartMorseReadout(bool repeat) {
   PW_CHECK_OK(status);
   pubsub_->Publish(MorseEncodeRequest{.message = air_quality_score_string_,
                                       .repeat = repeat ? 0u : 1u});
+  PW_LOG_INFO("Current air quality score: %hu", last_air_quality_score_);
 }
 
 void StateManager::DisplayThreshold() {

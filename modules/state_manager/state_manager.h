@@ -241,6 +241,10 @@ class StateManager {
 
     void ButtonXReleased() override { manager().SetState<ProximityDemo>(); }
     void ButtonYReleased() override { manager().SetState<AirQualityMode>(); }
+
+    void AirQualityModeLedValue(const LedValue& value) override {
+      manager().led_.SetColor(value);
+    }
     void MorseCodeEdge(const MorseCodeValue& value) override {
       manager().led_.SetBrightness(value.turn_on ? manager().brightness_ : 0);
       if (value.message_finished) {
