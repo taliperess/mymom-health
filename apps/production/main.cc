@@ -17,7 +17,6 @@
 #include "apps/production/threads.h"
 #include "modules/air_sensor/service.h"
 #include "modules/board/service.h"
-#include "modules/color_rotation/manager.h"
 #include "modules/morse_code/encoder.h"
 #include "modules/proximity/manager.h"
 #include "modules/pubsub/service.h"
@@ -34,22 +33,9 @@
 namespace sense {
 namespace {
 
-const std::array kColorRotationSteps{
-    ColorRotationManager::Step{
-        .r = 0xd6, .g = 0x02, .b = 0x70, .num_cycles = 50},
-    ColorRotationManager::Step{
-        .r = 0x9b, .g = 0x4f, .b = 0x96, .num_cycles = 50},
-    ColorRotationManager::Step{
-        .r = 0x00, .g = 0x38, .b = 0xa8, .num_cycles = 50},
-};
-
 void InitBoardService() {
   static StateManager state_manager(system::PubSub(), system::PolychromeLed());
   state_manager.Init();
-
-  static ColorRotationManager color_rotation_manager(
-      kColorRotationSteps, system::PubSub(), system::GetWorker());
-  color_rotation_manager.Start();
 
   // The morse encoder will emit pubsub events to the state manager.
   static Encoder morse_encoder;

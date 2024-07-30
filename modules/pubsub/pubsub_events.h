@@ -110,13 +110,6 @@ class LedValue {
   uint8_t b_;
 };
 
-class LedValueColorRotationMode : public LedValue {
- public:
-  using LedValue::LedValue;
-  explicit LedValueColorRotationMode(const LedValue& parent)
-      : LedValue(parent) {}
-};
-
 class LedValueAirQualityMode : public LedValue {
  public:
   using LedValue::LedValue;
@@ -143,7 +136,6 @@ using Event = std::variant<AlarmStateChange,
                            ButtonB,
                            ButtonX,
                            ButtonY,
-                           LedValueColorRotationMode,
                            LedValueAirQualityMode,
                            DemoModeTimerExpired,
                            ProximityStateChange,
@@ -162,7 +154,6 @@ enum EventType : size_t {
   kButtonB,
   kButtonX,
   kButtonY,
-  kLedValueColorRotationMode,
   kLedValueAirQualityMode,
   kDemoModeTimerExpired,
   kProximityStateChange,

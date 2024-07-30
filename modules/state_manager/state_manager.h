@@ -147,11 +147,8 @@ class StateManager {
       manager().UpdateBrightnessFromAmbientLight();
     }
 
-    virtual void ProximitySample(uint16_t) {}
-
     // Events for requested LED values from other components.
     virtual void AirQualityModeLedValue(const LedValue&) {}
-    virtual void ColorRotationModeLedValue(const LedValue&) {}
 
     virtual void MorseCodeEdge(const MorseCodeValue&) {}
 
@@ -187,7 +184,6 @@ class StateManager {
    public:
     AirQualityMode(StateManager& manager) : State(manager, "AirQualityMode") {}
 
-    void ButtonXReleased() override { manager().SetState<ProximityDemo>(); }
     void ButtonYReleased() override { manager().SetState<MorseReadout>(); }
 
     void AirQualityModeLedValue(const LedValue& value) override {
@@ -239,7 +235,6 @@ class StateManager {
       manager.StartMorseReadout(/* repeat: */ false);
     }
 
-    void ButtonXReleased() override { manager().SetState<ProximityDemo>(); }
     void ButtonYReleased() override { manager().SetState<AirQualityMode>(); }
 
     void AirQualityModeLedValue(const LedValue& value) override {
@@ -250,54 +245,6 @@ class StateManager {
       if (value.message_finished) {
         manager().SetState<AirQualityMode>();
       }
-    }
-  };
-
-  class ProximityDemo final : public TimeoutState {
-   public:
-    ProximityDemo(StateManager& manager)
-        : TimeoutState(manager, "ProximityDemo", kDemoModeTimeout) {
-      manager.led_.SetColor(LedValue(255, 255, 255));
-    }
-
-    ~ProximityDemo() {
-      // Recalculate the brightness value since updates were paused.
-      manager().UpdateBrightnessFromAmbientLight();
-    }
-
-    void ButtonXReleased() override { manager().SetState<MorseCodeDemo>(); }
-
-    // Ignore ambient light updates since proximity drives brightness.
-    void AmbientLightUpdate() override {}
-
-    void ProximitySample(uint16_t value) override;
-  };
-
-  class MorseCodeDemo final : public TimeoutState {
-   public:
-    MorseCodeDemo(StateManager& manager)
-        : TimeoutState(manager, "MorseCodeDemo", kDemoModeTimeout) {
-      manager.led_.SetColor(LedValue(0, 255, 255));
-      manager.pubsub_->Publish(
-          MorseEncodeRequest{.message = "PW", .repeat = 0});
-    }
-
-    void ButtonXReleased() override { manager().SetState<ColorRotationDemo>(); }
-
-    void MorseCodeEdge(const MorseCodeValue& value) override {
-      manager().led_.SetBrightness(value.turn_on ? manager().brightness_ : 0);
-    }
-  };
-
-  class ColorRotationDemo final : public TimeoutState {
-   public:
-    ColorRotationDemo(StateManager& manager)
-        : TimeoutState(manager, "ColorRotationDemo", kDemoModeTimeout) {}
-
-    void ButtonXReleased() override { manager().SetState<ProximityDemo>(); }
-
-    void ColorRotationModeLedValue(const LedValue& value) override {
-      manager().led_.SetColor(value);
     }
   };
 
@@ -344,10 +291,7 @@ class StateManager {
                   AirQualityMode,
                   AirQualityThresholdMode,
                   AirQualityAlarmMode,
-                  MorseReadout,
-                  ProximityDemo,
-                  MorseCodeDemo,
-                  ColorRotationDemo>
+                  MorseReadout>
       state_;
 
   pw::chrono::SystemTimer demo_mode_timer_;

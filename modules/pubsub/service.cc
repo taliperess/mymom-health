@@ -50,10 +50,6 @@ pubsub_Event EventToProto(const Event& event) {
   } else if (std::holds_alternative<ButtonY>(event)) {
     proto.which_type = pubsub_Event_button_y_pressed_tag;
     proto.type.button_y_pressed = std::get<ButtonY>(event).pressed();
-  } else if (std::holds_alternative<LedValueColorRotationMode>(event)) {
-    proto.which_type = pubsub_Event_led_value_color_rotation_tag;
-    proto.type.led_value_color_rotation =
-        LedValueToProto(std::get<LedValueColorRotationMode>(event));
   } else if (std::holds_alternative<LedValueAirQualityMode>(event)) {
     proto.which_type = pubsub_Event_led_value_air_quality_tag;
     proto.type.led_value_air_quality =
@@ -111,9 +107,6 @@ pw::Result<Event> ProtoToEvent(const pubsub_Event& proto) {
       return ButtonX(proto.type.button_x_pressed);
     case pubsub_Event_button_y_pressed_tag:
       return ButtonY(proto.type.button_y_pressed);
-    case pubsub_Event_led_value_color_rotation_tag:
-      return LedValueColorRotationMode(
-          LedValueFromProto(proto.type.led_value_color_rotation));
     case pubsub_Event_morse_code_value_tag:
       return MorseCodeValue{
           .turn_on = proto.type.morse_code_value.turn_on,

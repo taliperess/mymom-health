@@ -70,14 +70,6 @@ void StateManager::Update(Event event) {
       HandleButtonPress(std::get<ButtonY>(event).pressed(),
                         &State::ButtonYReleased);
       break;
-    case kLedValueColorRotationMode:
-      state_.get().ColorRotationModeLedValue(
-          std::get<LedValueColorRotationMode>(event));
-      break;
-    case kProximitySample:
-      prox_samples_.Update(std::get<ProximitySample>(event).sample);
-      state_.get().ProximitySample(prox_samples_.Average());
-      break;
     case kLedValueAirQualityMode:
       state_.get().AirQualityModeLedValue(
           std::get<LedValueAirQualityMode>(event));
@@ -92,6 +84,7 @@ void StateManager::Update(Event event) {
       UpdateAverageAmbientLight(std::get<AmbientLightSample>(event).sample_lux);
       state_.get().AmbientLightUpdate();
       break;
+    case kProximitySample:
     case kAlarmSilenceRequest:
     case kAirQualityThreshold:
     case kMorseEncodeRequest:
@@ -186,17 +179,6 @@ void StateManager::UpdateBrightnessFromAmbientLight() {
 
 void StateManager::LogStateChange(const char* old_state) const {
   PW_LOG_INFO("StateManager: %s -> %s", old_state, state_.get().name());
-}
-
-void StateManager::ProximityDemo::ProximitySample(uint16_t value) {
-  // Based on manual experimentation, right shift by 7 (instead of 8) to scale
-  // the value, and ignore very low readings to avoid flickering from noise.
-  uint8_t scaled = static_cast<uint8_t>(std::min((value >> 7), 255));
-  if (scaled < 3) {
-    scaled = 0;
-  }
-  PW_LOG_DEBUG("Proximity: avg=%hu, scaled=%hhu", value, scaled);
-  manager().led_.SetBrightness(scaled);
 }
 
 }  // namespace sense
