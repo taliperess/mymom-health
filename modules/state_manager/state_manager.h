@@ -17,6 +17,7 @@
 #include "modules/led/polychrome_led.h"
 #include "modules/pubsub/pubsub_events.h"
 #include "modules/state_manager/common_base_union.h"
+#include "modules/stats/simple_moving_average.h"
 #include "pw_chrono/system_timer.h"
 #include "pw_string/string.h"
 
@@ -25,45 +26,43 @@ namespace sense {
 // State machine that controls what displays on the LED.
 class LedOutputStateMachine {
  public:
-  explicit constexpr LedOutputStateMachine(PolychromeLed& led,
-                                           uint8_t brightness)
+  explicit LedOutputStateMachine(PolychromeLed& led, uint8_t brightness)
       : state_(kPassthrough),
         brightness_(brightness),
         red_(0),
         green_(0),
         blue_(0),
-        led_(&led) {}
+        led_(&led) {
+    // Set the brightness, but start the color as black.
+    led_->SetBrightness(brightness_);
+    led_->SetColor(0);
+  }
 
+  // Use this color and brightness until EndOverride is called.
   void Override(uint32_t color, uint8_t brightness) {
     state_ = kOverride;
     led_->SetColor(color);
     led_->SetBrightness(brightness);
   }
 
+  // Switch to the most recently set color and brightness.
   void EndOverride() {
     state_ = kPassthrough;
-    UpdateLed();
+    led_->SetColor(red_, green_, blue_);
+    led_->SetBrightness(brightness_);
   }
 
   void SetColor(const LedValue& value) {
-    red_ = value.r();
-    green_ = value.g();
-    blue_ = value.b();
-    UpdateLed();
+    UpdateLed(value.r(), value.g(), value.b(), brightness_);
   }
 
   void SetBrightness(uint8_t brightness) {
-    brightness_ = brightness;
-    UpdateLed();
+    UpdateLed(red_, green_, blue_, brightness);
   }
 
  private:
-  void UpdateLed() {
-    if (state_ == kPassthrough) {
-      led_->SetColor(red_, green_, blue_);
-      led_->SetBrightness(brightness_);
-    }
-  }
+  void UpdateLed(uint8_t red, uint8_t green, uint8_t blue, uint8_t brightness);
+
   enum : bool {
     kPassthrough,  // show stored values and update as they come in
     kOverride,     // display a specific color
@@ -77,6 +76,10 @@ class LedOutputStateMachine {
   PolychromeLed* led_;
 };
 
+// Manages state for the "production" Sense app.
+//
+// This class is NOT thread safe. Must only be interacted with from the PubSub
+// thread.
 class StateManager {
  public:
   StateManager(PubSub& pubsub, PolychromeLed& led)
@@ -133,8 +136,9 @@ class StateManager {
     virtual void ButtonXReleased() {}
     virtual void ButtonYReleased() {}
 
+    virtual void ProximitySample(uint16_t) {}
+
     // Events for requested LED values from other components.
-    virtual void ProximityModeLedValue(const LedValue&) {}
     virtual void AirQualityModeLedValue(const LedValue&) {}
     virtual void ColorRotationModeLedValue(const LedValue&) {}
 
@@ -155,8 +159,8 @@ class StateManager {
   class TimeoutState : public State {
    public:
     TimeoutState(StateManager& manager,
-              const char* name,
-              pw::chrono::SystemClock::duration timeout)
+                 const char* name,
+                 pw::chrono::SystemClock::duration timeout)
         : State(manager, name) {
       manager.demo_mode_timer_.InvokeAfter(timeout);
     }
@@ -170,8 +174,7 @@ class StateManager {
 
   class AirQualityMode final : public State {
    public:
-    AirQualityMode(StateManager& manager)
-        : State(manager, "AirQualityMode") {}
+    AirQualityMode(StateManager& manager) : State(manager, "AirQualityMode") {}
 
     void ButtonXReleased() override { manager().SetState<ProximityDemo>(); }
     void ButtonYReleased() override { manager().SetState<MorseReadout>(); }
@@ -187,7 +190,8 @@ class StateManager {
         pw::chrono::SystemClock::for_at_least(std::chrono::seconds(3));
 
     AirQualityThresholdMode(StateManager& manager)
-        : TimeoutState(manager, "AirQualityThresholdMode", kThresholdModeTimeout) {
+        : TimeoutState(
+              manager, "AirQualityThresholdMode", kThresholdModeTimeout) {
       manager.DisplayThreshold();
     }
 
@@ -237,13 +241,13 @@ class StateManager {
   class ProximityDemo final : public TimeoutState {
    public:
     ProximityDemo(StateManager& manager)
-        : TimeoutState(manager, "ProximityDemo", kDemoModeTimeout) {}
+        : TimeoutState(manager, "ProximityDemo", kDemoModeTimeout) {
+      manager.led_.SetColor(LedValue(255, 255, 255));
+    }
 
     void ButtonXReleased() override { manager().SetState<MorseCodeDemo>(); }
 
-    void ProximityModeLedValue(const LedValue& value) override {
-      manager().led_.SetColor(value);
-    }
+    void ProximitySample(uint16_t value) override;
   };
 
   class MorseCodeDemo final : public TimeoutState {
@@ -277,7 +281,7 @@ class StateManager {
   // Respond to a PubSub event.
   void Update(Event event);
 
-  void HandleButtonPress(bool pressed, void (State::* function)());
+  void HandleButtonPress(bool pressed, void (State::*function)());
 
   template <typename StateType>
   void SetState() {
@@ -313,6 +317,7 @@ class StateManager {
   pw::chrono::SystemTimer demo_mode_timer_;
 
   bool alarmed_ = false;
+  IntegerSimpleMovingAverager<uint16_t, 5> prox_samples_;
   uint16_t current_threshold_ = AirSensor::kDefaultTheshold;
   uint16_t last_air_quality_score_ = AirSensor::kAverageScore;
   pw::InlineString<4> air_quality_score_string_;

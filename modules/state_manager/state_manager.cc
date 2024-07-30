@@ -20,6 +20,26 @@
 
 namespace sense {
 
+void LedOutputStateMachine::UpdateLed(uint8_t red,
+                                      uint8_t green,
+                                      uint8_t blue,
+                                      uint8_t brightness) {
+  if (red_ != red || green_ != green || blue_ != blue) {
+    red_ = red;
+    green_ = green;
+    blue_ = blue;
+    if (state_ == kPassthrough) {
+      led_->SetColor(red_, green_, blue_);
+    }
+  }
+  if (brightness_ != brightness) {
+    brightness_ = brightness;
+    if (state_ == kPassthrough) {
+      led_->SetBrightness(brightness_);
+    }
+  }
+}
+
 void StateManager::Init() {
   pubsub_->Subscribe([this](Event event) { Update(event); });
 }
@@ -52,9 +72,9 @@ void StateManager::Update(Event event) {
       state_.get().ColorRotationModeLedValue(
           std::get<LedValueColorRotationMode>(event));
       break;
-    case kLedValueProximityMode:
-      state_.get().ProximityModeLedValue(
-          std::get<LedValueProximityMode>(event));
+    case kProximitySample:
+      prox_samples_.Update(std::get<ProximitySample>(event).sample);
+      state_.get().ProximitySample(prox_samples_.Average());
       break;
     case kLedValueAirQualityMode:
       state_.get().AirQualityModeLedValue(
@@ -70,12 +90,11 @@ void StateManager::Update(Event event) {
     case kAirQualityThreshold:
     case kMorseEncodeRequest:
     case kProximityStateChange:
-    case kProximitySample:
       break;  // ignore these events
   }
 }
 
-void StateManager::HandleButtonPress(bool pressed, void (State::* function)()) {
+void StateManager::HandleButtonPress(bool pressed, void (State::*function)()) {
   if (pressed) {
     led_.Override(0xffffff, 255);  // Bright white while pressed.
   } else {
@@ -100,10 +119,12 @@ void StateManager::IncrementThreshold(
     pw::chrono::SystemClock::duration timeout) {
   demo_mode_timer_.Cancel();
   uint16_t candidate_threshold = current_threshold_ + kThresholdIncrement;
-  current_threshold_ = candidate_threshold < kMaxThreshold ? candidate_threshold : kMaxThreshold;
+  current_threshold_ =
+      candidate_threshold < kMaxThreshold ? candidate_threshold : kMaxThreshold;
   pubsub_->Publish(AirQualityThreshold{
       .alarm = current_threshold_,
-      .silence = static_cast<uint16_t>(current_threshold_ + kThresholdIncrement),
+      .silence =
+          static_cast<uint16_t>(current_threshold_ + kThresholdIncrement),
   });
   DisplayThreshold();
   demo_mode_timer_.InvokeAfter(timeout);
@@ -117,7 +138,8 @@ void StateManager::DecrementThreshold(
   }
   pubsub_->Publish(AirQualityThreshold{
       .alarm = current_threshold_,
-      .silence = static_cast<uint16_t>(current_threshold_ + kThresholdIncrement),
+      .silence =
+          static_cast<uint16_t>(current_threshold_ + kThresholdIncrement),
   });
   DisplayThreshold();
   demo_mode_timer_.InvokeAfter(timeout);
@@ -125,6 +147,17 @@ void StateManager::DecrementThreshold(
 
 void StateManager::LogStateChange(const char* old_state) const {
   PW_LOG_INFO("StateManager: %s -> %s", old_state, state_.get().name());
+}
+
+void StateManager::ProximityDemo::ProximitySample(uint16_t value) {
+  // Based on manual experimentation, right shift by 7 (instead of 8) to scale
+  // the value, and ignore very low readings to avoid flickering from noise.
+  uint8_t scaled = static_cast<uint8_t>(std::min((value >> 7), 255));
+  if (scaled < 3) {
+    scaled = 0;
+  }
+  PW_LOG_DEBUG("Proximity: avg=%hu, scaled=%hhu", value, scaled);
+  manager().led_.SetBrightness(scaled);
 }
 
 }  // namespace sense

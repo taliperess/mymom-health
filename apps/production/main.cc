@@ -88,12 +88,6 @@ void InitProximitySensor() {
           PW_LOG_INFO("Proximity NOT detected!");
         }
       });
-
-  // Publish LED values based on proximity samples.
-  system::PubSub().SubscribeTo<ProximitySample>([](ProximitySample event) {
-    const uint8_t value = static_cast<uint8_t>(event.sample >> 8);
-    system::PubSub().Publish(LedValueProximityMode(value, value, value));
-  });
 }
 
 void InitAirSensor() {

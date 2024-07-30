@@ -30,7 +30,6 @@ class CommonBaseUnion {
 
   template <typename T, typename... Args>
   void emplace(Args&&... args) {
-    // All types are trivially destructible.
     static_assert((std::is_same_v<T, Types> || ...));
     get().~Base();
     new (data) T(std::forward<Args>(args)...);

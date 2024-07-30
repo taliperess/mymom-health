@@ -54,10 +54,6 @@ pubsub_Event EventToProto(const Event& event) {
     proto.which_type = pubsub_Event_led_value_color_rotation_tag;
     proto.type.led_value_color_rotation =
         LedValueToProto(std::get<LedValueColorRotationMode>(event));
-  } else if (std::holds_alternative<LedValueProximityMode>(event)) {
-    proto.which_type = pubsub_Event_led_value_proximity_tag;
-    proto.type.led_value_proximity =
-        LedValueToProto(std::get<LedValueProximityMode>(event));
   } else if (std::holds_alternative<LedValueAirQualityMode>(event)) {
     proto.which_type = pubsub_Event_led_value_air_quality_tag;
     proto.type.led_value_air_quality =
@@ -119,9 +115,6 @@ pw::Result<Event> ProtoToEvent(const pubsub_Event& proto) {
           .turn_on = proto.type.morse_code_value.turn_on,
           .message_finished = proto.type.morse_code_value.message_finished,
       };
-    case pubsub_Event_led_value_proximity_tag:
-      return LedValueProximityMode(
-          LedValueFromProto(proto.type.led_value_proximity));
     case pubsub_Event_led_value_air_quality_tag:
       return LedValueAirQualityMode(
           LedValueFromProto(proto.type.led_value_air_quality));

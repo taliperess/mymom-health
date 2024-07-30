@@ -27,6 +27,7 @@ cc_library(
         "//modules/air_sensor",
         "//modules/led:polychrome_led",
         "//modules/pubsub:events",
+        "//modules/stats:simple_moving_average",
         "//modules/worker",
         "@pigweed//pw_assert",
         "@pigweed//pw_chrono:system_timer",
