@@ -22,14 +22,16 @@
 #include "modules/light/fake_sensor.h"
 #include "modules/proximity/fake_sensor.h"
 #include "pw_assert/check.h"
+#include "pw_channel/stream_channel.h"
 #include "pw_digital_io/digital_io.h"
 #include "pw_multibuf/simple_allocator.h"
 #include "pw_system/io.h"
 #include "pw_system/system.h"
-#include "targets/host/stream_channel.h"
+#include "pw_thread_stl/options.h"
 
-using pw::digital_io::DigitalIn;
-using pw::digital_io::State;
+using ::pw::channel::StreamChannel;
+using ::pw::digital_io::DigitalIn;
+using ::pw::digital_io::State;
 
 extern "C" {
 
@@ -88,10 +90,14 @@ void Start() {
   static std::byte channel_buffer[16384];
   static pw::multibuf::SimpleAllocator multibuf_alloc(channel_buffer,
                                                       pw::System().allocator());
-  static StreamChannel channel(
-      multibuf_alloc, pw::system::GetReader(), pw::system::GetWriter());
+  static pw::NoDestructor<StreamChannel> channel(
+      multibuf_alloc,
+      pw::system::GetReader(),
+      pw::thread::stl::Options(),
+      pw::system::GetWriter(),
+      pw::thread::stl::Options());
 
-  pw::SystemStart(channel);
+  pw::SystemStart(*channel);
   PW_UNREACHABLE;
 }
 

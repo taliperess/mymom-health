@@ -23,7 +23,6 @@ cc_library(
         "system.cc",
     ],
     implementation_deps = [
-        ":stream_channel",
         "//modules/air_sensor:air_sensor_fake",
         "//modules/board:board_fake",
         "//modules/led:monochrome_led_fake",
@@ -31,6 +30,7 @@ cc_library(
         "//modules/light:fake_sensor",
         "//modules/proximity:fake_sensor",
         "@pigweed//pw_channel",
+        "@pigweed//pw_channel:stream_channel",
         "@pigweed//pw_digital_io",
         "@pigweed//pw_multibuf:simple_allocator",
         "@pigweed//pw_system:async",
@@ -38,20 +38,6 @@ cc_library(
     ],
     target_compatible_with = incompatible_with_mcu(),
     deps = ["//system:headers"],
-)
-
-cc_library(
-    name = "stream_channel",
-    srcs = ["stream_channel.cc"],
-    hdrs = ["stream_channel.h"],
-    target_compatible_with = incompatible_with_mcu(),
-    deps = [
-        "@pigweed//pw_channel",
-        "@pigweed//pw_log",
-        "@pigweed//pw_stream",
-        "@pigweed//pw_sync:interrupt_spin_lock",
-        "@pigweed//pw_sync:thread_notification",
-    ],
 )
 
 cc_library(
