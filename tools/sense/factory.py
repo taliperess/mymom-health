@@ -18,6 +18,7 @@ import argparse
 from dataclasses import dataclass
 from datetime import datetime
 import logging
+import math
 from pathlib import Path
 import sys
 import threading
@@ -68,6 +69,7 @@ class Test(abc.ABC):
         self._blinky_service = rpcs.blinky.Blinky
         self.passed_tests = []
         self.failed_tests = []
+        self.skipped_tests = []
 
     @abc.abstractmethod
     def run(self) -> bool:
@@ -100,6 +102,11 @@ class Test(abc.ABC):
         self.failed_tests.append(name)
         print(f'{colors().bold_red("FAIL:")} {name}')
         self.blink_led(Color(255, 0, 0))
+
+    def skip_test(self, name: str) -> None:
+        """Records a test as skipped."""
+        self.skipped_tests.append(name)
+        print(f'{colors().yellow("SKIP:")} {name}')
 
     def set_led(self, color: Color) -> Status:
         """Sets the device's RGB LED to the specified color."""
@@ -217,32 +224,71 @@ class LedTest(Test):
 
         return True
 
+@dataclass
+class Samples:
+    count: int = 0
+    total_value: float = 0
+    min_value: float = math.inf
+    max_value: float = 0
+
+    @property
+    def mean_value(self) -> float:
+        return self.total_value / self.count
+
+    def update(self, value: float) -> None:
+        self.count += 1
+        self.total_value += value
+        self.min_value = min(self.min_value, value)
+        self.max_value = max(self.max_value, value)
+
+    def __str__(self) -> str:
+        return (f'{self.count} total samples; min: {self.min_value}, '
+                f'max: {self.max_value}, mean: {self.mean_value}')
+
+def _sample_until(
+        max_samples: int,
+        sample_rpc_method,
+        predicate: Callable[[int], bool],
+        field: str = 'value',
+        delay: float = 0.1,
+    ) -> Tuple[bool, Samples]:
+    """Repeatedly calls an RPC until a condition is met.
+
+    Tracks a moving average of the value of the specified RPC response field,
+    invoking the provided predicate function on this average value.
+
+    Exits as soon as the predicate returns True. If the condition is never met,
+    runs until max_samples iterations, then returns False.
+
+    Aggregate sample data is returned regardless of success.
+    """
+
+    samples = Samples()
+    recent_samples = [None for _ in range(5)]
+
+    for i in range(max_samples):
+        status, response = sample_rpc_method()
+        if status is not Status.OK:
+            return False, samples
+
+        value = getattr(response, field)
+        recent_samples[i % len(recent_samples)] = value
+        samples.update(value)
+
+        if i >= len(recent_samples):
+            moving_average = sum(recent_samples) / len(recent_samples)
+            if predicate(moving_average):
+                return True, samples
+
+        time.sleep(delay)
+
+    return False, samples
+
 
 class Ltr559Test(Test):
     _PROX_NEAR_THRESHOLD = 20000
     _LIGHT_DARK_THRESHOLD = 0.5
     _LIGHT_BRIGHT_THRESHOLD = 4000
-
-    @dataclass
-    class Samples:
-        count: int = 0
-        total_value: float = 0
-        min_value: float = 0
-        max_value: float = 0
-
-        @property
-        def mean_value(self) -> float:
-            return self.total_value / self.count
-
-        def update(self, value: float) -> None:
-            self.count += 1
-            self.total_value += value
-            self.min_value = min(self.min_value, value)
-            self.max_value = max(self.max_value, value)
-
-        def __str__(self) -> str:
-            return (f'{self.count} total samples; min: {self.min_value}, '
-                    f'max: {self.max_value}, mean: {self.mean_value}')
 
     def __init__(self, rpcs):
         super().__init__('Ltr559Test', rpcs)
@@ -280,7 +326,7 @@ class Ltr559Test(Test):
         self.prompt_enter('Place your Enviro+ pack in a lit area')
         print('Getting initial sensor readings', end='', flush=True)
 
-        baseline_samples = Ltr559Test.Samples()
+        baseline_samples = Samples()
 
         while baseline_samples.count < 5:
             status, response = self._factory_service.SampleLtr559Prox()
@@ -296,7 +342,7 @@ class Ltr559Test(Test):
         print()
         self.prompt('Fully cover the light sensor')
 
-        success, samples = self._sample_until(
+        success, samples = _sample_until(
             50,
             self._factory_service.SampleLtr559Prox,
             lambda value: value > Ltr559Test._PROX_NEAR_THRESHOLD,
@@ -310,7 +356,7 @@ class Ltr559Test(Test):
         print()
         self.prompt('Fully uncover the light sensor')
 
-        success, samples = self._sample_until(
+        success, samples = _sample_until(
             50,
             self._factory_service.SampleLtr559Prox,
             lambda value: abs(value - baseline_samples.mean_value) < 200,
@@ -327,7 +373,7 @@ class Ltr559Test(Test):
         self.prompt_enter('Place your Enviro+ pack in an area with neutral light')
         print('Getting initial sensor readings', end='', flush=True)
 
-        baseline_samples = Ltr559Test.Samples()
+        baseline_samples = Samples()
 
         while baseline_samples.count < 5:
             status, response = self._factory_service.SampleLtr559Light()
@@ -343,7 +389,7 @@ class Ltr559Test(Test):
         print()
         self.prompt('Cover the light sensor')
 
-        success, samples = self._sample_until(
+        success, samples = _sample_until(
             100,
             self._factory_service.SampleLtr559Light,
             lambda value: value < Ltr559Test._LIGHT_DARK_THRESHOLD,
@@ -359,7 +405,7 @@ class Ltr559Test(Test):
         print()
         self.prompt('Shine a light directly at the light sensor')
 
-        success, samples = self._sample_until(
+        success, samples = _sample_until(
             100,
             self._factory_service.SampleLtr559Light,
             lambda value: abs(value - baseline_samples.mean_value) > Ltr559Test._LIGHT_BRIGHT_THRESHOLD,
@@ -375,7 +421,7 @@ class Ltr559Test(Test):
         print()
         self.prompt('Return the light sensor to its original position')
 
-        success, samples = self._sample_until(
+        success, samples = _sample_until(
             100,
             self._factory_service.SampleLtr559Light,
             lambda value: abs(value - baseline_samples.mean_value) < 2,
@@ -389,33 +435,143 @@ class Ltr559Test(Test):
         self.pass_test('ltr559_light_neutral')
         return True
 
-    def _sample_until(
-            self,
-            max_samples: int,
-            sample_rpc_method,
-            predicate: Callable[[int], bool],
-            field: str = 'value',
-        ) -> Tuple[bool, Samples]:
-        samples = Ltr559Test.Samples()
-        recent_samples = [None for _ in range(5)]
 
-        for i in range(max_samples):
-            status, response = sample_rpc_method()
-            if status is not Status.OK:
-                return False, samples
+class Bme688Test(Test):
+    _POOR_GAS_RESISTANCE_THRESHOLD = 10000
+    _NORMAL_GAS_RESISTANCE_THRESHOLD = 40000
+    _HOT_TEMPERATURE_THRESHOLD_C = 40
 
-            value = getattr(response, field)
-            recent_samples[i % len(recent_samples)] = value
-            samples.update(value)
+    def __init__(self, rpcs):
+        super().__init__('Bme688Test', rpcs)
+        self._factory_service = rpcs.factory.Factory
+        self._air_sensor_service = rpcs.air_sensor.AirSensor
 
-            if i >= len(recent_samples):
-                moving_average = sum(recent_samples) / len(recent_samples)
-                if predicate(moving_average):
-                    return True, samples
+    def run(self) -> bool:
+        status, _ = self._factory_service.StartTest(test=factory_pb2.Test.Type.BME688)
+        if status is not Status.OK:
+            return False
 
-            time.sleep(0.1)
+        gas_result = self._test_gas_sensor()
+        temp_result = self._test_temperature()
 
-        return False, samples
+        status, _ = self._factory_service.EndTest(test=factory_pb2.Test.Type.BME688)
+        if status is not Status.OK:
+            return False
+
+        return gas_result and temp_result
+
+    def _test_gas_sensor(self) -> bool:
+        print(colors().bold_white('\nTesting gas resistance sensor.'))
+        print(
+            'To test the gas sensor, have some type of disinfectant, '
+            'rubbing alcohol, or similar solution available.'
+        )
+        if not self.prompt_yn('Are you able to continue this test?'):
+            self.skip_test('bme688_gas_resistance')
+            return True
+
+        def log_received(_):
+            print('.', end='', flush=True)
+            return False
+
+        print('Getting initial sensor readings', end='', flush=True)
+        _, baseline_samples = _sample_until(
+            10,
+            self._air_sensor_service.Measure,
+            log_received,
+            field='gas_resistance',
+            delay=0.25,
+        )
+        print(colors().green(' DONE'))
+        print(baseline_samples)
+
+        self.prompt('Hold the sensor near the alcohol source')
+        success, samples = _sample_until(
+            50,
+            self._air_sensor_service.Measure,
+            lambda v: v < Bme688Test._POOR_GAS_RESISTANCE_THRESHOLD,
+            field='gas_resistance',
+            delay=0.25,
+        )
+        print(samples)
+
+        if not success:
+            self.fail_test('bme688_gas_resistance_poor')
+            return False
+
+        self.pass_test('bme688_gas_resistance_poor')
+
+        self.prompt('Return the sensor to its original position')
+        success, samples = _sample_until(
+            50,
+            self._air_sensor_service.Measure,
+            lambda v: v > Bme688Test._NORMAL_GAS_RESISTANCE_THRESHOLD,
+            field='gas_resistance',
+            delay=0.25,
+        )
+        print(samples)
+
+        if not success:
+            self.fail_test('bme688_gas_resistance_normal')
+            return False
+
+        self.pass_test('bme688_gas_resistance_normal')
+        return True
+
+    def _test_temperature(self) -> bool:
+        print(colors().bold_white('\nTesting temperature sensor.'))
+        print('Testing the temperature sensor requires some heating apparatus.')
+        if not self.prompt_yn('Are you able to continue this test?'):
+            self.skip_test('bme688_temperature')
+            return True
+
+        def log_received(_):
+            print('.', end='', flush=True)
+            return False
+
+        print('Getting initial sensor readings', end='', flush=True)
+        _, baseline_samples = _sample_until(
+            10,
+            self._air_sensor_service.Measure,
+            log_received,
+            field='temperature',
+            delay=0.25,
+        )
+        print(colors().green(' DONE'))
+        print(baseline_samples)
+
+        self.prompt('Heat the sensor')
+        success, samples = _sample_until(
+            50,
+            self._air_sensor_service.Measure,
+            lambda v: v > Bme688Test._HOT_TEMPERATURE_THRESHOLD_C,
+            field='temperature',
+            delay=0.25,
+        )
+        print(samples)
+
+        if not success:
+            self.fail_test('bme688_temperature_hot')
+            return False
+
+        self.pass_test('bme688_temperature_hot')
+
+        self.prompt('Allow the sensor to cool to room temperature')
+        success, samples = _sample_until(
+            100,
+            self._air_sensor_service.Measure,
+            lambda v: abs(v - baseline_samples.mean_value) < 7.0,
+            field='temperature',
+            delay=0.25,
+        )
+        print(samples)
+
+        if not success:
+            self.fail_test('bme688_temperature_normal')
+            return False
+
+        self.pass_test('bme688_temperature_normal')
+        return True
 
 
 def _run_tests(rpcs) -> bool:
@@ -425,10 +581,12 @@ def _run_tests(rpcs) -> bool:
         LedTest(rpcs),
         ButtonsTest(rpcs),
         Ltr559Test(rpcs),
+        Bme688Test(rpcs),
     ]
 
     all_passes = []
     all_failures = []
+    all_skips = []
 
     for num, test in enumerate(tests_to_run):
         start_msg = f'[{num + 1}/{len(tests_to_run)}] Running test {test.name}'
@@ -440,10 +598,15 @@ def _run_tests(rpcs) -> bool:
         if not test.run():
             all_failures.extend(test.failed_tests)
         all_passes.extend(test.passed_tests)
+        all_skips.extend(test.skipped_tests)
 
-    if all_failures:
-        print(f'\n{len(all_passes)} tests passed, {len(all_failures)} tests failed')
-        return False
+    if all_failures or all_skips:
+        print(f'\n{len(all_passes)} tests passed, {len(all_failures)} tests failed', end='')
+        if all_skips:
+            print(f', {len(all_skips)} tests skipped')
+        else:
+            print()
+        return len(all_failures) > 0
 
     print('\nAll tests passed')
     return True

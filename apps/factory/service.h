@@ -14,6 +14,7 @@
 #pragma once
 
 #include "apps/factory/factory_pb/factory.rpc.pb.h"
+#include "modules/air_sensor/air_sensor.h"
 #include "modules/board/board.h"
 #include "modules/buttons/manager.h"
 #include "modules/light/sensor.h"
@@ -25,9 +26,11 @@ class FactoryService final
     : public ::factory::pw_rpc::nanopb::Factory::Service<FactoryService> {
  public:
   void Init(Board& board,
+            PubSub& pubsub,
             ButtonManager& button_manager,
             ProximitySensor& proximity_sensor,
-            AmbientLightSensor& ambient_light_sensor);
+            AmbientLightSensor& ambient_light_sensor,
+            AirSensor& air_sensor);
 
   pw::Status GetDeviceInfo(const pw_protobuf_Empty&,
                            factory_DeviceInfo& response);
@@ -45,9 +48,11 @@ class FactoryService final
 
  private:
   Board* board_;
+  PubSub* pubsub_;
   ButtonManager* button_manager_;
   ProximitySensor* proximity_sensor_;
   AmbientLightSensor* ambient_light_sensor_;
+  AirSensor* air_sensor_;
 };
 
 }  // namespace sense

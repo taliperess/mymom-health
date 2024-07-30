@@ -22,13 +22,17 @@
 namespace sense {
 
 void FactoryService::Init(Board& board,
+                          PubSub& pubsub,
                           ButtonManager& button_manager,
                           ProximitySensor& proximity_sensor,
-                          AmbientLightSensor& ambient_light_sensor) {
+                          AmbientLightSensor& ambient_light_sensor,
+                          AirSensor& air_sensor) {
   board_ = &board;
+  pubsub_ = &pubsub;
   button_manager_ = &button_manager;
   proximity_sensor_ = &proximity_sensor;
   ambient_light_sensor_ = &ambient_light_sensor;
+  air_sensor_ = &air_sensor;
 }
 
 pw::Status FactoryService::GetDeviceInfo(const pw_protobuf_Empty&,
@@ -52,6 +56,10 @@ pw::Status FactoryService::StartTest(const factory_StartTestRequest& request,
       PW_LOG_INFO("Configured for LTR559 ambient light test");
       ambient_light_sensor_->Enable();
       break;
+    case factory_Test_Type_BME688:
+      PW_LOG_INFO("Configured for BME688 air sensor test");
+      air_sensor_->Init(*pubsub_, pw::chrono::VirtualSystemClock::RealClock());
+      break;
   }
 
   return pw::OkStatus();
@@ -68,6 +76,9 @@ pw::Status FactoryService::EndTest(const factory_EndTestRequest& request,
       break;
     case factory_Test_Type_LTR559_LIGHT:
       ambient_light_sensor_->Disable();
+      break;
+    case factory_Test_Type_BME688:
+      // Do nothing.
       break;
   }
 

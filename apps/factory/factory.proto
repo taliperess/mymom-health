@@ -35,6 +35,7 @@ message Test {
     BUTTONS = 0;
     LTR559_PROX = 1;
     LTR559_LIGHT = 2;
+    BME688 = 3;
   }
 }
 
