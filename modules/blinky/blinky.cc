@@ -11,9 +11,8 @@
 // WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 // License for the specific language governing permissions and limitations under
 // the License.
+#define PW_LOG_MODULE_NAME "BLINKY"
 #include "blinky.h"
-// FIXME
-// #define PW_LOG_MODULE_NAME "BLINKY"
 
 #include <mutex>
 
@@ -38,11 +37,13 @@ Coro<Status> Blinky::BlinkLoop(CoroContext&,
   for (uint32_t blinked = 0; blinked < blink_count || blink_count == 0;
        ++blinked) {
     {
+      PW_LOG_INFO("LED blinking: OFF");
       std::lock_guard lock(lock_);
       monochrome_led_->TurnOff();
     }
     co_await timer_.WaitFor(interval);
     {
+      PW_LOG_INFO("LED blinking: ON");
       std::lock_guard lock(lock_);
       monochrome_led_->TurnOn();
     }
@@ -52,6 +53,7 @@ Coro<Status> Blinky::BlinkLoop(CoroContext&,
     std::lock_guard lock(lock_);
     monochrome_led_->TurnOff();
   }
+  PW_LOG_INFO("Stopped blinking");
   co_return OkStatus();
 }
 
