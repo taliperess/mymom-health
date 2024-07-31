@@ -49,7 +49,7 @@ class AirSensor {
     kGreen = 512,
     kBlueGreen = 640,
     kCyan = 768,
-    kLighBlue = 896,
+    kLightBlue = 896,
     kBlue = 1023,
   };
 
@@ -130,7 +130,8 @@ class AirSensor {
   pw::chrono::VirtualSystemClock* clock_ = nullptr;
 
   HysteresisEdgeDetector<uint16_t> edge_detector_ PW_GUARDED_BY(lock_);
-  std::optional<pw::chrono::SystemClock::time_point> ignore_until_ PW_GUARDED_BY(lock_);
+  std::optional<pw::chrono::SystemClock::time_point> ignore_until_
+      PW_GUARDED_BY(lock_);
 
   // Thread safety: metric values should be atomic.
   //
