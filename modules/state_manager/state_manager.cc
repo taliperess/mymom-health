@@ -67,20 +67,24 @@ void StateManager::Update(Event event) {
       UpdateAirQuality(std::get<AirQuality>(event).score);
       break;
     case kButtonA:
-      HandleButtonPress(std::get<ButtonA>(event).pressed(),
-                        &State::ButtonAReleased);
+      if (std::get<ButtonA>(event).pressed()) {
+        state_.get().ButtonAPressed();
+      }
       break;
     case kButtonB:
-      HandleButtonPress(std::get<ButtonB>(event).pressed(),
-                        &State::ButtonBReleased);
+      if (std::get<ButtonB>(event).pressed()) {
+        state_.get().ButtonBPressed();
+      }
       break;
     case kButtonX:
-      HandleButtonPress(std::get<ButtonX>(event).pressed(),
-                        &State::ButtonXReleased);
+      if (std::get<ButtonX>(event).pressed()) {
+        state_.get().ButtonXPressed();
+      }
       break;
     case kButtonY:
-      HandleButtonPress(std::get<ButtonY>(event).pressed(),
-                        &State::ButtonYReleased);
+      if (std::get<ButtonY>(event).pressed()) {
+        state_.get().ButtonYPressed();
+      }
       break;
     case kTimerExpired:
       state_.get().OnTimerExpired(std::get<TimerExpired>(event));
@@ -97,15 +101,6 @@ void StateManager::Update(Event event) {
     case kProximitySample:
     case kProximityStateChange:
       break;  // ignore these events
-  }
-}
-
-void StateManager::HandleButtonPress(bool pressed, void (State::* function)()) {
-  if (pressed) {
-    led_.Override(0xffffff, 160);  // Bright white while pressed.
-  } else {
-    led_.EndOverride();
-    (state_.get().*function)();
   }
 }
 

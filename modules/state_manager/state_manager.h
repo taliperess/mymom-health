@@ -117,16 +117,16 @@ class StateManager {
     // Name of the state for logging.
     const char* name() const { return name_; }
 
-    // Events for releasing buttons. By default, 'A' and 'B' change to
+    // Handle button presses. By default, 'A' and 'B' change to
     // threshold mode, while 'X' and 'Y' change to monitoring mode.
-    virtual void ButtonAReleased() {
+    virtual void ButtonAPressed() {
       manager_.SetState<AirQualityThresholdMode>();
     }
-    virtual void ButtonBReleased() {
+    virtual void ButtonBPressed() {
       manager_.SetState<AirQualityThresholdMode>();
     }
-    virtual void ButtonXReleased() { manager_.ResetMode(); }
-    virtual void ButtonYReleased() { manager_.ResetMode(); }
+    virtual void ButtonXPressed() { manager_.ResetMode(); }
+    virtual void ButtonYPressed() { manager_.ResetMode(); }
 
     // Ambient light sensor updates determine LED brightess by default.
     virtual void AmbientLightUpdate() {
@@ -160,7 +160,7 @@ class StateManager {
    public:
     AirQualityMode(StateManager& manager) : State(manager, "AirQualityMode") {}
 
-    void ButtonYReleased() override { manager().SetState<MorseReadout>(); }
+    void ButtonYPressed() override { manager().SetState<MorseReadout>(); }
   };
 
   class AirQualityThresholdMode final : public State {
@@ -170,9 +170,9 @@ class StateManager {
       manager.DisplayThreshold();
     }
 
-    void ButtonAReleased() override { manager().IncrementThreshold(); }
+    void ButtonAPressed() override { manager().IncrementThreshold(); }
 
-    void ButtonBReleased() override { manager().DecrementThreshold(); }
+    void ButtonBPressed() override { manager().DecrementThreshold(); }
 
     void OnLedValue(const LedValue&) override {}
 
@@ -192,9 +192,9 @@ class StateManager {
       manager.StartMorseReadout(/* repeat: */ true);
     }
 
-    void ButtonXReleased() override { manager().SilenceAlarms(); }
+    void ButtonXPressed() override { manager().SilenceAlarms(); }
 
-    void ButtonYReleased() override {}
+    void ButtonYPressed() override {}
 
     void MorseCodeEdge(const MorseCodeValue& value) override {
       manager().led_.SetBrightness(value.turn_on ? manager().brightness_ : 0);
@@ -207,6 +207,8 @@ class StateManager {
       manager.StartMorseReadout(/* repeat: */ false);
     }
 
+    void ButtonYPressed() override {}
+
     void MorseCodeEdge(const MorseCodeValue& value) override {
       manager().led_.SetBrightness(value.turn_on ? manager().brightness_ : 0);
       if (value.message_finished) {
@@ -217,8 +219,6 @@ class StateManager {
 
   // Respond to a PubSub event.
   void Update(Event event);
-
-  void HandleButtonPress(bool pressed, void (State::* function)());
 
   template <typename StateType>
   void SetState() {
