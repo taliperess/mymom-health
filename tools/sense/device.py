@@ -94,6 +94,26 @@ class Device(PwSystemDevice):
             self.pubsub_call_.cancel()
             self.pubsub_call_ = None
 
+    def get_air_measurement(self) -> air_sensor_pb2.Measurement:
+        """Fetches an air measurement from the device."""
+        return self.rpcs.air_sensor.AirSensor.Measure().unwrap_or_raise()
+
+    def toggle_led(self):
+        """Toggles the onboard (non-RGB) LED."""
+        self.rpcs.blinky.Blinky.ToggleLed()
+
+    def set_led(self, on: bool):
+        """Sets the onboard (non-RGB) LED."""
+        self.rpcs.blinky.Blinky.SetLed(on=on)
+
+    def blink(self, interval_ms=1000, blink_count=None):
+        """Sets the onboard (non-RGB) LED to blink on and off."""
+        self.rpcs.blinky.Blinky.Blink(
+            interval_ms=interval_ms, blink_count=blink_count)
+
+    def pulse(self, interval_ms=1000):
+        """Sets the onboard (non-RGB) LED to pulse on and off."""
+        self.rpcs.blinky.Blinky.Pulse(interval_ms=interval_ms)
 
 class DeviceWithTracing(PwSystemDeviceWithTracing):
     def __init__(self, *args, **kwargs):
