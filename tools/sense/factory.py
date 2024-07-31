@@ -217,7 +217,7 @@ class LedTest(Test):
 
         self.set_led(color)
 
-        if self.prompt_yn(f'Is the LED {color.formatted_name}?'):
+        if self.prompt_yn(f'Is the Enviro+ LED {color.formatted_name}?'):
             self.pass_test(test_name)
         else:
             self.fail_test(test_name)
@@ -299,7 +299,7 @@ class Ltr559Test(Test):
         if status is not Status.OK:
             return False
 
-        print(colors().bold_white('\nSet LTR599 to proximity mode.'))
+        print(colors().bold_white('\nSetting LTR559 sensor to proximity mode.'))
         result = self._test_prox()
 
         status, _ = self._factory_service.EndTest(test=factory_pb2.Test.Type.LTR559_PROX)
@@ -313,7 +313,7 @@ class Ltr559Test(Test):
         if status is not Status.OK:
             return False
 
-        print(colors().bold_white('\nSet LTR599 to ambient light mode.'))
+        print(colors().bold_white('\nSetting LTR559 sensor to ambient mode.'))
         result = self._test_light()
 
         status, _ = self._factory_service.EndTest(test=factory_pb2.Test.Type.LTR559_LIGHT)
@@ -323,7 +323,7 @@ class Ltr559Test(Test):
         return result
 
     def _test_prox(self) -> bool:
-        self.prompt_enter('Place your Enviro+ pack in a lit area')
+        self.prompt_enter('Place your Enviro+ pack in a well-lit area')
         print('Getting initial sensor readings', end='', flush=True)
 
         baseline_samples = Samples()
@@ -340,7 +340,7 @@ class Ltr559Test(Test):
         print(baseline_samples)
 
         print()
-        self.prompt('Fully cover the light sensor')
+        self.prompt_enter('Fully cover the LIGHT sensor')
 
         success, samples = _sample_until(
             50,
@@ -354,7 +354,7 @@ class Ltr559Test(Test):
 
         self.pass_test('ltr559_prox_near')
         print()
-        self.prompt('Fully uncover the light sensor')
+        self.prompt_enter('Fully uncover the LIGHT sensor')
 
         success, samples = _sample_until(
             50,
@@ -387,7 +387,7 @@ class Ltr559Test(Test):
         print(baseline_samples)
 
         print()
-        self.prompt('Cover the light sensor')
+        self.prompt_enter('Cover the LIGHT sensor with your finger')
 
         success, samples = _sample_until(
             100,
@@ -403,7 +403,7 @@ class Ltr559Test(Test):
         self.pass_test('ltr559_light_dark')
 
         print()
-        self.prompt('Shine a light directly at the light sensor')
+        self.prompt_enter('Shine a light directly at the LIGHT sensor')
 
         success, samples = _sample_until(
             100,
@@ -419,7 +419,7 @@ class Ltr559Test(Test):
         self.pass_test('ltr559_light_bright')
 
         print()
-        self.prompt('Return the light sensor to its original position')
+        self.prompt_enter('Return the LIGHT sensor to its original position')
 
         success, samples = _sample_until(
             100,
@@ -439,7 +439,9 @@ class Ltr559Test(Test):
 class Bme688Test(Test):
     _POOR_GAS_RESISTANCE_THRESHOLD = 10000
     _NORMAL_GAS_RESISTANCE_THRESHOLD = 40000
-    _HOT_TEMPERATURE_THRESHOLD_C = 40
+    # Putting your finger on the temperature sensor for a few
+    # seconds should increase the temperature past this delta.
+    _HOT_TEMPERATURE_DELTA_C = 3
 
     def __init__(self, rpcs):
         super().__init__('Bme688Test', rpcs)
@@ -461,10 +463,10 @@ class Bme688Test(Test):
         return gas_result and temp_result
 
     def _test_gas_sensor(self) -> bool:
-        print(colors().bold_white('\nTesting gas resistance sensor.'))
+        print(colors().bold_white('\nTesting gas resistance in the BME688 sensor.'))
         print(
-            'To test the gas sensor, have some type of disinfectant, '
-            'rubbing alcohol, or similar solution available.'
+            "To test the BME688's gas sensor, you need an alcohol-based "
+            '\nsolution. E.g. dip a cotton swab in rubbing alcohol.'
         )
         if not self.prompt_yn('Are you able to continue this test?'):
             self.skip_test('bme688_gas_resistance')
@@ -485,7 +487,7 @@ class Bme688Test(Test):
         print(colors().green(' DONE'))
         print(baseline_samples)
 
-        self.prompt('Hold the sensor near the alcohol source')
+        self.prompt_enter('Move the alcohol close to the BME688 sensor')
         success, samples = _sample_until(
             50,
             self._air_sensor_service.Measure,
@@ -501,7 +503,7 @@ class Bme688Test(Test):
 
         self.pass_test('bme688_gas_resistance_poor')
 
-        self.prompt('Return the sensor to its original position')
+        self.prompt_enter('Move the alcohol away from the BME688 sensor')
         success, samples = _sample_until(
             50,
             self._air_sensor_service.Measure,
@@ -519,11 +521,7 @@ class Bme688Test(Test):
         return True
 
     def _test_temperature(self) -> bool:
-        print(colors().bold_white('\nTesting temperature sensor.'))
-        print('Testing the temperature sensor requires some heating apparatus.')
-        if not self.prompt_yn('Are you able to continue this test?'):
-            self.skip_test('bme688_temperature')
-            return True
+        print(colors().bold_white("\nTesting BME688's temperature sensor."))
 
         def log_received(_):
             print('.', end='', flush=True)
@@ -540,11 +538,11 @@ class Bme688Test(Test):
         print(colors().green(' DONE'))
         print(baseline_samples)
 
-        self.prompt('Heat the sensor')
+        self.prompt_enter('Put your finger on the BME688 sensor to increase its temperature')
         success, samples = _sample_until(
             50,
             self._air_sensor_service.Measure,
-            lambda v: v > Bme688Test._HOT_TEMPERATURE_THRESHOLD_C,
+            lambda v: v > baseline_samples.mean_value + Bme688Test._HOT_TEMPERATURE_DELTA_C,
             field='temperature',
             delay=0.25,
         )
@@ -556,7 +554,7 @@ class Bme688Test(Test):
 
         self.pass_test('bme688_temperature_hot')
 
-        self.prompt('Allow the sensor to cool to room temperature')
+        self.prompt_enter('Remove your finger from the BME688 sensor')
         success, samples = _sample_until(
             100,
             self._air_sensor_service.Measure,
