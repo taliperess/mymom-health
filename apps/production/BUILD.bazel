@@ -26,6 +26,7 @@ cc_binary(
     deps = [
         "//modules/air_sensor:service",
         "//modules/board:service",
+        "//modules/event_timers",
         "//modules/morse_code:encoder",
         "//modules/pubsub:service",
         "//modules/state_manager",

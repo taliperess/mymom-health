@@ -84,14 +84,7 @@ class LedOutputStateMachine {
 // thread.
 class StateManager {
  public:
-  StateManager(PubSub& pubsub, PolychromeLed& led)
-      : pubsub_(&pubsub),
-        led_(led, brightness_),
-        state_(*this),
-        demo_mode_timer_(
-            [this](auto) { pubsub_->Publish(DemoModeTimerExpired{}); }) {}
-
-  void Init();
+  StateManager(PubSub& pubsub, PolychromeLed& led);
 
  private:
   /// How long to show demo modes before returning to the regular AQI monitor.
@@ -251,7 +244,7 @@ class StateManager {
   // Respond to a PubSub event.
   void Update(Event event);
 
-  void HandleButtonPress(bool pressed, void (State::*function)());
+  void HandleButtonPress(bool pressed, void (State::* function)());
 
   template <typename StateType>
   void SetState() {

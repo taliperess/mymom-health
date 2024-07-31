@@ -116,7 +116,14 @@ class LedValueAirQualityMode : public LedValue {
   explicit LedValueAirQualityMode(const LedValue& parent) : LedValue(parent) {}
 };
 
-struct DemoModeTimerExpired {};
+struct TimerRequest {
+  uint32_t token;
+  uint16_t timeout_s;
+};
+
+struct TimerExpired {
+  uint32_t token;
+};
 
 struct MorseEncodeRequest {
   std::string_view message;
@@ -137,7 +144,8 @@ using Event = std::variant<AlarmStateChange,
                            ButtonX,
                            ButtonY,
                            LedValueAirQualityMode,
-                           DemoModeTimerExpired,
+                           TimerRequest,
+                           TimerExpired,
                            ProximityStateChange,
                            ProximitySample,
                            AmbientLightSample,
@@ -155,7 +163,8 @@ enum EventType : size_t {
   kButtonX,
   kButtonY,
   kLedValueAirQualityMode,
-  kDemoModeTimerExpired,
+  kTimerRequest,
+  kTimerExpired,
   kProximityStateChange,
   kProximitySample,
   kAmbientLightSample,

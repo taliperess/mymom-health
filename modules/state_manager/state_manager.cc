@@ -42,7 +42,11 @@ void LedOutputStateMachine::UpdateLed(uint8_t red,
   }
 }
 
-void StateManager::Init() {
+StateManager::StateManager(PubSub& pubsub, PolychromeLed& led)
+    : pubsub_(&pubsub),
+      led_(led, brightness_),
+      state_(*this),
+      demo_mode_timer_([this](auto) { state_.get().DemoModeTimerExpired(); }) {
   pubsub_->Subscribe([this](Event event) { Update(event); });
 }
 
@@ -74,9 +78,6 @@ void StateManager::Update(Event event) {
       state_.get().AirQualityModeLedValue(
           std::get<LedValueAirQualityMode>(event));
       break;
-    case kDemoModeTimerExpired:
-      state_.get().DemoModeTimerExpired();
-      break;
     case kMorseCodeValue:
       state_.get().MorseCodeEdge(std::get<MorseCodeValue>(event));
       break;
@@ -84,6 +85,8 @@ void StateManager::Update(Event event) {
       UpdateAverageAmbientLight(std::get<AmbientLightSample>(event).sample_lux);
       state_.get().AmbientLightUpdate();
       break;
+    case kTimerRequest:
+    case kTimerExpired:
     case kProximitySample:
     case kAlarmSilenceRequest:
     case kAirQualityThreshold:
@@ -93,7 +96,7 @@ void StateManager::Update(Event event) {
   }
 }
 
-void StateManager::HandleButtonPress(bool pressed, void (State::*function)()) {
+void StateManager::HandleButtonPress(bool pressed, void (State::* function)()) {
   if (pressed) {
     led_.Override(0xffffff, 160);  // Bright white while pressed.
   } else {

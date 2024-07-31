@@ -17,6 +17,7 @@
 #include "apps/production/threads.h"
 #include "modules/air_sensor/service.h"
 #include "modules/board/service.h"
+#include "modules/event_timers/event_timers.h"
 #include "modules/morse_code/encoder.h"
 #include "modules/proximity/manager.h"
 #include "modules/pubsub/service.h"
@@ -33,10 +34,24 @@
 namespace sense {
 namespace {
 
-void InitBoardService() {
+void InitStateManager() {
   static StateManager state_manager(system::PubSub(), system::PolychromeLed());
-  state_manager.Init();
+}
 
+void InitEventTimers() {
+  auto& pubsub = system::PubSub();
+  static EventTimers<0> event_timers(pubsub);
+  pubsub.SubscribeTo<TimerRequest>(
+      [](TimerRequest request) { event_timers.OnTimerRequest(request); });
+}
+
+void InitBoardService() {
+  static BoardService board_service;
+  board_service.Init(system::GetWorker(), system::Board());
+  pw::System().rpc_server().RegisterService(board_service);
+}
+
+void InitMorseEncoder() {
   // The morse encoder will emit pubsub events to the state manager.
   static Encoder morse_encoder;
   morse_encoder.Init(system::GetWorker(),
@@ -52,10 +67,6 @@ void InitBoardService() {
         morse_encoder.Encode(
             request.message, request.repeat, Encoder::kDefaultIntervalMs);
       });
-
-  static BoardService board_service;
-  board_service.Init(system::GetWorker(), system::Board());
-  pw::System().rpc_server().RegisterService(board_service);
 }
 
 void InitProximitySensor() {
@@ -106,7 +117,10 @@ void InitAirSensor() {
 [[noreturn]] void InitializeApp() {
   system::Init();
 
+  InitStateManager();
+  InitEventTimers();
   InitBoardService();
+  InitMorseEncoder();
   InitProximitySensor();
   InitAirSensor();
 

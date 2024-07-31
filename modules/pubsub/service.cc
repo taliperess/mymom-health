@@ -54,8 +54,15 @@ pubsub_Event EventToProto(const Event& event) {
     proto.which_type = pubsub_Event_led_value_air_quality_tag;
     proto.type.led_value_air_quality =
         LedValueToProto(std::get<LedValueAirQualityMode>(event));
-  } else if (std::holds_alternative<DemoModeTimerExpired>(event)) {
-    proto.which_type = pubsub_Event_demo_mode_timer_expired_tag;
+  } else if (std::holds_alternative<TimerRequest>(event)) {
+    proto.which_type = pubsub_Event_timer_request_tag;
+    auto& timer_request = std::get<TimerRequest>(event);
+    proto.type.timer_request.token = timer_request.token;
+    proto.type.timer_request.timeout_s = timer_request.timeout_s;
+  } else if (std::holds_alternative<TimerExpired>(event)) {
+    proto.which_type = pubsub_Event_timer_expired_tag;
+    auto& timer_expired = std::get<TimerExpired>(event);
+    proto.type.timer_expired.token = timer_expired.token;
   } else if (std::holds_alternative<ProximityStateChange>(event)) {
     proto.which_type = pubsub_Event_proximity_tag;
     proto.type.proximity = std::get<ProximityStateChange>(event).proximity;
@@ -107,6 +114,16 @@ pw::Result<Event> ProtoToEvent(const pubsub_Event& proto) {
       return ButtonX(proto.type.button_x_pressed);
     case pubsub_Event_button_y_pressed_tag:
       return ButtonY(proto.type.button_y_pressed);
+    case pubsub_Event_timer_request_tag:
+      return TimerRequest{
+          .token = proto.type.timer_request.token,
+          .timeout_s =
+              static_cast<uint16_t>(proto.type.timer_request.timeout_s),
+      };
+    case pubsub_Event_timer_expired_tag:
+      return TimerExpired{
+          .token = proto.type.timer_expired.token,
+      };
     case pubsub_Event_morse_code_value_tag:
       return MorseCodeValue{
           .turn_on = proto.type.morse_code_value.turn_on,
