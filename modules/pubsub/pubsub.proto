@@ -39,11 +39,6 @@ message MorseEncodeRequest {
   uint32 repeat = 2;
 }
 
-message AirQualityThreshold {
-  uint32 alarm = 1;
-  uint32 silence = 2;
-}
-
 message TimerRequest {
   uint32 token = 1;
   uint32 timeout_s = 2;
@@ -57,21 +52,17 @@ message Event {
   // This definition must be kept up to date with
   // modules/pubsub/pubsub_events.h.
   oneof type {
-    bool alarm = 1;
-    bool button_a_pressed = 2;
-    bool button_b_pressed = 3;
-    bool button_x_pressed = 4;
-    bool button_y_pressed = 5;
-    bool proximity = 6;
-    uint32 proximity_level = 7;
-    uint32 air_quality = 8;
-    MorseCodeValue morse_code_value = 9;
-    LedValue led_value_air_quality = 10;
-    TimerRequest timer_request = 11;
-    TimerExpired timer_expired = 12;
-    morse_code.SendRequest morse_encode_request = 13;
-    AirQualityThreshold air_quality_threshold = 14;
-    uint32 alarm_silence = 15;
-    float ambient_light_lux = 16;
+    bool button_a_pressed = 1;
+    bool button_b_pressed = 2;
+    bool button_x_pressed = 3;
+    bool button_y_pressed = 4;
+    bool proximity = 5;
+    uint32 proximity_level = 6;
+    uint32 air_quality = 7;
+    MorseCodeValue morse_code_value = 8;
+    TimerRequest timer_request = 9;
+    TimerExpired timer_expired = 10;
+    morse_code.SendRequest morse_encode_request = 11;
+    float ambient_light_lux = 12;
   }
 }

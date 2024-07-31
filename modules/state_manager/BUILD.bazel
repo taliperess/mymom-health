@@ -25,12 +25,11 @@ cc_library(
     deps = [
         ":common_base_union",
         "//modules/air_sensor",
+        "//modules/edge_detector:hysteresis_edge_detector",
         "//modules/led:polychrome_led",
         "//modules/pubsub:events",
-        "//modules/stats:simple_moving_average",
         "//modules/worker",
         "@pigweed//pw_assert",
-        "@pigweed//pw_chrono:system_timer",
         "@pigweed//pw_string:string",
     ],
 )

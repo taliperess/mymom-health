@@ -15,11 +15,6 @@
 #include "modules/air_sensor/air_sensor.h"
 
 #include "modules/air_sensor/air_sensor_fake.h"
-#include "modules/pubsub/pubsub.h"
-#include "modules/pubsub/pubsub_events.h"
-#include "modules/worker/test_worker.h"
-#include "pw_chrono/simulated_system_clock.h"
-#include "pw_status/try.h"
 #include "pw_sync/timed_thread_notification.h"
 #include "pw_thread/test_thread_context.h"
 #include "pw_thread/thread.h"
@@ -30,25 +25,10 @@ namespace sense {
 // Test fixtures.
 
 class AirSensorTest : public ::testing::Test {
- public:
-  AirSensorTest()
-      : ::testing::Test(),
-        pubsub_(worker_, event_queue_, subscribers_buffer_) {}
-
  protected:
   using Score = AirSensor::Score;
 
-  void SetUp() override {
-    air_sensor_.Init(pubsub_, clock_);
-    air_sensor_.SetThresholds(Score::kYellow, Score::kLightGreen);
-    pubsub_.SubscribeTo<AlarmStateChange>([this](AlarmStateChange event) {
-      {
-        std::lock_guard lock(alarm_lock_);
-        alarm_state_ = event.alarm;
-      }
-      response_.release();
-    });
-  }
+  void SetUp() override { air_sensor_.Init(); }
 
   void MeasureRepeated(size_t n) {
     for (size_t i = 0; i < n; ++i) {
@@ -65,34 +45,9 @@ class AirSensorTest : public ::testing::Test {
     }
   }
 
-  pw::Status TriggerAlarm() {
-    air_sensor_.set_gas_resistance(AirSensor::kDefaultGasResistance / 10);
-    uint16_t score;
-    PW_TRY_ASSIGN(score, air_sensor_.MeasureSync());
-    auto threshold = static_cast<uint16_t>(Score::kYellow);
-    EXPECT_LT(score, threshold);
-    return score < threshold ? pw::OkStatus() : pw::Status::OutOfRange();
-  }
-
-  void TearDown() override { worker_.Stop(); }
-
-  bool alarm_state() {
-    std::lock_guard lock_(alarm_lock_);
-    return alarm_state_;
-  }
-
-  sense::TestWorker<> worker_;
-  pw::InlineDeque<Event, 4> event_queue_;
-  std::array<PubSub::Subscriber, 4> subscribers_buffer_;
-  PubSub pubsub_;
-  pw::chrono::SimulatedSystemClock clock_;
-
   AirSensorFake air_sensor_;
   pw::sync::TimedThreadNotification request_;
   pw::sync::TimedThreadNotification response_;
-
-  pw::sync::InterruptSpinLock alarm_lock_;
-  bool alarm_state_ PW_GUARDED_BY(alarm_lock_) = false;
 };
 
 // Unit tests.
@@ -186,97 +141,6 @@ TEST_F(AirSensorTest, MeasureAsync) {
   }
 
   thread.join();
-}
-
-TEST_F(AirSensorTest, TriggerAlarm) {
-  MeasureRepeated(1000);
-  ASSERT_EQ(TriggerAlarm(), pw::OkStatus());
-  response_.acquire();
-  EXPECT_TRUE(alarm_state());
-}
-
-TEST_F(AirSensorTest, RecoverFromAlarm) {
-  MeasureRepeated(1000);
-  ASSERT_EQ(TriggerAlarm(), pw::OkStatus());
-  response_.acquire();
-  EXPECT_TRUE(alarm_state());
-
-  air_sensor_.set_gas_resistance(50000.f);
-  pw::Result<uint16_t> score = air_sensor_.MeasureSync();
-  ASSERT_EQ(score.status(), pw::OkStatus());
-  ASSERT_GT(*score, 640);
-  response_.acquire();
-  EXPECT_FALSE(alarm_state());
-}
-
-TEST_F(AirSensorTest, SilenceAlarm) {
-  MeasureRepeated(1000);
-  ASSERT_EQ(TriggerAlarm(), pw::OkStatus());
-  response_.acquire();
-  EXPECT_TRUE(alarm_state());
-
-  air_sensor_.Silence(
-      pw::chrono::SystemClock::for_at_least(std::chrono::hours(1)));
-  response_.acquire();
-  EXPECT_FALSE(alarm_state());
-}
-
-TEST_F(AirSensorTest, RetriggerAlarmLater) {
-  MeasureRepeated(1000);
-  ASSERT_EQ(TriggerAlarm(), pw::OkStatus());
-  response_.acquire();
-  EXPECT_TRUE(alarm_state());
-
-  auto duration =
-      pw::chrono::SystemClock::for_at_least(std::chrono::milliseconds(100));
-  air_sensor_.Silence(duration);
-  response_.acquire();
-  EXPECT_FALSE(alarm_state());
-
-  clock_.AdvanceTime(duration);
-  air_sensor_.MeasureSync().IgnoreError();
-  response_.acquire();
-  EXPECT_TRUE(alarm_state());
-}
-
-TEST_F(AirSensorTest, DelayAlarmWhenSilenced) {
-  MeasureRepeated(1000);
-
-  auto duration =
-      pw::chrono::SystemClock::for_at_least(std::chrono::milliseconds(100));
-  air_sensor_.Silence(duration);
-  response_.acquire();
-  EXPECT_FALSE(alarm_state());
-
-  auto start = clock_.now();
-  ASSERT_EQ(TriggerAlarm(), pw::OkStatus());
-
-  clock_.AdvanceTime(duration);
-  response_.acquire();
-  EXPECT_TRUE(alarm_state());
-
-  EXPECT_GE(clock_.now() - start, duration);
-}
-
-TEST_F(AirSensorTest, ChangeThresholdWhileSilenced) {
-  MeasureRepeated(1000);
-  ASSERT_EQ(TriggerAlarm(), pw::OkStatus());
-  response_.acquire();
-  EXPECT_TRUE(alarm_state());
-
-  auto duration =
-      pw::chrono::SystemClock::for_at_least(std::chrono::milliseconds(100));
-  air_sensor_.Silence(duration);
-  response_.acquire();
-  EXPECT_FALSE(alarm_state());
-
-  uint16_t score = air_sensor_.score();
-  air_sensor_.SetThresholds(score / 2,
-                            static_cast<uint16_t>(Score::kLightGreen));
-
-  // Alarm should not retrigger.
-  EXPECT_FALSE(response_.try_acquire_for(duration));
-  EXPECT_FALSE(alarm_state());
 }
 
 }  // namespace sense

@@ -20,25 +20,10 @@
 namespace sense {
 namespace {
 
-pubsub_LedValue LedValueToProto(const LedValue& value) {
-  pubsub_LedValue proto;
-  proto.r = value.r();
-  proto.g = value.g();
-  proto.b = value.b();
-  return proto;
-}
-
-LedValue LedValueFromProto(const pubsub_LedValue& proto) {
-  return LedValue(proto.r, proto.g, proto.b);
-}
-
 pubsub_Event EventToProto(const Event& event) {
   pubsub_Event proto = pubsub_Event_init_default;
 
-  if (std::holds_alternative<AlarmStateChange>(event)) {
-    proto.which_type = pubsub_Event_alarm_tag;
-    proto.type.alarm = std::get<AlarmStateChange>(event).alarm;
-  } else if (std::holds_alternative<ButtonA>(event)) {
+  if (std::holds_alternative<ButtonA>(event)) {
     proto.which_type = pubsub_Event_button_a_pressed_tag;
     proto.type.button_a_pressed = std::get<ButtonA>(event).pressed();
   } else if (std::holds_alternative<ButtonB>(event)) {
@@ -50,10 +35,6 @@ pubsub_Event EventToProto(const Event& event) {
   } else if (std::holds_alternative<ButtonY>(event)) {
     proto.which_type = pubsub_Event_button_y_pressed_tag;
     proto.type.button_y_pressed = std::get<ButtonY>(event).pressed();
-  } else if (std::holds_alternative<LedValueAirQualityMode>(event)) {
-    proto.which_type = pubsub_Event_led_value_air_quality_tag;
-    proto.type.led_value_air_quality =
-        LedValueToProto(std::get<LedValueAirQualityMode>(event));
   } else if (std::holds_alternative<TimerRequest>(event)) {
     proto.which_type = pubsub_Event_timer_request_tag;
     auto& timer_request = std::get<TimerRequest>(event);
@@ -76,14 +57,6 @@ pubsub_Event EventToProto(const Event& event) {
   } else if (std::holds_alternative<AirQuality>(event)) {
     proto.which_type = pubsub_Event_air_quality_tag;
     proto.type.air_quality = std::get<AirQuality>(event).score;
-  } else if (std::holds_alternative<AirQualityThreshold>(event)) {
-    proto.which_type = pubsub_Event_air_quality_threshold_tag;
-    auto& air_quality_threshold = std::get<AirQualityThreshold>(event);
-    proto.type.air_quality_threshold.alarm = air_quality_threshold.alarm;
-    proto.type.air_quality_threshold.silence = air_quality_threshold.silence;
-  } else if (std::holds_alternative<AlarmSilenceRequest>(event)) {
-    proto.which_type = pubsub_Event_alarm_silence_tag;
-    proto.type.alarm_silence = std::get<AlarmSilenceRequest>(event).seconds;
   } else if (std::holds_alternative<MorseEncodeRequest>(event)) {
     proto.which_type = pubsub_Event_morse_encode_request_tag;
     const auto& morse = std::get<MorseEncodeRequest>(event);
@@ -104,8 +77,6 @@ pubsub_Event EventToProto(const Event& event) {
 
 pw::Result<Event> ProtoToEvent(const pubsub_Event& proto) {
   switch (proto.which_type) {
-    case pubsub_Event_alarm_tag:
-      return AlarmStateChange{.alarm = proto.type.alarm};
     case pubsub_Event_button_a_pressed_tag:
       return ButtonA(proto.type.button_a_pressed);
     case pubsub_Event_button_b_pressed_tag:
@@ -129,16 +100,10 @@ pw::Result<Event> ProtoToEvent(const pubsub_Event& proto) {
           .turn_on = proto.type.morse_code_value.turn_on,
           .message_finished = proto.type.morse_code_value.message_finished,
       };
-    case pubsub_Event_led_value_air_quality_tag:
-      return LedValueAirQualityMode(
-          LedValueFromProto(proto.type.led_value_air_quality));
     case pubsub_Event_proximity_tag:
       return ProximityStateChange{.proximity = proto.type.proximity};
     case pubsub_Event_air_quality_tag:
       return AirQuality{.score = static_cast<uint16_t>(proto.type.air_quality)};
-    case pubsub_Event_alarm_silence_tag:
-      return AlarmSilenceRequest{
-          .seconds = static_cast<uint16_t>(proto.type.alarm_silence)};
     default:
       return pw::Status::Unimplemented();
   }

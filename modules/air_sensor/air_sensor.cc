@@ -45,10 +45,6 @@ LedValue AirSensor::GetLedValue(uint16_t score) {
   return LedValue(red, green, blue);
 }
 
-AirSensor::AirSensor() : edge_detector_(0, 0) {
-  SetThresholds(Score::kYellow, Score::kLightGreen);
-}
-
 float AirSensor::temperature() const {
   std::lock_guard lock(lock_);
   return temperature_.value();
@@ -74,37 +70,6 @@ uint16_t AirSensor::score() const {
   return score_.value();
 }
 
-pw::Status AirSensor::Init(PubSub& pubsub,
-                           pw::chrono::VirtualSystemClock& clock) {
-  pubsub_ = &pubsub;
-  clock_ = &clock;
-  return DoInit();
-}
-
-void AirSensor::SetThresholds(uint16_t alarm, uint16_t silence) {
-  std::lock_guard lock(lock_);
-  edge_detector_.set_low_and_high_thresholds(alarm, silence);
-  PW_LOG_INFO(
-      "Air quality thresholds set: alarm at %u, silence at %u", alarm, silence);
-  edge_detector_.Update(kMaxScore);
-}
-
-void AirSensor::SetThresholds(Score alarm, Score silence) {
-  SetThresholds(static_cast<uint16_t>(alarm), static_cast<uint16_t>(silence));
-}
-
-void AirSensor::Silence(pw::chrono::SystemClock::duration duration) {
-  // Set by `Init`.
-  PW_CHECK_NOTNULL(clock_);
-  PW_CHECK_NOTNULL(pubsub_);
-
-  {
-    std::lock_guard lock(lock_);
-    ignore_until_ = clock_->now() + duration;
-  }
-  pubsub_->Publish(AlarmStateChange{.alarm = false});
-}
-
 pw::Result<uint16_t> AirSensor::MeasureSync() {
   pw::sync::ThreadNotification notification;
   PW_TRY(Measure(notification));
@@ -117,14 +82,6 @@ void AirSensor::Update(float temperature,
                        float humidity,
                        float gas_resistance) {
   std::lock_guard lock(lock_);
-  // If the alarmed was silenced for some duration that has now elapsed, reset
-  // the edge detector to the highest value.
-  if (ignore_until_.has_value() && clock_ != nullptr &&
-      *ignore_until_ <= clock_->now()) {
-    ignore_until_.reset();
-    edge_detector_.Update(kMaxScore);
-  }
-
   // Record the sensor data.
   temperature_.Set(temperature);
   pressure_.Set(pressure);
@@ -158,20 +115,6 @@ void AirSensor::Update(float temperature,
   float score = ((quality - average) / stddev) + 3.f;
   score = std::min(std::max(score * 256.f, 0.f), static_cast<float>(kMaxScore));
   score_.Set(static_cast<uint32_t>(score));
-
-  // Check if a threshold was crossed.
-  if (pubsub_ != nullptr) {
-    switch (edge_detector_.Update(score_.value())) {
-      case Edge::kFalling:
-        pubsub_->Publish(AlarmStateChange{.alarm = true});
-        break;
-      case Edge::kRising:
-        pubsub_->Publish(AlarmStateChange{.alarm = false});
-        break;
-      case Edge::kNone:
-        break;
-    }
-  }
 }
 
 }  // namespace sense

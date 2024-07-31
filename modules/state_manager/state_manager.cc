@@ -22,6 +22,17 @@
 
 namespace sense {
 
+template <typename T>
+static void AddAndSmoothExponentially(std::optional<T>& aggregate,
+                                      T next_value) {
+  static constexpr T kDecayFactor = T(4);
+  if (!aggregate.has_value()) {
+    aggregate = next_value;
+  } else {
+    *aggregate += (next_value - *aggregate) / kDecayFactor;
+  }
+}
+
 void LedOutputStateMachine::UpdateLed(uint8_t red,
                                       uint8_t green,
                                       uint8_t blue,
@@ -43,20 +54,17 @@ void LedOutputStateMachine::UpdateLed(uint8_t red,
 }
 
 StateManager::StateManager(PubSub& pubsub, PolychromeLed& led)
-    : pubsub_(&pubsub),
+    : edge_detector_(alarm_threshold_, alarm_threshold_ + kThresholdIncrement),
+      pubsub_(&pubsub),
       led_(led, brightness_),
-      state_(*this),
-      demo_mode_timer_([this](auto) { state_.get().DemoModeTimerExpired(); }) {
+      state_(*this) {
   pubsub_->Subscribe([this](Event event) { Update(event); });
 }
 
 void StateManager::Update(Event event) {
   switch (static_cast<EventType>(event.index())) {
     case kAirQuality:
-      last_air_quality_score_ = std::get<AirQuality>(event).score;
-      break;
-    case kAlarmStateChange:
-      state_.get().AlarmStateChanged(std::get<AlarmStateChange>(event).alarm);
+      UpdateAirQuality(std::get<AirQuality>(event).score);
       break;
     case kButtonA:
       HandleButtonPress(std::get<ButtonA>(event).pressed(),
@@ -74,9 +82,8 @@ void StateManager::Update(Event event) {
       HandleButtonPress(std::get<ButtonY>(event).pressed(),
                         &State::ButtonYReleased);
       break;
-    case kLedValueAirQualityMode:
-      state_.get().AirQualityModeLedValue(
-          std::get<LedValueAirQualityMode>(event));
+    case kTimerExpired:
+      state_.get().OnTimerExpired(std::get<TimerExpired>(event));
       break;
     case kMorseCodeValue:
       state_.get().MorseCodeEdge(std::get<MorseCodeValue>(event));
@@ -86,11 +93,8 @@ void StateManager::Update(Event event) {
       state_.get().AmbientLightUpdate();
       break;
     case kTimerRequest:
-    case kTimerExpired:
-    case kProximitySample:
-    case kAlarmSilenceRequest:
-    case kAirQualityThreshold:
     case kMorseEncodeRequest:
+    case kProximitySample:
     case kProximityStateChange:
       break;  // ignore these events
   }
@@ -105,77 +109,114 @@ void StateManager::HandleButtonPress(bool pressed, void (State::* function)()) {
   }
 }
 
+void StateManager::DisplayThreshold() {
+  led_.SetColor(AirSensor::GetLedValue(alarm_threshold_));
+  pubsub_->Publish(TimerRequest{
+      .token = kThresholdModeToken,
+      .timeout_s = kThresholdModeTimeout,
+  });
+}
+
+void StateManager::IncrementThreshold() {
+  if (alarm_threshold_ < kMaxThreshold) {
+    SetAlarmThreshold(alarm_threshold_ + kThresholdIncrement);
+  }
+  DisplayThreshold();
+}
+
+void StateManager::DecrementThreshold() {
+  if (alarm_threshold_ > 0) {
+    SetAlarmThreshold(alarm_threshold_ - kThresholdIncrement);
+  }
+  DisplayThreshold();
+}
+
+void StateManager::SetAlarmThreshold(uint16_t alarm_threshold) {
+  alarm_threshold_ = alarm_threshold;
+  auto silence_threshold =
+      static_cast<uint16_t>(alarm_threshold_ + kThresholdIncrement);
+  edge_detector_.set_low_and_high_thresholds(alarm_threshold_,
+                                             silence_threshold);
+  PW_LOG_INFO("Air quality thresholds set: alarm at %u, silence at %u",
+              alarm_threshold_,
+              silence_threshold);
+  edge_detector_.Update(AirSensor::kMaxScore);
+}
+
+void StateManager::UpdateAirQuality(uint16_t score) {
+  AddAndSmoothExponentially(air_quality_, score);
+  state_.get().OnLedValue(AirSensor::GetLedValue(*air_quality_));
+  if (alarm_silenced_) {
+    return;
+  }
+  switch (edge_detector_.Update(*air_quality_)) {
+    case Edge::kFalling:
+      alarm_ = true;
+      break;
+    case Edge::kRising:
+      alarm_ = false;
+      break;
+    case Edge::kNone:
+      return;
+  }
+  ResetMode();
+}
+
+void StateManager::SilenceAlarms() {
+  alarm_ = false;
+  alarm_silenced_ = true;
+  edge_detector_.Update(AirSensor::kMaxScore);
+  pubsub_->Publish(TimerRequest{
+      .token = kSilenceAlarmsToken,
+      .timeout_s = kSilenceAlarmsTimeout,
+  });
+  ResetMode();
+}
+
+void StateManager::ResetMode() {
+  if (alarm_) {
+    SetState<AirQualityAlarmMode>();
+  } else {
+    SetState<AirQualityMode>();
+  }
+}
+
 void StateManager::StartMorseReadout(bool repeat) {
+  if (!air_quality_.has_value()) {
+    return;
+  }
   pw::Status status = pw::string::FormatOverwrite(
-      air_quality_score_string_, "%hu", last_air_quality_score_);
+      air_quality_score_string_, "%hu", *air_quality_);
   PW_CHECK_OK(status);
   pubsub_->Publish(MorseEncodeRequest{.message = air_quality_score_string_,
                                       .repeat = repeat ? 0u : 1u});
-  PW_LOG_INFO("Current air quality score: %hu", last_air_quality_score_);
-}
-
-void StateManager::DisplayThreshold() {
-  led_.SetColor(AirSensor::GetLedValue(current_threshold_));
-}
-
-void StateManager::IncrementThreshold(
-    pw::chrono::SystemClock::duration timeout) {
-  demo_mode_timer_.Cancel();
-  uint16_t candidate_threshold = current_threshold_ + kThresholdIncrement;
-  current_threshold_ =
-      candidate_threshold < kMaxThreshold ? candidate_threshold : kMaxThreshold;
-  pubsub_->Publish(AirQualityThreshold{
-      .alarm = current_threshold_,
-      .silence =
-          static_cast<uint16_t>(current_threshold_ + kThresholdIncrement),
-  });
-  DisplayThreshold();
-  demo_mode_timer_.InvokeAfter(timeout);
-}
-
-void StateManager::DecrementThreshold(
-    pw::chrono::SystemClock::duration timeout) {
-  demo_mode_timer_.Cancel();
-  if (current_threshold_ > 0) {
-    current_threshold_ -= kThresholdIncrement;
-  }
-  pubsub_->Publish(AirQualityThreshold{
-      .alarm = current_threshold_,
-      .silence =
-          static_cast<uint16_t>(current_threshold_ + kThresholdIncrement),
-  });
-  DisplayThreshold();
-  demo_mode_timer_.InvokeAfter(timeout);
+  PW_LOG_INFO("Current air quality score: %hu", *air_quality_);
 }
 
 void StateManager::UpdateAverageAmbientLight(float ambient_light_sample_lux) {
-  static constexpr float kDecayFactor = 0.25;
-  if (std::isnan(ambient_light_lux_)) {
-    ambient_light_lux_ = ambient_light_sample_lux;
-  } else {
-    ambient_light_lux_ +=
-        (ambient_light_sample_lux - ambient_light_lux_) * kDecayFactor;
-  }
+  AddAndSmoothExponentially(ambient_light_lux_, ambient_light_sample_lux);
 }
 
 void StateManager::UpdateBrightnessFromAmbientLight() {
   static constexpr float kMinLux = 40.f;
   static constexpr float kMaxLux = 3000.f;
-
-  if (ambient_light_lux_ < kMinLux) {
+  if (!ambient_light_lux_.has_value()) {
+    return;
+  }
+  if (*ambient_light_lux_ < kMinLux) {
     brightness_ = kMinBrightness;
-  } else if (ambient_light_lux_ > kMaxLux) {
+  } else if (*ambient_light_lux_ > kMaxLux) {
     brightness_ = kMaxBrightness;
   } else {
     constexpr float kBrightnessRange = kMaxBrightness - kMinBrightness;
     brightness_ = static_cast<uint8_t>(
-        std::lround((ambient_light_lux_ - kMinLux) / (kMaxLux - kMinLux) *
+        std::lround((*ambient_light_lux_ - kMinLux) / (kMaxLux - kMinLux) *
                     kBrightnessRange) +
         kMinBrightness);
   }
 
   PW_LOG_DEBUG(
-      "Ambient light: mean=%.1f, led=%hhu", ambient_light_lux_, brightness_);
+      "Ambient light: mean=%.1f, led=%hhu", *ambient_light_lux_, brightness_);
 
   led_.SetBrightness(brightness_);
 }

@@ -20,11 +20,6 @@
 
 namespace sense {
 
-// VOC / CO2 crossed over the threshold.
-struct AlarmStateChange {
-  bool alarm;
-};
-
 // Base for button state changes.
 class ButtonStateChange {
  public:
@@ -78,20 +73,6 @@ struct AirQuality {
   uint16_t score;
 };
 
-/// Air quality thresholds.
-///
-/// When the score falls below `alarm`, the air sensor will trigger an alarm.
-/// When the score rises above `silence`, the air sensor will silence the alarm.
-struct AirQualityThreshold {
-  uint16_t alarm;
-  uint16_t silence;
-};
-
-/// Request to suppress alarms for some time, regardless of air quality score.
-struct AlarmSilenceRequest {
-  uint16_t seconds;
-};
-
 class LedValue {
  public:
   explicit constexpr LedValue(uint8_t r, uint8_t g, uint8_t b)
@@ -108,12 +89,6 @@ class LedValue {
   uint8_t r_;
   uint8_t g_;
   uint8_t b_;
-};
-
-class LedValueAirQualityMode : public LedValue {
- public:
-  using LedValue::LedValue;
-  explicit LedValueAirQualityMode(const LedValue& parent) : LedValue(parent) {}
 };
 
 struct TimerRequest {
@@ -137,39 +112,31 @@ struct MorseCodeValue {
 
 // This definition must be kept up to date with modules/pubsub/pubsub.proto and
 // the EventType enum.
-using Event = std::variant<AlarmStateChange,
-                           AlarmSilenceRequest,
-                           ButtonA,
+using Event = std::variant<ButtonA,
                            ButtonB,
                            ButtonX,
                            ButtonY,
-                           LedValueAirQualityMode,
                            TimerRequest,
                            TimerExpired,
                            ProximityStateChange,
                            ProximitySample,
                            AmbientLightSample,
                            AirQuality,
-                           AirQualityThreshold,
                            MorseEncodeRequest,
                            MorseCodeValue>;
 
 // Index versions of Event variants, to support finding the event
 enum EventType : size_t {
-  kAlarmStateChange,
-  kAlarmSilenceRequest,
   kButtonA,
   kButtonB,
   kButtonX,
   kButtonY,
-  kLedValueAirQualityMode,
   kTimerRequest,
   kTimerExpired,
   kProximityStateChange,
   kProximitySample,
   kAmbientLightSample,
   kAirQuality,
-  kAirQualityThreshold,
   kMorseEncodeRequest,
   kMorseCodeValue,
   kLastEventType = kMorseCodeValue,

@@ -16,11 +16,10 @@
 #include <cmath>
 
 #include "modules/air_sensor/air_sensor.h"
+#include "modules/edge_detector/hysteresis_edge_detector.h"
 #include "modules/led/polychrome_led.h"
 #include "modules/pubsub/pubsub_events.h"
 #include "modules/state_manager/common_base_union.h"
-#include "modules/stats/simple_moving_average.h"
-#include "pw_chrono/system_timer.h"
 #include "pw_string/string.h"
 
 namespace sense {
@@ -84,20 +83,26 @@ class LedOutputStateMachine {
 // thread.
 class StateManager {
  public:
+  using TimerToken = ::pw::tokenizer::Token;
+
+  static constexpr TimerToken kSilenceAlarmsToken =
+      PW_TOKENIZE_STRING("re-enable alarms");
+  static constexpr uint16_t kSilenceAlarmsTimeout = 60;
+
+  static constexpr TimerToken kThresholdModeToken =
+      PW_TOKENIZE_STRING("exit threshold mode");
+  static constexpr uint16_t kThresholdModeTimeout = 3;
+
+  static constexpr uint16_t kThresholdIncrement = 128;
+  static constexpr uint16_t kMaxThreshold = 768;
+
   StateManager(PubSub& pubsub, PolychromeLed& led);
 
  private:
-  /// How long to show demo modes before returning to the regular AQI monitor.
-  static constexpr pw::chrono::SystemClock::duration kDemoModeTimeout =
-      std::chrono::seconds(30);
-
   // LED brightness varies based on ambient light readings.
   static constexpr uint8_t kMinBrightness = 20;
   static constexpr uint8_t kDefaultBrightness = 160;
   static constexpr uint8_t kMaxBrightness = 255;
-
-  static constexpr uint16_t kThresholdIncrement = 128;
-  static constexpr uint16_t kMaxThreshold = 768;
 
   // Represents a state in the Sense app state machine.
   class State {
@@ -112,41 +117,36 @@ class StateManager {
     // Name of the state for logging.
     const char* name() const { return name_; }
 
-    // Events for handling alarms.
-    virtual void AlarmStateChanged(bool alarm) {
-      if (manager_.alarmed_ == alarm) {
-        return;
-      }
-      manager_.alarmed_ = alarm;
-      if (alarm) {
-        manager_.SetState<AirQualityAlarmMode>();
-      } else {
-        manager_.SetState<AirQualityMode>();
-      }
-    }
-
-    // Events for releasing buttons.
+    // Events for releasing buttons. By default, 'A' and 'B' change to
+    // threshold mode, while 'X' and 'Y' change to monitoring mode.
     virtual void ButtonAReleased() {
       manager_.SetState<AirQualityThresholdMode>();
     }
     virtual void ButtonBReleased() {
       manager_.SetState<AirQualityThresholdMode>();
     }
-    virtual void ButtonXReleased() {}
-    virtual void ButtonYReleased() {}
+    virtual void ButtonXReleased() { manager_.ResetMode(); }
+    virtual void ButtonYReleased() { manager_.ResetMode(); }
 
     // Ambient light sensor updates determine LED brightess by default.
     virtual void AmbientLightUpdate() {
       manager().UpdateBrightnessFromAmbientLight();
     }
 
-    // Events for requested LED values from other components.
-    virtual void AirQualityModeLedValue(const LedValue&) {}
+    // Update the LED color by default.
+    virtual void OnLedValue(const LedValue& value) {
+      manager().led_.SetColor(value);
+    }
 
+    // Ignore Morse code edges by default.
     virtual void MorseCodeEdge(const MorseCodeValue&) {}
 
-    // Demo mode returns to air quality mode after a specified time.
-    virtual void DemoModeTimerExpired() {}
+    // Mode returns to air quality mode after a specified time.
+    virtual void OnTimerExpired(const TimerExpired& timer) {
+      if (timer.token == kSilenceAlarmsToken) {
+        manager().alarm_silenced_ = false;
+      }
+    }
 
    protected:
     StateManager& manager() { return manager_; }
@@ -156,51 +156,32 @@ class StateManager {
     const char* name_;
   };
 
-  // Base class for all demo states to handle button behavior and timer.
-  class TimeoutState : public State {
-   public:
-    TimeoutState(StateManager& manager,
-                 const char* name,
-                 pw::chrono::SystemClock::duration timeout)
-        : State(manager, name) {
-      manager.demo_mode_timer_.InvokeAfter(timeout);
-    }
-
-    void ButtonYReleased() override { manager().SetState<MorseReadout>(); }
-
-    void DemoModeTimerExpired() override {
-      manager().SetState<AirQualityMode>();
-    }
-  };
-
   class AirQualityMode final : public State {
    public:
     AirQualityMode(StateManager& manager) : State(manager, "AirQualityMode") {}
 
     void ButtonYReleased() override { manager().SetState<MorseReadout>(); }
-
-    void AirQualityModeLedValue(const LedValue& value) override {
-      manager().led_.SetColor(value);
-    }
   };
 
-  class AirQualityThresholdMode final : public TimeoutState {
+  class AirQualityThresholdMode final : public State {
    public:
-    static constexpr auto kThresholdModeTimeout =
-        pw::chrono::SystemClock::for_at_least(std::chrono::seconds(3));
-
     AirQualityThresholdMode(StateManager& manager)
-        : TimeoutState(
-              manager, "AirQualityThresholdMode", kThresholdModeTimeout) {
+        : State(manager, "AirQualityThresholdMode") {
       manager.DisplayThreshold();
     }
 
-    void ButtonAReleased() override {
-      manager().IncrementThreshold(kThresholdModeTimeout);
-    }
+    void ButtonAReleased() override { manager().IncrementThreshold(); }
 
-    void ButtonBReleased() override {
-      manager().DecrementThreshold(kThresholdModeTimeout);
+    void ButtonBReleased() override { manager().DecrementThreshold(); }
+
+    void OnLedValue(const LedValue&) override {}
+
+    void OnTimerExpired(const TimerExpired& timer) override {
+      if (timer.token == kThresholdModeToken) {
+        manager().ResetMode();
+      } else {
+        State::OnTimerExpired(timer);
+      }
     }
   };
 
@@ -211,12 +192,10 @@ class StateManager {
       manager.StartMorseReadout(/* repeat: */ true);
     }
 
-    void ButtonYReleased() override {
-      manager().pubsub_->Publish(AlarmSilenceRequest{.seconds = 60});
-    }
-    void AirQualityModeLedValue(const LedValue& value) override {
-      manager().led_.SetColor(value);
-    }
+    void ButtonXReleased() override { manager().SilenceAlarms(); }
+
+    void ButtonYReleased() override {}
+
     void MorseCodeEdge(const MorseCodeValue& value) override {
       manager().led_.SetBrightness(value.turn_on ? manager().brightness_ : 0);
     }
@@ -228,15 +207,10 @@ class StateManager {
       manager.StartMorseReadout(/* repeat: */ false);
     }
 
-    void ButtonYReleased() override { manager().SetState<AirQualityMode>(); }
-
-    void AirQualityModeLedValue(const LedValue& value) override {
-      manager().led_.SetColor(value);
-    }
     void MorseCodeEdge(const MorseCodeValue& value) override {
       manager().led_.SetBrightness(value.turn_on ? manager().brightness_ : 0);
       if (value.message_finished) {
-        manager().SetState<AirQualityMode>();
+        manager().ResetMode();
       }
     }
   };
@@ -248,34 +222,45 @@ class StateManager {
 
   template <typename StateType>
   void SetState() {
-    demo_mode_timer_.Cancel();  // always reset the timer
     const char* old_state = state_.get().name();
     state_.emplace<StateType>(*this);
     LogStateChange(old_state);
   }
 
-  void LogStateChange(const char* old_state) const;
-
-  void StartMorseReadout(bool repeat);
+  void ResetMode();
 
   void DisplayThreshold();
 
-  void IncrementThreshold(pw::chrono::SystemClock::duration timeout);
+  void IncrementThreshold();
 
-  void DecrementThreshold(pw::chrono::SystemClock::duration timeout);
+  void DecrementThreshold();
+
+  void SetAlarmThreshold(uint16_t alarm_threshold);
+
+  void UpdateAirQuality(uint16_t score);
+
+  void SilenceAlarms();
+
+  void StartMorseReadout(bool repeat);
 
   void UpdateAverageAmbientLight(float ambient_light_sample_lux);
 
   // Recalculates the brightness level when the ambient light changes.
   void UpdateBrightnessFromAmbientLight();
 
-  bool alarmed_ = false;
-  IntegerSimpleMovingAverager<uint16_t, 5> prox_samples_;
-  float ambient_light_lux_ = NAN;  // exponential moving averaged mean lux
-  uint8_t brightness_ = kDefaultBrightness;
-  uint16_t current_threshold_ = AirSensor::kDefaultTheshold;
-  uint16_t last_air_quality_score_ = AirSensor::kAverageScore;
+  void LogStateChange(const char* old_state) const;
+
+  std::optional<uint16_t> air_quality_;
   pw::InlineString<4> air_quality_score_string_;
+
+  bool alarm_ = false;
+  bool alarm_silenced_ = false;
+  uint16_t alarm_threshold_ = static_cast<uint16_t>(AirSensor::Score::kYellow);
+  HysteresisEdgeDetector<uint16_t> edge_detector_;
+
+  uint8_t brightness_ = kDefaultBrightness;
+  std::optional<float>
+      ambient_light_lux_;  // exponential moving averaged mean lux
 
   PubSub* pubsub_;
   LedOutputStateMachine led_;
@@ -286,8 +271,6 @@ class StateManager {
                   AirQualityAlarmMode,
                   MorseReadout>
       state_;
-
-  pw::chrono::SystemTimer demo_mode_timer_;
 };
 
 }  // namespace sense

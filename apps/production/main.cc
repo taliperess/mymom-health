@@ -40,7 +40,9 @@ void InitStateManager() {
 
 void InitEventTimers() {
   auto& pubsub = system::PubSub();
-  static EventTimers<0> event_timers(pubsub);
+  static EventTimers<2> event_timers(pubsub);
+  event_timers.AddEventTimer(StateManager::kSilenceAlarmsToken);
+  event_timers.AddEventTimer(StateManager::kThresholdModeToken);
   pubsub.SubscribeTo<TimerRequest>(
       [](TimerRequest request) { event_timers.OnTimerRequest(request); });
 }
@@ -91,26 +93,6 @@ void InitAirSensor() {
   static AirSensor& air_sensor = sense::system::AirSensor();
   static sense::AirSensorService air_sensor_service;
   air_sensor_service.Init(system::GetWorker(), air_sensor);
-
-  // Publish LED values based on gas resistance samples.
-  system::PubSub().SubscribeTo<AirQuality>([](AirQuality event) {
-    system::PubSub().Publish(
-        LedValueAirQualityMode(AirSensor::GetLedValue(event.score)));
-  });
-
-  // Update the alarm threshold based on button presses.
-  system::PubSub().SubscribeTo<AirQualityThreshold>(
-      [](AirQualityThreshold event) {
-        system::AirSensor().SetThresholds(event.alarm, event.silence);
-      });
-
-  system::PubSub().SubscribeTo<AlarmSilenceRequest>(
-      [](AlarmSilenceRequest request) {
-        auto duration = pw::chrono::SystemClock::for_at_least(
-            std::chrono::seconds(request.seconds));
-        system::AirSensor().Silence(duration);
-      });
-
   pw::System().rpc_server().RegisterService(air_sensor_service);
 }
 

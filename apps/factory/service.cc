@@ -58,7 +58,7 @@ pw::Status FactoryService::StartTest(const factory_StartTestRequest& request,
       break;
     case factory_Test_Type_BME688:
       PW_LOG_INFO("Configured for BME688 air sensor test");
-      air_sensor_->Init(*pubsub_, pw::chrono::VirtualSystemClock::RealClock());
+      air_sensor_->Init();
       break;
   }
 

@@ -13,9 +13,7 @@
 // the License.
 #pragma once
 
-#include "modules/edge_detector/hysteresis_edge_detector.h"
 #include "modules/pubsub/pubsub_events.h"
-#include "pw_chrono/system_clock.h"
 #include "pw_metric/metric.h"
 #include "pw_result/result.h"
 #include "pw_status/status.h"
@@ -55,8 +53,6 @@ class AirSensor {
 
   static constexpr uint16_t kMaxScore = static_cast<uint16_t>(Score::kBlue);
   static constexpr uint16_t kAverageScore = static_cast<uint16_t>(Score::kCyan);
-  static constexpr uint16_t kDefaultTheshold =
-      static_cast<uint16_t>(Score::kYellow);
 
   static LedValue GetLedValue(uint16_t score);
 
@@ -78,15 +74,7 @@ class AirSensor {
   uint16_t score() const PW_LOCKS_EXCLUDED(lock_);
 
   /// Sets up the sensor.
-  pw::Status Init(PubSub& pubsub, pw::chrono::VirtualSystemClock& clock);
-
-  /// Sets the thresholds at which the air sensor will raise or silence an
-  /// alarm.
-  void SetThresholds(uint16_t alarm, uint16_t silence);
-  void SetThresholds(Score alarm, Score silence);
-
-  /// Silences the alarm until the given time has elapsed.
-  void Silence(pw::chrono::SystemClock::duration duration);
+  pw::Status Init() { return DoInit(); }
 
   /// Requests an air measurement.
   ///
@@ -105,7 +93,7 @@ class AirSensor {
   void LogMetrics() { metrics_.Dump(); }
 
  protected:
-  AirSensor();
+  AirSensor() = default;
 
   /// Records the results of an air measurement.
   void Update(float temperature,
@@ -125,29 +113,20 @@ class AirSensor {
 
   mutable pw::sync::InterruptSpinLock lock_;
 
-  // Thread safety: set by `Init`, `const` after that.
-  PubSub* pubsub_ = nullptr;
-  pw::chrono::VirtualSystemClock* clock_ = nullptr;
-
-  HysteresisEdgeDetector<uint16_t> edge_detector_ PW_GUARDED_BY(lock_);
-  std::optional<pw::chrono::SystemClock::time_point> ignore_until_
-      PW_GUARDED_BY(lock_);
-
   // Thread safety: metric values should be atomic.
   //
   // Currently, they are not due to a bug, so they are guarded by
   // `lock_`. Unfortunately it isn't possible to use a PW_GUARDED_BY annotation
   // on them.
-
   PW_METRIC_GROUP(metrics_, "air sensor");
 
-  // // Directly read values.
+  // Directly read values.
   PW_METRIC(metrics_, temperature_, "ambient temperature", kDefaultTemperature);
   PW_METRIC(metrics_, pressure_, "barometric pressure", kDefaultPressure);
   PW_METRIC(metrics_, humidity_, "relative humidity", kDefaultHumidity);
   PW_METRIC(metrics_, gas_resistance_, "gas resistance", kDefaultGasResistance);
 
-  // // Derived values.
+  // Derived values.
   PW_METRIC(metrics_, count_, "number of measurements", 0u);
   PW_METRIC(metrics_, quality_, "current air quality", 0.f);
   PW_METRIC(metrics_, average_, "average air quality", 0.f);
