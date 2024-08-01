@@ -15,11 +15,8 @@ module(
     name = "showcase-rp2",
 )
 
-bazel_dep(name = "bazel_skylib", version = "1.6.1")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "freertos", version = "10.5.1.bcr.2")
-
-bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
-
 bazel_dep(name = "nanopb", repo_name = "com_github_nanopb_nanopb")
 bazel_dep(name = "pico-sdk", version = "1.6.0-rc1")
 bazel_dep(name = "pigweed")
@@ -27,6 +24,8 @@ bazel_dep(name = "platforms", version = "0.0.10")
 bazel_dep(name = "pw_toolchain")
 bazel_dep(name = "rules_cc")
 bazel_dep(name = "rules_python", version = "0.34.0")
+
+bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 
 # Module overrides
 # ================
