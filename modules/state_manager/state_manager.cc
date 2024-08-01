@@ -33,30 +33,10 @@ static void AddAndSmoothExponentially(std::optional<T>& aggregate,
   }
 }
 
-void LedOutputStateMachine::UpdateLed(uint8_t red,
-                                      uint8_t green,
-                                      uint8_t blue,
-                                      uint8_t brightness) {
-  if (red_ != red || green_ != green || blue_ != blue) {
-    red_ = red;
-    green_ = green;
-    blue_ = blue;
-    if (state_ == kPassthrough) {
-      led_->SetColor(red_, green_, blue_);
-    }
-  }
-  if (brightness_ != brightness) {
-    brightness_ = brightness;
-    if (state_ == kPassthrough) {
-      led_->SetBrightness(brightness_);
-    }
-  }
-}
-
 StateManager::StateManager(PubSub& pubsub, PolychromeLed& led)
     : edge_detector_(alarm_threshold_, alarm_threshold_ + kThresholdIncrement),
       pubsub_(&pubsub),
-      led_(led, brightness_),
+      led_(led),
       state_(*this) {
   pubsub_->Subscribe([this](Event event) { Update(event); });
 }
@@ -93,8 +73,8 @@ void StateManager::Update(Event event) {
       state_.get().MorseCodeEdge(std::get<MorseCodeValue>(event));
       break;
     case kAmbientLightSample:
-      UpdateAverageAmbientLight(std::get<AmbientLightSample>(event).sample_lux);
-      state_.get().AmbientLightUpdate();
+      led_.UpdateBrightnessFromAmbientLight(
+          std::get<AmbientLightSample>(event).sample_lux);
       break;
     case kTimerRequest:
     case kMorseEncodeRequest:
@@ -188,32 +168,40 @@ void StateManager::StartMorseReadout(bool repeat) {
   PW_LOG_INFO("Current air quality score: %hu", *air_quality_);
 }
 
-void StateManager::UpdateAverageAmbientLight(float ambient_light_sample_lux) {
-  AddAndSmoothExponentially(ambient_light_lux_, ambient_light_sample_lux);
+AmbientLightAdjustedLed::AmbientLightAdjustedLed(PolychromeLed& led)
+    : led_(led) {
+  led_.SetColor(0);
+  led_.SetBrightness(kDefaultBrightness);
+  led_.Enable();
+  led_.TurnOn();
 }
 
-void StateManager::UpdateBrightnessFromAmbientLight() {
+void AmbientLightAdjustedLed::UpdateBrightnessFromAmbientLight(
+    float ambient_light_sample_lux) {
+  AddAndSmoothExponentially(ambient_light_lux_, ambient_light_sample_lux);
+
   static constexpr float kMinLux = 40.f;
   static constexpr float kMaxLux = 3000.f;
   if (!ambient_light_lux_.has_value()) {
     return;
   }
+  uint8_t brightness;
   if (*ambient_light_lux_ < kMinLux) {
-    brightness_ = kMinBrightness;
+    brightness = kMinBrightness;
   } else if (*ambient_light_lux_ > kMaxLux) {
-    brightness_ = kMaxBrightness;
+    brightness = kMaxBrightness;
   } else {
     constexpr float kBrightnessRange = kMaxBrightness - kMinBrightness;
-    brightness_ = static_cast<uint8_t>(
+    brightness = static_cast<uint8_t>(
         std::lround((*ambient_light_lux_ - kMinLux) / (kMaxLux - kMinLux) *
                     kBrightnessRange) +
         kMinBrightness);
   }
 
-  PW_LOG_DEBUG(
-      "Ambient light: mean=%.1f, led=%hhu", *ambient_light_lux_, brightness_);
-
-  led_.SetBrightness(brightness_);
+  PW_LOG_DEBUG("Ambient light: mean_lux=%.1f, brightness=%hhu",
+               *ambient_light_lux_,
+               brightness);
+  led_.SetBrightness(brightness);
 }
 
 void StateManager::LogStateChange(const char* old_state) const {

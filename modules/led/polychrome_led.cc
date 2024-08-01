@@ -12,45 +12,68 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+#define PW_LOG_LEVEL PW_LOG_LEVEL_INFO
+
 #include "modules/led/polychrome_led.h"
+
+#include "pw_log/log.h"
 
 namespace sense {
 
-void PolychromeLed::TurnOff() {
+void PolychromeLed::Enable() {
+  state_ = kOff;
+  red_.Enable();
+  green_.Enable();
+  blue_.Enable();
+  UpdateZeroBrightness();  // Start the LED off.
+}
+
+void PolychromeLed::Disable() {
+  state_ = kDisabled;
+  UpdateZeroBrightness();
   red_.Disable();
   green_.Disable();
   blue_.Disable();
 }
 
+void PolychromeLed::TurnOff() {
+  if (state_ == kOn) {
+    UpdateZeroBrightness();
+    state_ = kOff;
+    PW_LOG_DEBUG("LED off");
+  }
+}
+
 void PolychromeLed::TurnOn() {
-  red_.Enable();
-  green_.Enable();
-  blue_.Enable();
-  Update();
+  if (state_ == kOff) {
+    Update();
+    state_ = kOn;
+    PW_LOG_DEBUG("LED on");
+  }
 }
 
 void PolychromeLed::SetBrightness(uint8_t brightness) {
-  TurnOff();
   red_.ClearCallback();
-  brightness_ = brightness;
-  TurnOn();
-}
+  if (brightness_ == brightness) {
+    return;
+  }
 
-void PolychromeLed::SetColor(uint8_t red, uint8_t green, uint8_t blue) {
-  TurnOff();
-  red_.ClearCallback();
-  hex_ = 0;
-  hex_ |= uint32_t(red) << kRedShift;
-  hex_ |= uint32_t(green) << kGreenShift;
-  hex_ |= uint32_t(blue) << kBlueShift;
-  TurnOn();
+  brightness_ = brightness;
+  if (state_ == kOn) {
+    Update();
+  }
 }
 
 void PolychromeLed::SetColor(uint32_t hex) {
-  TurnOff();
   red_.ClearCallback();
+  if (hex_ == hex) {
+    return;
+  }
+
   hex_ = hex;
-  TurnOn();
+  if (state_ == kOn) {
+    Update();
+  }
 }
 
 void PolychromeLed::Pulse(uint32_t hex, uint32_t interval_ms) {
@@ -131,9 +154,17 @@ void PolychromeLed::Rainbow(uint32_t interval_ms) {
 }
 
 void PolychromeLed::Update() {
+  PW_LOG_DEBUG("LED update: rgb=%06x brightness=%hu", hex_, brightness_);
   red_.SetLevel(GammaCorrect(hex_ >> kRedShift));
   green_.SetLevel(GammaCorrect(hex_ >> kGreenShift));
   blue_.SetLevel(GammaCorrect(hex_ >> kBlueShift));
+}
+
+void PolychromeLed::UpdateZeroBrightness() {
+  PW_LOG_DEBUG("LED update: rgb=%06x brightness=0", hex_);
+  red_.SetLevel(0);
+  green_.SetLevel(0);
+  blue_.SetLevel(0);
 }
 
 uint16_t PolychromeLed::GammaCorrect(uint32_t val) const {
@@ -174,8 +205,7 @@ uint16_t PolychromeLed::GammaCorrect(uint32_t val) const {
     239, 241, 244, 246, 248, 250, 252, 255,
   };
   // clang-format on
-  uint16_t u16 = uint16_t(kGammaCorrection[val % 256]) * brightness_;
-  return u16;
+  return static_cast<uint16_t>(kGammaCorrection[val % 256]) * brightness_;
 }
 
 }  // namespace sense

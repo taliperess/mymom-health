@@ -24,57 +24,29 @@
 
 namespace sense {
 
-// State machine that controls what displays on the LED.
-class LedOutputStateMachine {
+// Wraps a PolychromeLed and sets brightness from ambient light readings.
+class AmbientLightAdjustedLed {
  public:
-  explicit LedOutputStateMachine(PolychromeLed& led, uint8_t brightness)
-      : state_(kPassthrough),
-        brightness_(brightness),
-        red_(0),
-        green_(0),
-        blue_(0),
-        led_(&led) {
-    // Set the brightness, but start the color as black.
-    led_->SetBrightness(brightness_);
-    led_->SetColor(0);
+  AmbientLightAdjustedLed(PolychromeLed& led);
+
+  void SetColor(const LedValue& color) {
+    led_.SetColor(color.r(), color.g(), color.b());
   }
 
-  // Use this color and brightness until EndOverride is called.
-  void Override(uint32_t color, uint8_t brightness) {
-    state_ = kOverride;
-    led_->SetColor(color);
-    led_->SetBrightness(brightness);
-  }
+  void SetOnOff(bool turn_on) { led_.SetOnOff(turn_on); }
 
-  // Switch to the most recently set color and brightness.
-  void EndOverride() {
-    state_ = kPassthrough;
-    led_->SetColor(red_, green_, blue_);
-    led_->SetBrightness(brightness_);
-  }
-
-  void SetColor(const LedValue& value) {
-    UpdateLed(value.r(), value.g(), value.b(), brightness_);
-  }
-
-  void SetBrightness(uint8_t brightness) {
-    UpdateLed(red_, green_, blue_, brightness);
-  }
+  // Recalculates the brightness level when the ambient light changes.
+  void UpdateBrightnessFromAmbientLight(float ambient_light_sample_lux);
 
  private:
-  void UpdateLed(uint8_t red, uint8_t green, uint8_t blue, uint8_t brightness);
+  static constexpr uint8_t kMinBrightness = 10;
+  static constexpr uint8_t kDefaultBrightness = 160;
+  static constexpr uint8_t kMaxBrightness = 255;
 
-  enum : bool {
-    kPassthrough,  // show stored values and update as they come in
-    kOverride,     // display a specific color
-  } state_;
+  void UpdateAverageAmbientLight(float ambient_light_sample_lux);
 
-  uint8_t brightness_;
-  uint8_t red_;
-  uint8_t green_;
-  uint8_t blue_;
-
-  PolychromeLed* led_;
+  PolychromeLed& led_;
+  std::optional<float> ambient_light_lux_;
 };
 
 // Manages state for the "production" Sense app.
@@ -99,18 +71,11 @@ class StateManager {
   StateManager(PubSub& pubsub, PolychromeLed& led);
 
  private:
-  // LED brightness varies based on ambient light readings.
-  static constexpr uint8_t kMinBrightness = 20;
-  static constexpr uint8_t kDefaultBrightness = 160;
-  static constexpr uint8_t kMaxBrightness = 255;
-
   // Represents a state in the Sense app state machine.
   class State {
    public:
     State(StateManager& manager, const char* name)
-        : manager_(manager), name_(name) {
-      manager_.led_.SetBrightness(manager_.brightness_);
-    }
+        : manager_(manager), name_(name) {}
 
     virtual ~State() = default;
 
@@ -129,11 +94,6 @@ class StateManager {
 
     /// Button Y enters `MorseReadoutMode` by default.
     virtual void ButtonYPressed() { manager().SetState<MorseReadoutMode>(); }
-
-    // Ambient light sensor updates determine LED brightess by default.
-    virtual void AmbientLightUpdate() {
-      manager().UpdateBrightnessFromAmbientLight();
-    }
 
     // Update the LED color by default.
     virtual void OnLedValue(const LedValue& value) {
@@ -210,12 +170,15 @@ class StateManager {
       manager.StartMorseReadout(/* repeat: */ true);
     }
 
+    // Since morse code leaves the LED off, turn it back on.
+    ~AlarmMode() { manager().led_.SetOnOff(true); }
+
     void ButtonXPressed() override { manager().SilenceAlarms(); }
 
     void ButtonYPressed() override {}
 
     void MorseCodeEdge(const MorseCodeValue& value) override {
-      manager().led_.SetBrightness(value.turn_on ? manager().brightness_ : 0);
+      manager().led_.SetOnOff(value.turn_on);
     }
   };
 
@@ -230,12 +193,15 @@ class StateManager {
       manager.StartMorseReadout(/* repeat: */ false);
     }
 
+    // Since morse code leaves the LED off, turn it back on.
+    ~MorseReadoutMode() { manager().led_.SetOnOff(true); }
+
     void ButtonYPressed() override {
       manager().StartMorseReadout(/* repeat: */ false);
     }
 
     void MorseCodeEdge(const MorseCodeValue& value) override {
-      manager().led_.SetBrightness(value.turn_on ? manager().brightness_ : 0);
+      manager().led_.SetOnOff(value.turn_on);
       if (value.message_finished) {
         manager().ResetMode();
       }
@@ -279,12 +245,6 @@ class StateManager {
   /// the current air quality.
   void StartMorseReadout(bool repeat);
 
-  /// Incorporates a new ambient light reading.
-  void UpdateAverageAmbientLight(float ambient_light_sample_lux);
-
-  // Recalculates the brightness level when the ambient light changes.
-  void UpdateBrightnessFromAmbientLight();
-
   void LogStateChange(const char* old_state) const;
 
   std::optional<uint16_t> air_quality_;
@@ -295,12 +255,8 @@ class StateManager {
   uint16_t alarm_threshold_ = static_cast<uint16_t>(AirSensor::Score::kYellow);
   HysteresisEdgeDetector<uint16_t> edge_detector_;
 
-  uint8_t brightness_ = kDefaultBrightness;
-  std::optional<float>
-      ambient_light_lux_;  // exponential moving averaged mean lux
-
   PubSub* pubsub_;
-  LedOutputStateMachine led_;
+  AmbientLightAdjustedLed led_;
 
   CommonBaseUnion<State,
                   MonitorMode,

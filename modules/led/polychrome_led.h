@@ -19,37 +19,63 @@
 
 namespace sense {
 
-/// Interface for a multi-color LED.
+/// Represents a multi-color LED.
+///
+/// NOT thread safe.
 class PolychromeLed {
  public:
   static constexpr uint32_t kRedShift = 16;
   static constexpr uint32_t kGreenShift = 8;
   static constexpr uint32_t kBlueShift = 0;
 
+  /// Converts separate RGB values to a `uint32_t` ("hex") value.
+  static constexpr uint32_t ColorToHex(uint8_t red,
+                                       uint8_t green,
+                                       uint8_t blue) {
+    return uint32_t{red} << kRedShift | uint32_t{green} << kGreenShift |
+           uint32_t{blue} << kBlueShift;
+  }
+
   PolychromeLed(PwmDigitalOut& red, PwmDigitalOut& green, PwmDigitalOut& blue)
       : red_(red), green_(green), blue_(blue) {}
+
   ~PolychromeLed() = default;
+
+  /// Enables the LED in the off state. Must be called for `TurnOn()` to work.
+  void Enable();
+
+  /// Turns off and disables the LED.
+  void Disable();
 
   /// Turns off the LED.
   void TurnOff();
 
-  // Turns the LED on.
+  /// Turns on the LED.
   void TurnOn();
 
-  /// Sets the brightness of the LED.
+  // Turns the LED on or off.
+  void SetOnOff(bool turn_on);
+
+  /// Sets the brightness of the LED. The brightness setting always takes
+  /// effect, but changes will not be visible unless the LED is enabled and
+  /// turned on.
   ///
-  /// @param  level   Relative brightness of the LED
+  /// @param level Relative brightness of the LED
   void SetBrightness(uint8_t level);
 
-  /// Sets the RGB LED using individual red, green, and blue components.
-  void SetColor(uint8_t red, uint8_t green, uint8_t blue);
+  /// Sets the RGB LED using individual red, green, and blue components. Color
+  /// changes always take effect, but changes will not be visible unless the LED
+  /// is enabled and turned on.
+  void SetColor(uint8_t red, uint8_t green, uint8_t blue) {
+    SetColor(ColorToHex(red, green, blue));
+  }
 
   /// Sets the RGB LED using a 24-bit hex color code.
   void SetColor(uint32_t hex);
 
   /// Fades the LED on and off continuously.
   ///
-  /// @param  interval_ms   The duration of a fade cycle, in milliseconds.
+  /// @param interval_ms The duration of a fade cycle, in milliseconds.
   void Pulse(uint32_t hex, uint32_t interval_ms);
 
   /// Cycles back and forth between two colors.
@@ -62,8 +88,11 @@ class PolychromeLed {
   /// Sets the levels of the red, green, and blue PWM slices.
   void Update();
 
+  /// Sets the levels of the PWM slices to 0, preserving the prior brightness_.
+  void UpdateZeroBrightness();
+
   /// Adjusts the given 8-bit value using sRGB, and scales according to the
-  /// current brightness.
+  /// current brightness. The `uint32_t` value is masked to the bottom 8 bits.
   uint16_t GammaCorrect(uint32_t value) const;
 
   PwmDigitalOut& red_;
@@ -71,7 +100,16 @@ class PolychromeLed {
   PwmDigitalOut& blue_;
   uint32_t hex_ = 0;
   uint32_t alternate_hex_ = 0;
-  uint16_t brightness_ = 0;
+  uint8_t brightness_ = 0;
+  enum : uint8_t { kDisabled, kOff, kOn } state_ = kDisabled;
 };
+
+inline void PolychromeLed::SetOnOff(bool turn_on) {
+  if (turn_on) {
+    TurnOn();
+  } else {
+    TurnOff();
+  }
+}
 
 }  // namespace sense
