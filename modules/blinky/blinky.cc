@@ -74,6 +74,7 @@ void Blinky::Init(Dispatcher& dispatcher,
   monochrome_led_->TurnOff();
 
   polychrome_led_ = &polychrome_led;
+  polychrome_led_->Enable();
   polychrome_led_->TurnOff();
 }
 

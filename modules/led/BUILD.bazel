@@ -53,7 +53,10 @@ cc_library(
     name = "polychrome_led",
     srcs = ["polychrome_led.cc"],
     hdrs = ["polychrome_led.h"],
-    implementation_deps = ["@pigweed//pw_log"],
+    implementation_deps = [
+        "@pigweed//pw_assert",
+        "@pigweed//pw_log",
+    ],
     deps = ["//modules/pwm:digital_out"],
 )
 

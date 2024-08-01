@@ -16,6 +16,7 @@
 
 #include "modules/led/polychrome_led.h"
 
+#include "pw_assert/check.h"
 #include "pw_log/log.h"
 
 namespace sense {
@@ -45,6 +46,8 @@ void PolychromeLed::TurnOff() {
 }
 
 void PolychromeLed::TurnOn() {
+  PW_DCHECK_INT_NE(
+      state_, kDisabled, "Cannot turn on the LED until Enable() is called");
   if (state_ == kOff) {
     Update();
     state_ = kOn;

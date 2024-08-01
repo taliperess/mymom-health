@@ -29,7 +29,7 @@
 
 namespace sense {
 
-/// Simple component that blink the on-board LED.
+/// Simple component that blinks the on-board LED.
 class Blinky final {
  public:
   static constexpr uint32_t kDefaultIntervalMs = 1000;
