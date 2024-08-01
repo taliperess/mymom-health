@@ -170,9 +170,9 @@ void StateManager::SilenceAlarms() {
 
 void StateManager::ResetMode() {
   if (alarm_) {
-    SetState<AirQualityAlarmMode>();
+    SetState<AlarmMode>();
   } else {
-    SetState<AirQualityMode>();
+    SetState<MonitorMode>();
   }
 }
 

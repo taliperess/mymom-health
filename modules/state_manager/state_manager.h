@@ -117,16 +117,18 @@ class StateManager {
     // Name of the state for logging.
     const char* name() const { return name_; }
 
-    // Handle button presses. By default, 'A' and 'B' change to
-    // threshold mode, while 'X' and 'Y' change to monitoring mode.
-    virtual void ButtonAPressed() {
-      manager_.SetState<AirQualityThresholdMode>();
-    }
-    virtual void ButtonBPressed() {
-      manager_.SetState<AirQualityThresholdMode>();
-    }
+    /// Button A enters `ThresholdMode` by default.
+    virtual void ButtonAPressed() { manager_.SetState<ThresholdMode>(); }
+
+    /// Button B enters `ThresholdMode` by default.
+    virtual void ButtonBPressed() { manager_.SetState<ThresholdMode>(); }
+
+    /// Button X enters resets the mode to either `MonitorMode` or `AlarmMode`
+    /// by default, depending on the current air quality..
     virtual void ButtonXPressed() { manager_.ResetMode(); }
-    virtual void ButtonYPressed() { manager_.ResetMode(); }
+
+    /// Button Y enters `MorseReadoutMode` by default.
+    virtual void ButtonYPressed() { manager().SetState<MorseReadoutMode>(); }
 
     // Ambient light sensor updates determine LED brightess by default.
     virtual void AmbientLightUpdate() {
@@ -141,7 +143,7 @@ class StateManager {
     // Ignore Morse code edges by default.
     virtual void MorseCodeEdge(const MorseCodeValue&) {}
 
-    // Mode returns to air quality mode after a specified time.
+    // Handles re-enabling alarms that were previously silenced.
     virtual void OnTimerExpired(const TimerExpired& timer) {
       if (timer.token == kSilenceAlarmsToken) {
         manager().alarm_silenced_ = false;
@@ -156,17 +158,25 @@ class StateManager {
     const char* name_;
   };
 
-  class AirQualityMode final : public State {
+  /// Mode for monitoring the air quality.
+  ///
+  /// Inherits default button mapping.
+  class MonitorMode final : public State {
    public:
-    AirQualityMode(StateManager& manager) : State(manager, "AirQualityMode") {}
-
-    void ButtonYPressed() override { manager().SetState<MorseReadout>(); }
+    MonitorMode(StateManager& manager) : State(manager, "MonitorMode") {}
   };
 
-  class AirQualityThresholdMode final : public State {
+  /// Mode for displaying and modifying the the air quality alarm threshold.
+  ///
+  /// Inherits default button mapping, except:
+  ///  * Button A increments the threshold.
+  ///  * Button B decrements the threshold.
+  ///
+  /// The mode will timeout and return to the default mode after 3 seconds of no
+  /// button being pressed.
+  class ThresholdMode final : public State {
    public:
-    AirQualityThresholdMode(StateManager& manager)
-        : State(manager, "AirQualityThresholdMode") {
+    ThresholdMode(StateManager& manager) : State(manager, "ThresholdMode") {
       manager.DisplayThreshold();
     }
 
@@ -183,12 +193,20 @@ class StateManager {
         State::OnTimerExpired(timer);
       }
     }
+
+    void ButtonXPressed() override { manager().SetState<MonitorMode>(); }
+
+    void ButtonYPressed() override { manager().SetState<MonitorMode>(); }
   };
 
-  class AirQualityAlarmMode final : public State {
+  /// Mode representing a triggered air quality alarm.
+  ///
+  /// Inherits default button mapping, except:
+  ///  * Button X silences the alarm for 60 seconds.
+  ///  * Button Y does nothing.
+  class AlarmMode final : public State {
    public:
-    AirQualityAlarmMode(StateManager& manager)
-        : State(manager, "AirQualityAlarmMode") {
+    AlarmMode(StateManager& manager) : State(manager, "AlarmMode") {
       manager.StartMorseReadout(/* repeat: */ true);
     }
 
@@ -201,13 +219,20 @@ class StateManager {
     }
   };
 
-  class MorseReadout final : public State {
+  /// Mode that displays the current air quality in Morse code.
+  ///
+  /// Inherits default button mapping, except:
+  ///  * Button Y restarts the air quality display.
+  class MorseReadoutMode final : public State {
    public:
-    MorseReadout(StateManager& manager) : State(manager, "MorseReadout") {
+    MorseReadoutMode(StateManager& manager)
+        : State(manager, "MorseReadoutMode") {
       manager.StartMorseReadout(/* repeat: */ false);
     }
 
-    void ButtonYPressed() override {}
+    void ButtonYPressed() override {
+      manager().StartMorseReadout(/* repeat: */ false);
+    }
 
     void MorseCodeEdge(const MorseCodeValue& value) override {
       manager().led_.SetBrightness(value.turn_on ? manager().brightness_ : 0);
@@ -217,7 +242,7 @@ class StateManager {
     }
   };
 
-  // Respond to a PubSub event.
+  /// Responds to a PubSub event.
   void Update(Event event);
 
   template <typename StateType>
@@ -227,22 +252,34 @@ class StateManager {
     LogStateChange(old_state);
   }
 
+  /// Sets the state to `MonitorMode` or `AlarmMode`, depending on the current
+  /// air quality.
   void ResetMode();
 
+  /// Sets the LED to reflect the current alarm threshold.
   void DisplayThreshold();
 
+  /// Increases the current alarm threshold.
   void IncrementThreshold();
 
+  /// Decreases the current alarm threshold.
   void DecrementThreshold();
 
+  /// Sets the current alarm threshold.
   void SetAlarmThreshold(uint16_t alarm_threshold);
 
+  /// Incorporates a new air quality reading from the air sensor, changing the
+  /// LED color and triggering alarms as appropriate.
   void UpdateAirQuality(uint16_t score);
 
+  /// Suppresses `AlarmMode` for 60 seconds.
   void SilenceAlarms();
 
+  /// Sends a request to the Morse encoder to send `MorseCodeEdge` events for
+  /// the current air quality.
   void StartMorseReadout(bool repeat);
 
+  /// Incorporates a new ambient light reading.
   void UpdateAverageAmbientLight(float ambient_light_sample_lux);
 
   // Recalculates the brightness level when the ambient light changes.
@@ -266,10 +303,10 @@ class StateManager {
   LedOutputStateMachine led_;
 
   CommonBaseUnion<State,
-                  AirQualityMode,
-                  AirQualityThresholdMode,
-                  AirQualityAlarmMode,
-                  MorseReadout>
+                  MonitorMode,
+                  ThresholdMode,
+                  AlarmMode,
+                  MorseReadoutMode>
       state_;
 };
 
