@@ -35,10 +35,10 @@ static void AddAndSmoothExponentially(std::optional<T>& aggregate,
 
 StateManager::StateManager(PubSub& pubsub, PolychromeLed& led)
     : edge_detector_(alarm_threshold_, alarm_threshold_ + kThresholdIncrement),
-      pubsub_(&pubsub),
+      pubsub_(pubsub),
       led_(led),
       state_(*this) {
-  pubsub_->Subscribe([this](Event event) { Update(event); });
+  pubsub_.Subscribe([this](Event event) { Update(event); });
 }
 
 void StateManager::Update(Event event) {
@@ -86,7 +86,7 @@ void StateManager::Update(Event event) {
 
 void StateManager::DisplayThreshold() {
   led_.SetColor(AirSensor::GetLedValue(alarm_threshold_));
-  pubsub_->Publish(TimerRequest{
+  pubsub_.Publish(TimerRequest{
       .token = kThresholdModeToken,
       .timeout_s = kThresholdModeTimeout,
   });
@@ -141,7 +141,7 @@ void StateManager::SilenceAlarms() {
   alarm_ = false;
   alarm_silenced_ = true;
   edge_detector_.Update(AirSensor::kMaxScore);
-  pubsub_->Publish(TimerRequest{
+  pubsub_.Publish(TimerRequest{
       .token = kSilenceAlarmsToken,
       .timeout_s = kSilenceAlarmsTimeout,
   });
@@ -163,7 +163,7 @@ void StateManager::StartMorseReadout(bool repeat) {
   pw::Status status = pw::string::FormatOverwrite(
       air_quality_score_string_, "%hu", *air_quality_);
   PW_CHECK_OK(status);
-  pubsub_->Publish(MorseEncodeRequest{.message = air_quality_score_string_,
+  pubsub_.Publish(MorseEncodeRequest{.message = air_quality_score_string_,
                                       .repeat = repeat ? 0u : 1u});
   PW_LOG_INFO("Current air quality score: %hu", *air_quality_);
 }

@@ -70,6 +70,9 @@ class StateManager {
 
   StateManager(PubSub& pubsub, PolychromeLed& led);
 
+  StateManager(const StateManager&) = delete;
+  StateManager& operator=(const StateManager&) = delete;
+
  private:
   // Represents a state in the Sense app state machine.
   class State {
@@ -255,7 +258,7 @@ class StateManager {
   uint16_t alarm_threshold_ = static_cast<uint16_t>(AirSensor::Score::kYellow);
   HysteresisEdgeDetector<uint16_t> edge_detector_;
 
-  PubSub* pubsub_;
+  PubSub& pubsub_;
   AmbientLightAdjustedLed led_;
 
   CommonBaseUnion<State,
