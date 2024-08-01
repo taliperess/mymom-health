@@ -17,13 +17,16 @@ import abc
 import argparse
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 import logging
 import math
+import os
 from pathlib import Path
+import pwd
 import sys
 import threading
 import time
-from typing import Callable, Tuple
+from typing import Callable, Iterable, List, Tuple
 
 from prompt_toolkit import prompt
 from prompt_toolkit.patch_stdout import patch_stdout
@@ -68,14 +71,20 @@ class Color:
 
 
 class Test(abc.ABC):
+    class Status(Enum):
+        PASS = 0
+        FAIL = 1
+        SKIP = 2
+
     def __init__(self, name: str, rpcs):
         self.name = name
         self._notification = threading.Event()
         self._rpcs = rpcs
         self._blinky_service = rpcs.blinky.Blinky
-        self.passed_tests = []
-        self.failed_tests = []
-        self.skipped_tests = []
+        self.executed_tests: List[Tuple[str, Test.Status]] = []
+        self.passed_tests = 0
+        self.failed_tests = 0
+        self.skipped_tests = 0
 
     @abc.abstractmethod
     def run(self) -> bool:
@@ -86,7 +95,11 @@ class Test(abc.ABC):
         """Prints a prompt for a user action."""
         print(f'{colors().yellow(">>>")} {message}')
 
-    def prompt_enter(self, message: str) -> None:
+    def prompt_enter(
+            self,
+            message: str,
+            key_prompt: str = 'Press Enter to continue...',
+        ) -> None:
         """Prints a prompt for a user action."""
 
         with patch_stdout():
@@ -97,7 +110,7 @@ class Test(abc.ABC):
             prompt_fragments.extend(ANSI(message).__pt_formatted_text__())
             prompt_fragments.extend(
                 [
-                    ('', '\nPress Enter to continue...'),
+                    ('', f'\n{key_prompt}'),
                 ]
             )
             prompt(prompt_fragments)
@@ -122,19 +135,22 @@ class Test(abc.ABC):
 
     def pass_test(self, name: str) -> None:
         """Records a test as passed."""
-        self.passed_tests.append(name)
+        self.executed_tests.append((name, Test.Status.PASS))
+        self.passed_tests += 1
         print(f'{colors().green("PASS:")} {name}')
         self.blink_led(Color(0, 255, 0))
 
     def fail_test(self, name: str) -> None:
         """Records a test as failed."""
-        self.failed_tests.append(name)
+        self.executed_tests.append((name, Test.Status.FAIL))
+        self.failed_tests += 1
         print(f'{colors().bold_red("FAIL:")} {name}')
         self.blink_led(Color(255, 0, 0))
 
     def skip_test(self, name: str) -> None:
         """Records a test as skipped."""
-        self.skipped_tests.append(name)
+        self.executed_tests.append((name, Test.Status.SKIP))
+        self.skipped_tests += 1
         print(f'{colors().yellow("SKIP:")} {name}')
 
     def set_led(self, color: Color) -> Status:
@@ -198,7 +214,7 @@ class ButtonsTest(Test):
         assert status is Status.OK
 
         pubsub_call.cancel()
-        return len(self.failed_tests) == 0
+        return self.failed_tests == 0
 
     def _test_button_press(self, button: Button) -> None:
         test_name = button.name.lower().replace(' ', '_')
@@ -248,7 +264,7 @@ class LedTest(Test):
         status = self.unset_led()
         assert status is Status.OK
 
-        return len(self.failed_tests) == 0
+        return self.failed_tests == 0
 
     def _test_led(self, color: Color) -> bool:
         test_name = f'led_{color.name}'
@@ -286,6 +302,13 @@ class Samples:
             f'max: {self.max_value}, mean: {self.mean_value}'
         )
 
+
+    def print_formatted(self, indent: int = 0, units: str | None = None) -> None:
+        suffix = units if units is not None else ''
+        print(f'{" " * indent}Samples   {self.count}')
+        print(f'{" " * indent}Min       {self.min_value:.2f}{suffix}')
+        print(f'{" " * indent}Max       {self.max_value:.2f}{suffix}')
+        print(f'{" " * indent}Mean      {self.max_value:.2f}{suffix}')
 
 def _sample_until(
     max_samples: int,
@@ -389,7 +412,7 @@ class Ltr559Test(Test):
                     baseline_samples.update(response.value)
 
         print(colors().green(' DONE'))
-        print(baseline_samples)
+        baseline_samples.print_formatted(indent=4)
 
         print()
         self.prompt_enter('Fully cover the LIGHT sensor')
@@ -400,7 +423,7 @@ class Ltr559Test(Test):
             lambda value: value > Ltr559Test._PROX_NEAR_THRESHOLD,
             message='Reading sensor',
         )
-        print(samples)
+        samples.print_formatted(indent=4)
         if not success:
             self.fail_test('ltr559_prox_near')
             return False
@@ -414,7 +437,7 @@ class Ltr559Test(Test):
             self._factory_service.SampleLtr559Prox,
             lambda value: abs(value - baseline_samples.mean_value) < 200,
         )
-        print(samples)
+        samples.print_formatted(indent=4)
         if not success:
             self.fail_test('ltr559_prox_far')
             return False
@@ -438,7 +461,7 @@ class Ltr559Test(Test):
                     baseline_samples.update(response.lux)
 
         print(colors().green(' DONE'))
-        print(baseline_samples)
+        baseline_samples.print_formatted(indent=4, units='lux')
 
         print()
         self.prompt_enter('Cover the LIGHT sensor with your finger')
@@ -449,7 +472,7 @@ class Ltr559Test(Test):
             lambda value: value < Ltr559Test._LIGHT_DARK_THRESHOLD,
             field='lux',
         )
-        print(samples)
+        samples.print_formatted(indent=4, units='lux')
         if not success:
             self.fail_test('ltr559_light_dark')
             return False
@@ -466,7 +489,7 @@ class Ltr559Test(Test):
             > Ltr559Test._LIGHT_BRIGHT_THRESHOLD,
             field='lux',
         )
-        print(samples)
+        samples.print_formatted(indent=4, units='lux')
         if not success:
             self.fail_test('ltr559_light_bright')
             return False
@@ -482,7 +505,7 @@ class Ltr559Test(Test):
             lambda value: abs(value - baseline_samples.mean_value) < 2,
             field='lux',
         )
-        print(samples)
+        samples.print_formatted(indent=4, units='lux')
         if not success:
             self.fail_test('ltr559_light_neutral')
             return False
@@ -547,9 +570,12 @@ class Bme688Test(Test):
             message='Getting initial sensor readings',
         )
         print(colors().green(' DONE'))
-        print(baseline_samples)
+        baseline_samples.print_formatted(indent=4)
 
-        self.prompt_enter('Move the alcohol close to the BME688 sensor')
+        self.prompt_enter(
+            'Move the alcohol close to the BME688 sensor.',
+            key_prompt='Press Enter to begin measuring...',
+        )
         success, samples = _sample_until(
             50,
             self._air_sensor_service.Measure,
@@ -558,7 +584,7 @@ class Bme688Test(Test):
             delay=0.25,
             message='Reading sensor',
         )
-        print(samples)
+        samples.print_formatted(indent=4)
 
         if not success:
             self.fail_test('bme688_gas_resistance_poor')
@@ -575,7 +601,7 @@ class Bme688Test(Test):
             delay=0.25,
             message='Reading sensor',
         )
-        print(samples)
+        samples.print_formatted(indent=4)
 
         if not success:
             self.fail_test('bme688_gas_resistance_normal')
@@ -599,10 +625,11 @@ class Bme688Test(Test):
             message='Getting initial sensor readings',
         )
         print(colors().green(' DONE'))
-        print(baseline_samples)
+        baseline_samples.print_formatted(indent=4, units='C')
 
         self.prompt_enter(
-            'Put your finger on the BME688 sensor to increase its temperature'
+            'Put your finger on the BME688 sensor to increase its temperature',
+            key_prompt='Press Enter to begin measuring...',
         )
         success, samples = _sample_until(
             50,
@@ -613,7 +640,7 @@ class Bme688Test(Test):
             delay=0.25,
             message='Reading sensor',
         )
-        print(samples)
+        samples.print_formatted(indent=4, units='C')
 
         if not success:
             self.fail_test('bme688_temperature_hot')
@@ -621,7 +648,10 @@ class Bme688Test(Test):
 
         self.pass_test('bme688_temperature_hot')
 
-        self.prompt_enter('Remove your finger from the BME688 sensor')
+        self.prompt_enter(
+            'Remove your finger from the BME688 sensor',
+            key_prompt='Press Enter to begin measuring...',
+        )
         success, samples = _sample_until(
             100,
             self._air_sensor_service.Measure,
@@ -630,7 +660,7 @@ class Bme688Test(Test):
             delay=0.25,
             message='Reading sensor',
         )
-        print(samples)
+        samples.print_formatted(indent=4, units='C')
 
         if not success:
             self.fail_test('bme688_temperature_normal')
@@ -640,8 +670,24 @@ class Bme688Test(Test):
         return True
 
 
-def _run_tests(rpcs) -> bool:
-    print(colors().green('\nStarting hardware tests.'))
+@dataclass
+class FactoryRunMetadata:
+    operator: str
+    device_id: str
+    time: datetime
+
+    def print_formatted(self):
+        print(f'Operator: {colors().bold_white(self.operator)}')
+        print(f'Date: {colors().bold_white(self.time.strftime("%Y/%m/%d %H:%M:%S"))}')
+        print(f'Device flash ID: {colors().bold_white(f"{self.device_id:x}")}')
+
+
+def _run_tests(run_metadata: FactoryRunMetadata, rpcs) -> bool:
+    print()
+    print('===========================')
+    print('Pigweed Sense Factory Tests')
+    print('===========================')
+    run_metadata.print_formatted()
 
     tests_to_run = [
         LedTest(rpcs),
@@ -650,9 +696,15 @@ def _run_tests(rpcs) -> bool:
         Bme688Test(rpcs),
     ]
 
-    all_passes = []
-    all_failures = []
-    all_skips = []
+    print()
+    print(f'{len(tests_to_run)} tests will be performed:')
+    for test in tests_to_run:
+        print(f'  - {test.name}')
+
+    input('\nPress Enter when you are ready to begin. ')
+    print(colors().green('\nStarting hardware tests.'))
+
+    success = True
 
     for num, test in enumerate(tests_to_run):
         start_msg = f'[{num + 1}/{len(tests_to_run)}] Running test {test.name}'
@@ -662,23 +714,47 @@ def _run_tests(rpcs) -> bool:
         print('=' * len(start_msg))
 
         if not test.run():
-            all_failures.extend(test.failed_tests)
-        all_passes.extend(test.passed_tests)
-        all_skips.extend(test.skipped_tests)
+            success = False
 
-    if all_failures or all_skips:
-        print(
-            f'\n{len(all_passes)} tests passed, {len(all_failures)} tests failed',
-            end='',
-        )
-        if all_skips:
-            print(f', {len(all_skips)} tests skipped')
-        else:
-            print()
-        return len(all_failures) > 0
+    _print_report_card(run_metadata, tests_to_run)
+    return success
 
-    print('\nAll tests passed')
-    return True
+
+def _print_report_card(
+    run_metadata: FactoryRunMetadata,
+    executed_test_suites: Iterable[Test],
+) -> None:
+    passed = 0
+    failed = 0
+    skipped = 0
+
+    print()
+    print('============')
+    print('Test Summary')
+    print('============')
+
+    run_metadata.print_formatted()
+
+    for test_suite in executed_test_suites:
+        passed += test_suite.passed_tests
+        failed += test_suite.failed_tests
+        skipped += test_suite.skipped_tests
+
+        print()
+        print(colors().bold_white(test_suite.name))
+        for name, status in test_suite.executed_tests:
+            if status is Test.Status.PASS:
+                print(f'  {colors().green("PASS")} | {name}')
+            elif status is Test.Status.FAIL:
+                print(f'  {colors().red("FAIL")} | {name}')
+            elif status is Test.Status.SKIP:
+                print(f'  {colors().yellow("SKIP")} | {name}')
+
+    print(f'\n{passed} tests passed, {failed} tests failed', end='')
+    if skipped > 0:
+        print(f', {skipped} tests skipped', end='')
+    print('.')
+    print('=' * 40)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -693,9 +769,10 @@ def _parse_args() -> argparse.Namespace:
 
 
 def main(log_file: Path | None = None) -> int:
+    now = datetime.now()
     if log_file is None:
-        time = datetime.now().strftime('%Y%m%d%H%M%S')
-        log_file = Path(f'factory-logs-{time}.txt')
+        run_time = now.strftime('%Y%m%d%H%M%S')
+        log_file = Path(f'factory-logs-{run_time}.txt')
 
     pw_cli.log.install(
         level=logging.DEBUG,
@@ -739,12 +816,11 @@ def main(log_file: Path | None = None) -> int:
             )
             return 1
 
-        print(
-            f'Device flash ID: {colors().bold_white(f"{device_info.flash_id:x}")}'
-        )
+        username = pwd.getpwuid(os.getuid()).pw_name
+        run_metadata = FactoryRunMetadata(username, device_info.flash_id, now)
 
         try:
-            if not _run_tests(device.rpcs):
+            if not _run_tests(run_metadata, device.rpcs):
                 exit_code = 1
         except KeyboardInterrupt:
             # Turn off the LED if it was on when tests were interrupted.
