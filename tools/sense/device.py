@@ -109,11 +109,13 @@ class Device(PwSystemDevice):
     def blink(self, interval_ms=1000, blink_count=None):
         """Sets the onboard (non-RGB) LED to blink on and off."""
         self.rpcs.blinky.Blinky.Blink(
-            interval_ms=interval_ms, blink_count=blink_count)
+            interval_ms=interval_ms, blink_count=blink_count
+        )
 
     def pulse(self, interval_ms=1000):
         """Sets the onboard (non-RGB) LED to pulse on and off."""
         self.rpcs.blinky.Blinky.Pulse(interval_ms=interval_ms)
+
 
 class DeviceWithTracing(PwSystemDeviceWithTracing):
     def __init__(self, *args, **kwargs):
@@ -133,9 +135,12 @@ def get_all_protos() -> list[ModuleType]:
     ]
 
 
-def get_device_connection(log: bool = True) -> DeviceConnection:
-    if log:
-        pw_cli.log.install(level=logging.DEBUG)
+def get_device_connection(
+    setup_logging: bool = True,
+    log_level: int = logging.DEBUG,
+) -> DeviceConnection:
+    if setup_logging:
+        pw_cli.log.install(level=log_level)
 
     parser = argparse.ArgumentParser(
         prog='sense',

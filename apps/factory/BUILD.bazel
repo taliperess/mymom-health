@@ -72,6 +72,18 @@ native_binary(
     ],
 )
 
+native_binary(
+    name = "rp2040_factory_test",
+    src = "//tools:factory",
+    args = [
+        "--token-databases",
+        "$(rootpath //apps/factory:rp2040.elf)",
+    ],
+    data = [
+        ":rp2040.elf",
+    ],
+)
+
 flash_rp2040(
     name = "flash",
     rp2040_binary = "rp2040.elf",
