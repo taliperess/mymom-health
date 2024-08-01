@@ -17,11 +17,13 @@
 #include <cstdint>
 #include <string_view>
 
+#include "modules/morse_code/morse_code.rpc.pb.h"
 #include "modules/worker/worker.h"
 #include "pw_chrono/system_clock.h"
 #include "pw_chrono/system_timer.h"
 #include "pw_containers/flat_map.h"
 #include "pw_status/status.h"
+#include "pw_string/string.h"
 #include "pw_sync/interrupt_spin_lock.h"
 #include "pw_sync/lock_annotations.h"
 
@@ -81,7 +83,7 @@ constexpr pw::containers::FlatMap<char, Encoding, 38> kEncodings({{
 
 class Encoder final {
  public:
-  static constexpr size_t kCapacity = 256;
+  static constexpr size_t kMaxMsgLen = sizeof(morse_code_SendRequest::msg);
   static constexpr uint32_t kDefaultIntervalMs = 60;
   static constexpr pw::chrono::SystemClock::duration kDefaultInterval =
       pw::chrono::SystemClock::for_at_least(
@@ -105,7 +107,7 @@ class Encoder final {
 
     constexpr State() = default;
 
-    std::string_view msg_;
+    pw::InlineString<kMaxMsgLen> msg_;
     size_t msg_offset_ = 0;
     size_t repeat_ = 1;
     uint32_t bits_ = 0;

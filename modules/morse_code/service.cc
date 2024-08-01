@@ -22,7 +22,6 @@ void MorseCodeService::Init(Worker& worker, Encoder::OutputFunction&& output) {
 
 pw::Status MorseCodeService::Send(const morse_code_SendRequest& request,
                                   pw_protobuf_Empty&) {
-  msg_ = request.msg;
   uint32_t repeat = request.has_repeat ? request.repeat : 1;
   uint32_t interval_ms = request.has_interval_ms ? request.interval_ms
                                                  : Encoder::kDefaultIntervalMs;

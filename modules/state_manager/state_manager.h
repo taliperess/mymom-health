@@ -18,6 +18,7 @@
 #include "modules/air_sensor/air_sensor.h"
 #include "modules/edge_detector/hysteresis_edge_detector.h"
 #include "modules/led/polychrome_led.h"
+#include "modules/morse_code/encoder.h"
 #include "modules/pubsub/pubsub_events.h"
 #include "modules/state_manager/common_base_union.h"
 #include "pw_string/string.h"
@@ -57,9 +58,13 @@ class StateManager {
  public:
   using TimerToken = ::pw::tokenizer::Token;
 
-  static constexpr TimerToken kSilenceAlarmsToken =
-      PW_TOKENIZE_STRING("re-enable alarms");
-  static constexpr uint16_t kSilenceAlarmsTimeout = 60;
+  static constexpr TimerToken kRepeatAlarmToken =
+      PW_TOKENIZE_STRING("repeat alarm");
+  static constexpr uint16_t kRepeatAlarmTimeout = 1;
+
+  static constexpr TimerToken kSilenceAlarmToken =
+      PW_TOKENIZE_STRING("re-enable alarm");
+  static constexpr uint16_t kSilenceAlarmTimeout = 60;
 
   static constexpr TimerToken kThresholdModeToken =
       PW_TOKENIZE_STRING("exit threshold mode");
@@ -74,6 +79,10 @@ class StateManager {
   StateManager& operator=(const StateManager&) = delete;
 
  private:
+  static constexpr size_t kMaxMorseCodeStringLen = 16;
+  static_assert(kMaxMorseCodeStringLen <= Encoder::kMaxMsgLen);
+  using MorseCodeString = ::pw::InlineString<kMaxMorseCodeStringLen>;
+
   // Represents a state in the Sense app state machine.
   class State {
    public:
@@ -104,11 +113,11 @@ class StateManager {
     }
 
     // Ignore Morse code edges by default.
-    virtual void MorseCodeEdge(const MorseCodeValue&) {}
+    virtual void OnMorseCodeValue(const MorseCodeValue&) {}
 
     // Handles re-enabling alarms that were previously silenced.
     virtual void OnTimerExpired(const TimerExpired& timer) {
-      if (timer.token == kSilenceAlarmsToken) {
+      if (timer.token == kSilenceAlarmToken) {
         manager().alarm_silenced_ = false;
       }
     }
@@ -147,19 +156,20 @@ class StateManager {
 
     void ButtonBPressed() override { manager().DecrementThreshold(); }
 
+    void ButtonXPressed() override { manager().ResetMode(); }
+
+    void ButtonYPressed() override { manager().ResetMode(); }
+
     void OnLedValue(const LedValue&) override {}
 
     void OnTimerExpired(const TimerExpired& timer) override {
       if (timer.token == kThresholdModeToken) {
-        manager().ResetMode();
+        // Blink three times before returning to the default mode.
+        manager().SetState<MorseReadoutMode>("TTT");
       } else {
         State::OnTimerExpired(timer);
       }
     }
-
-    void ButtonXPressed() override { manager().SetState<MonitorMode>(); }
-
-    void ButtonYPressed() override { manager().SetState<MonitorMode>(); }
   };
 
   /// Mode representing a triggered air quality alarm.
@@ -170,7 +180,8 @@ class StateManager {
   class AlarmMode final : public State {
    public:
     AlarmMode(StateManager& manager) : State(manager, "AlarmMode") {
-      manager.StartMorseReadout(/* repeat: */ true);
+      manager.FormatAirQuality(msg_);
+      manager.StartMorseReadout(msg_);
     }
 
     // Since morse code leaves the LED off, turn it back on.
@@ -180,9 +191,24 @@ class StateManager {
 
     void ButtonYPressed() override {}
 
-    void MorseCodeEdge(const MorseCodeValue& value) override {
+    void OnMorseCodeValue(const MorseCodeValue& value) override {
       manager().led_.SetOnOff(value.turn_on);
+      if (value.message_finished) {
+        manager().RepeatAlarm();
+      }
     }
+
+    void OnTimerExpired(const TimerExpired& timer) override {
+      if (timer.token == kRepeatAlarmToken) {
+        manager().FormatAirQuality(msg_);
+        manager().StartMorseReadout(msg_);
+      } else {
+        State::OnTimerExpired(timer);
+      }
+    }
+
+   private:
+    MorseCodeString msg_;
   };
 
   /// Mode that displays the current air quality in Morse code.
@@ -193,31 +219,39 @@ class StateManager {
    public:
     MorseReadoutMode(StateManager& manager)
         : State(manager, "MorseReadoutMode") {
-      manager.StartMorseReadout(/* repeat: */ false);
+      manager.FormatAirQuality(msg_);
+      manager.StartMorseReadout(msg_);
+    }
+
+    MorseReadoutMode(StateManager& manager, std::string_view msg)
+        : State(manager, "MorseReadoutMode"), msg_(msg) {
+      manager.StartMorseReadout(msg_);
     }
 
     // Since morse code leaves the LED off, turn it back on.
     ~MorseReadoutMode() { manager().led_.SetOnOff(true); }
 
-    void ButtonYPressed() override {
-      manager().StartMorseReadout(/* repeat: */ false);
-    }
+    // Keep the current color.
+    void OnLedValue(const LedValue&) override {}
 
-    void MorseCodeEdge(const MorseCodeValue& value) override {
+    void OnMorseCodeValue(const MorseCodeValue& value) override {
       manager().led_.SetOnOff(value.turn_on);
       if (value.message_finished) {
         manager().ResetMode();
       }
     }
+
+   private:
+    MorseCodeString msg_;
   };
 
   /// Responds to a PubSub event.
   void Update(Event event);
 
-  template <typename StateType>
-  void SetState() {
+  template <typename StateType, typename... Args>
+  void SetState(Args&&... args) {
     const char* old_state = state_.get().name();
-    state_.emplace<StateType>(*this);
+    state_.emplace<StateType>(*this, std::forward<Args>(args)...);
     LogStateChange(old_state);
   }
 
@@ -241,17 +275,26 @@ class StateManager {
   /// LED color and triggering alarms as appropriate.
   void UpdateAirQuality(uint16_t score);
 
+  /// Send a timer request to repeat an alarm.
+  void RepeatAlarm();
+
   /// Suppresses `AlarmMode` for 60 seconds.
   void SilenceAlarms();
 
-  /// Sends a request to the Morse encoder to send `MorseCodeEdge` events for
-  /// the current air quality.
-  void StartMorseReadout(bool repeat);
+  /// Sends a request to the Morse encoder to send `OnMorseCodeValue` events for
+  /// the given message.
+  void StartMorseReadout(std::string_view msg);
+
+  /// Sends a request to the Morse encoder to send `OnMorseCodeValue` events for
+  /// a description of the current air quality.
+  void StartMorseReadout();
+
+  /// Sets the given string to a  representation of the current air quality.
+  void FormatAirQuality(MorseCodeString& msg);
 
   void LogStateChange(const char* old_state) const;
 
   std::optional<uint16_t> air_quality_;
-  pw::InlineString<4> air_quality_score_string_;
 
   bool alarm_ = false;
   bool alarm_silenced_ = false;

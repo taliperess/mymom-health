@@ -17,7 +17,6 @@
 #include "modules/morse_code/morse_code.rpc.pb.h"
 #include "pw_rpc/server.h"
 #include "pw_status/status.h"
-#include "pw_string/string.h"
 
 namespace sense {
 
@@ -34,7 +33,6 @@ class MorseCodeService final
 
  private:
   Encoder encoder_;
-  pw::InlineString<sizeof(morse_code_SendRequest::msg)> msg_;
 };
 
 }  // namespace sense

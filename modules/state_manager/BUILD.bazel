@@ -27,6 +27,7 @@ cc_library(
         "//modules/air_sensor",
         "//modules/edge_detector:hysteresis_edge_detector",
         "//modules/led:polychrome_led",
+        "//modules/morse_code:encoder",
         "//modules/pubsub:events",
         "//modules/worker",
         "@pigweed//pw_assert",

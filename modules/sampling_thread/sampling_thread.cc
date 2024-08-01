@@ -28,7 +28,7 @@ namespace {
 
 using pw::chrono::SystemClock;
 
-constexpr SystemClock::duration kPeriod = std::chrono::milliseconds(100);
+constexpr SystemClock::duration kPeriod = std::chrono::milliseconds(250);
 
 void ReadProximity() {
   pw::Result<uint16_t> sample = system::ProximitySensor().ReadSample();

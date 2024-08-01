@@ -70,7 +70,7 @@ void StateManager::Update(Event event) {
       state_.get().OnTimerExpired(std::get<TimerExpired>(event));
       break;
     case kMorseCodeValue:
-      state_.get().MorseCodeEdge(std::get<MorseCodeValue>(event));
+      state_.get().OnMorseCodeValue(std::get<MorseCodeValue>(event));
       break;
     case kAmbientLightSample:
       led_.UpdateBrightnessFromAmbientLight(
@@ -137,13 +137,20 @@ void StateManager::UpdateAirQuality(uint16_t score) {
   ResetMode();
 }
 
+void StateManager::RepeatAlarm() {
+  pubsub_.Publish(TimerRequest{
+      .token = kRepeatAlarmToken,
+      .timeout_s = kRepeatAlarmTimeout,
+  });
+}
+
 void StateManager::SilenceAlarms() {
   alarm_ = false;
   alarm_silenced_ = true;
   edge_detector_.Update(AirSensor::kMaxScore);
   pubsub_.Publish(TimerRequest{
-      .token = kSilenceAlarmsToken,
-      .timeout_s = kSilenceAlarmsTimeout,
+      .token = kSilenceAlarmToken,
+      .timeout_s = kSilenceAlarmTimeout,
   });
   ResetMode();
 }
@@ -156,16 +163,44 @@ void StateManager::ResetMode() {
   }
 }
 
-void StateManager::StartMorseReadout(bool repeat) {
-  if (!air_quality_.has_value()) {
-    return;
+void StateManager::StartMorseReadout(std::string_view msg) {
+  pubsub_.Publish(MorseEncodeRequest{.message = msg, .repeat = 1u});
+}
+
+static constexpr const char* AirQualityDescription(uint16_t score) {
+  if (score > AirSensor::kMaxScore) {
+    return "INVALID";
   }
+  if (score < static_cast<uint16_t>(AirSensor::Score::kOrange)) {
+    return "TERRIBLE";
+  }
+  if (score < static_cast<uint16_t>(AirSensor::Score::kYellow)) {
+    return "BAD";
+  }
+  if (score < static_cast<uint16_t>(AirSensor::Score::kLightGreen)) {
+    return "MEDIOCRE";
+  }
+  if (score < static_cast<uint16_t>(AirSensor::Score::kGreen)) {
+    return "OKAY";
+  }
+  if (score < static_cast<uint16_t>(AirSensor::Score::kBlueGreen)) {
+    return "GOOD";
+  }
+  if (score < static_cast<uint16_t>(AirSensor::Score::kCyan)) {
+    return "VERY GOOD";
+  }
+  if (score < static_cast<uint16_t>(AirSensor::Score::kLightBlue)) {
+    return "EXCELLENT";
+  }
+  return "SUPERB";
+}
+
+void StateManager::FormatAirQuality(MorseCodeString& msg) {
+  uint16_t score = air_quality_.value_or(AirSensor::kMaxScore + 1);
   pw::Status status = pw::string::FormatOverwrite(
-      air_quality_score_string_, "%hu", *air_quality_);
+      msg, "AQ %s %hu", AirQualityDescription(score), score);
+  PW_LOG_INFO("%s", msg.data());
   PW_CHECK_OK(status);
-  pubsub_.Publish(MorseEncodeRequest{.message = air_quality_score_string_,
-                                      .repeat = repeat ? 0u : 1u});
-  PW_LOG_INFO("Current air quality score: %hu", *air_quality_);
 }
 
 AmbientLightAdjustedLed::AmbientLightAdjustedLed(PolychromeLed& led)

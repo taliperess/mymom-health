@@ -40,8 +40,9 @@ void InitStateManager() {
 
 void InitEventTimers() {
   auto& pubsub = system::PubSub();
-  static EventTimers<2> event_timers(pubsub);
-  event_timers.AddEventTimer(StateManager::kSilenceAlarmsToken);
+  static EventTimers<3> event_timers(pubsub);
+  event_timers.AddEventTimer(StateManager::kRepeatAlarmToken);
+  event_timers.AddEventTimer(StateManager::kSilenceAlarmToken);
   event_timers.AddEventTimer(StateManager::kThresholdModeToken);
   pubsub.SubscribeTo<TimerRequest>(
       [](TimerRequest request) { event_timers.OnTimerRequest(request); });
