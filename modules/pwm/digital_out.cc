@@ -14,21 +14,25 @@
 
 #include "modules/pwm/digital_out.h"
 
+#include "pw_assert/check.h"
+
 namespace sense {
 
 void PwmDigitalOut::SetCallback(Callback&& callback,
                                 uint16_t per_interval,
                                 uint32_t interval_ms) {
   callback_ = std::move(callback);
-  DoSetCallback(callback_.value(),
-                per_interval,
+  PW_CHECK(callback_, "Cannot set an empty callback!");
+  DoSetCallback(per_interval,
                 pw::chrono::SystemClock::for_at_least(
                     std::chrono::milliseconds(interval_ms)));
 };
 
 void PwmDigitalOut::ClearCallback() {
-  callback_.reset();
   DoClearCallback();
+  // Clear callback_ after running the implementation's ClearCallback so that
+  // any interrupts accessing it will be stopped.
+  callback_ = nullptr;
 }
 
 }  // namespace sense

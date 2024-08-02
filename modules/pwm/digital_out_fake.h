@@ -26,21 +26,15 @@ class PwmDigitalOutFake : public PwmDigitalOut {
   PwmDigitalOutFake() = default;
 
  private:
-  /// copydoc `PwmDigitalOut::Enable`.
   void DoEnable() override;
 
-  /// copydoc `PwmDigitalOut::Disable`.
   void DoDisable() override;
 
-  /// copydoc `PwmDigitalOut::SetLevel`.
   void DoSetLevel(uint16_t level) override;
 
-  /// copydoc `PwmDigitalOut::SetCallback`.
-  void DoSetCallback(const Callback& callback,
-                     uint16_t per_interval,
+  void DoSetCallback(uint16_t per_interval,
                      pw::chrono::SystemClock::duration interval) override;
 
-  /// copydoc `PwmDigitalOut::ClearCallback`.
   void DoClearCallback() override;
 };
 

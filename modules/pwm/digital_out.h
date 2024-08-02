@@ -38,7 +38,8 @@ class PwmDigitalOut {
   /// 0 is off, std::limits::max<uint16_t> is full on.
   void SetLevel(uint16_t level) { DoSetLevel(level); }
 
-  /// Sets a callback to invoke periodically.
+  /// Sets a callback to invoke periodically. Only one callback may be set at a
+  /// time across all `PwmDigitalOut` instances.
   ///
   /// The behavior of the callback may vary cyclically, i.e. fading an LED on
   /// and off. The callback is invoked a number of times in each interval of
@@ -52,31 +53,30 @@ class PwmDigitalOut {
                    uint16_t per_interval,
                    uint32_t interval_ms);
 
-  /// Discards the previosuly set callback, if any.
+  /// Discards the previously set callback, if any.
   void ClearCallback();
 
  protected:
   PwmDigitalOut() = default;
 
+  // Invokes the callback, which MUST be set!
+  void InvokeCallback() const { callback_(); }
+
+  void ClearCallbackFunction() { callback_ = nullptr; }
+
  private:
-  /// copydoc `PwmDigitalOut::Enable`.
   virtual void DoEnable() = 0;
 
-  /// copydoc `PwmDigitalOut::Disable`.
   virtual void DoDisable() = 0;
 
-  /// copydoc `PwmDigitalOut::SetLevel`.
   virtual void DoSetLevel(uint16_t level) = 0;
 
-  /// copydoc `PwmDigitalOut::SetCallback`.
-  virtual void DoSetCallback(const Callback& callback,
-                             uint16_t per_interval,
+  virtual void DoSetCallback(uint16_t per_interval,
                              pw::chrono::SystemClock::duration interval) = 0;
 
-  /// copydoc `PwmDigitalOut::ClearCallback`.
   virtual void DoClearCallback() = 0;
 
-  std::optional<Callback> callback_;
+  Callback callback_;
 };
 
 }  // namespace sense

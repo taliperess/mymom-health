@@ -19,7 +19,6 @@
 #include "modules/blinky/blinky.h"
 #include "pw_async2/coro.h"
 #include "pw_log/log.h"
-#include "pw_preprocessor/compiler.h"
 
 namespace sense {
 
@@ -29,7 +28,6 @@ using ::pw::Status;
 using ::pw::async2::Coro;
 using ::pw::async2::CoroContext;
 using ::pw::async2::Dispatcher;
-using ::pw::sync::InterruptSpinLock;
 
 Coro<Status> Blinky::BlinkLoop(CoroContext&,
                                uint32_t blink_count,

@@ -13,8 +13,6 @@
 // the License.
 #pragma once
 
-#include <cstdint>
-
 #include "pw_chrono/system_clock.h"
 #include "pw_containers/inline_deque.h"
 #include "pw_digital_io/digital_io.h"
@@ -45,13 +43,10 @@ class DigitalInOutFakeImpl : public pw::digital_io::DigitalInOut {
   DigitalInOutFakeImpl(Clock& clock, pw::InlineDeque<Event>& events);
 
  private:
-  /// @copydoc `DigitalInOut::Enable`
   pw::Status DoEnable(bool) override { return pw::OkStatus(); }
 
-  /// @copydoc `DigitalInOut::GetState`
   pw::Result<State> DoGetState() override;
 
-  /// @copydoc `DigitalInOut::SetState`
   pw::Status DoSetState(State state) override;
 
   Clock& clock_;

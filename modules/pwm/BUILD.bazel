@@ -18,6 +18,7 @@ cc_library(
     name = "digital_out",
     srcs = ["digital_out.cc"],
     hdrs = ["digital_out.h"],
+    implementation_deps = ["@pigweed//pw_assert"],
     deps = [
         "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_function",

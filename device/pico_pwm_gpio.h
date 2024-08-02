@@ -13,13 +13,11 @@
 // the License.
 #pragma once
 
-#include <chrono>
 #include <cstdint>
 
 #include "hardware/pwm.h"
 #include "modules/pwm/digital_out.h"
 #include "pw_chrono/system_clock.h"
-#include "pw_digital_io/polarity.h"
 #include "pw_digital_io_rp2040/digital_io.h"
 #include "pw_function/function.h"
 
@@ -33,22 +31,19 @@ class PicoPwmGpio : public PwmDigitalOut {
   PicoPwmGpio(const GpioConfig& config);
 
  private:
-  /// copydoc `PwmDigitalOut::Enable`.
   void DoEnable() override;
-
-  /// copydoc `PwmDigitalOut::Disable`.
   void DoDisable() override;
-
-  /// copydoc `PwmDigitalOut::SetLevel`.
   void DoSetLevel(uint16_t level) override;
-
-  /// copydoc `PwmDigitalOut::SetCallback`.
-  void DoSetCallback(const Callback& callback,
-                     uint16_t per_interval,
+  void DoSetCallback(uint16_t per_interval,
                      pw::chrono::SystemClock::duration interval_ms) override;
-
-  /// copydoc `PwmDigitalOut::ClearCallback`.
   void DoClearCallback() override;
+
+  void EnablePwmIrq() const;
+  void DisablePwmIrq() const;
+
+  static void IrqHandler();
+
+  static PicoPwmGpio* gpio_with_callback;
 
   uint16_t slice_num_;
   const GpioConfig& gpio_config_;

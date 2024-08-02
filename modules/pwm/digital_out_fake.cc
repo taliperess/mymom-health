@@ -29,9 +29,7 @@ void PwmDigitalOutFake::DoSetLevel(uint16_t level) {
 }
 
 void PwmDigitalOutFake::DoSetCallback(
-    const Callback&,
-    uint16_t per_interval,
-    pw::chrono::SystemClock::duration interval) {
+    uint16_t per_interval, pw::chrono::SystemClock::duration interval) {
   uint32_t ms =
       std::chrono::duration_cast<std::chrono::milliseconds>(interval).count();
   PW_LOG_INFO(

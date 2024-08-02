@@ -56,8 +56,6 @@ void MonochromeLed::Toggle() {
 
 void MonochromeLed::Pulse(uint32_t interval_ms) {
   SetMode(Mode::kPwm);
-  pwm_.Disable();
-  pwm_.ClearCallback();
   pwm_.SetCallback(
       [this]() {
         static uint16_t counter = 0;
@@ -72,7 +70,6 @@ void MonochromeLed::Pulse(uint32_t interval_ms) {
       },
       0x200,
       interval_ms);
-  pwm_.Enable();
 }
 
 void MonochromeLed::SetMode(Mode mode) {
