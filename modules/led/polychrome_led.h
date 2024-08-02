@@ -71,15 +71,12 @@ class PolychromeLed {
   }
 
   /// Sets the RGB LED using a 24-bit hex color code.
-  void SetColor(uint32_t hex);
+  void SetColor(uint32_t color_hex);
 
   /// Fades the LED on and off continuously.
   ///
   /// @param interval_ms The duration of a fade cycle, in milliseconds.
-  void Pulse(uint32_t hex, uint32_t interval_ms);
-
-  /// Cycles back and forth between two colors.
-  void PulseBetween(uint32_t hex1, uint32_t hex2, uint32_t interval_ms);
+  void Pulse(uint32_t color_hex, uint32_t interval_ms);
 
   /// Cycles thorugh all the colors.
   void Rainbow(uint32_t interval_ms);
@@ -98,8 +95,7 @@ class PolychromeLed {
   PwmDigitalOut& red_;
   PwmDigitalOut& green_;
   PwmDigitalOut& blue_;
-  uint32_t hex_ = 0;
-  uint32_t alternate_hex_ = 0;
+  uint32_t color_ = 0;
   uint8_t brightness_ = 0;
   enum : uint8_t { kDisabled, kOff, kOn } state_ = kDisabled;
 };

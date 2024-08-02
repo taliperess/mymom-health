@@ -67,22 +67,22 @@ void PolychromeLed::SetBrightness(uint8_t brightness) {
   }
 }
 
-void PolychromeLed::SetColor(uint32_t hex) {
+void PolychromeLed::SetColor(uint32_t color_hex) {
   red_.ClearCallback();
-  if (hex_ == hex) {
+  if (color_ == color_hex) {
     return;
   }
 
-  hex_ = hex;
+  color_ = color_hex;
   if (state_ == kOn) {
     Update();
   }
 }
 
-void PolychromeLed::Pulse(uint32_t hex, uint32_t interval_ms) {
+void PolychromeLed::Pulse(uint32_t color_hex, uint32_t interval_ms) {
   TurnOff();
   brightness_ = 0;
-  hex_ = hex;
+  color_ = color_hex;
   red_.SetCallback(
       [this]() {
         static uint16_t counter = 0;
@@ -99,54 +99,25 @@ void PolychromeLed::Pulse(uint32_t hex, uint32_t interval_ms) {
   TurnOn();
 }
 
-void PolychromeLed::PulseBetween(uint32_t hex1,
-                                 uint32_t hex2,
-                                 uint32_t interval_ms) {
-  TurnOff();
-  brightness_ = 0;
-  hex_ = hex1;
-  alternate_hex_ = hex2;
-  red_.SetCallback(
-      [this]() {
-        static uint16_t counter = 0;
-        if (counter < 0x100) {
-          brightness_ = static_cast<uint8_t>(counter);
-        } else if (counter < 0x200) {
-          brightness_ = static_cast<uint8_t>(0x200 - counter);
-        }
-        ++counter;
-        if (counter == 0x200) {
-          uint32_t hex = hex_;
-          hex_ = alternate_hex_;
-          alternate_hex_ = hex;
-        }
-        Update();
-        counter %= 0x200;
-      },
-      0x200,
-      interval_ms);
-  TurnOn();
-}
-
 void PolychromeLed::Rainbow(uint32_t interval_ms) {
   TurnOff();
   brightness_ = 0xff;
-  hex_ = 0xff0000;
+  color_ = 0xff0000;
   red_.SetCallback(
       [this]() {
         static uint16_t counter = 0;
         if (counter < 0x100) {
-          hex_ = 0xff0000 + (counter << 8);
+          color_ = 0xff0000 + (counter << 8);
         } else if (counter < 0x200) {
-          hex_ = 0xffff00 - ((counter - 0x100) << 16);
+          color_ = 0xffff00 - ((counter - 0x100) << 16);
         } else if (counter < 0x300) {
-          hex_ = 0x00ff00 + (counter - 0x200);
+          color_ = 0x00ff00 + (counter - 0x200);
         } else if (counter < 0x400) {
-          hex_ = 0x00ffff - ((counter - 0x300) << 8);
+          color_ = 0x00ffff - ((counter - 0x300) << 8);
         } else if (counter < 0x500) {
-          hex_ = 0x0000ff + ((counter - 0x400) << 16);
+          color_ = 0x0000ff + ((counter - 0x400) << 16);
         } else {
-          hex_ = 0xff00ff - (counter - 0x500);
+          color_ = 0xff00ff - (counter - 0x500);
         }
         Update();
         counter = (counter + 1) % 0x600;
@@ -157,14 +128,14 @@ void PolychromeLed::Rainbow(uint32_t interval_ms) {
 }
 
 void PolychromeLed::Update() {
-  PW_LOG_DEBUG("LED update: rgb=%06x brightness=%hu", hex_, brightness_);
-  red_.SetLevel(GammaCorrect(hex_ >> kRedShift));
-  green_.SetLevel(GammaCorrect(hex_ >> kGreenShift));
-  blue_.SetLevel(GammaCorrect(hex_ >> kBlueShift));
+  PW_LOG_DEBUG("LED update: rgb=%06x brightness=%hu", color_, brightness_);
+  red_.SetLevel(GammaCorrect(color_ >> kRedShift));
+  green_.SetLevel(GammaCorrect(color_ >> kGreenShift));
+  blue_.SetLevel(GammaCorrect(color_ >> kBlueShift));
 }
 
 void PolychromeLed::UpdateZeroBrightness() {
-  PW_LOG_DEBUG("LED update: rgb=%06x brightness=0", hex_);
+  PW_LOG_DEBUG("LED update: rgb=%06x brightness=0", color_);
   red_.SetLevel(0);
   green_.SetLevel(0);
   blue_.SetLevel(0);
