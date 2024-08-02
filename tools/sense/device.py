@@ -59,6 +59,13 @@ class Device(PwSystemDevice):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pubsub_call_ = None
+        self.pubsub_sensor_values: dict[str, Any] = {}
+
+    def _log_last_pubsub_sensor_values(self) -> None:
+        log_line = ''
+        for event_type, event_value in self.pubsub_sensor_values.items():
+            log_line += f'{event_type}: {event_value:.2f}  '
+        _PUBSUB_LOG.info(log_line)
 
     def log_pubsub_events(self, filter: None | str = None):
         """Logs pubsub events.
@@ -72,13 +79,25 @@ class Device(PwSystemDevice):
         # Hide from the root logger window.
         _PUBSUB_LOG.propagate = False
 
-        def log_event(event: pubsub_pb2.Event):
+        def log_event(event: pubsub_pb2.Event) -> None:
             event_str = str(event)
             if filter is not None and filter not in event_str:
                 return
             event_type = event.WhichOneof('type')
             event_value = getattr(event, event_type)
             prefix = ''
+
+            if event_type in [
+                'air_quality',
+                'ambient_light_lux',
+                'proximity_level',
+            ]:
+                # Save this sensor reading to be logged along with the
+                # previously measured values in one host log message.
+                self.pubsub_sensor_values[event_type] = event_value
+                self._log_last_pubsub_sensor_values()
+                return
+
             if isinstance(event_value, pubsub_pb2.LedValue):
                 prefix = _led_indicator(event_value)
 

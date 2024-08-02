@@ -21,21 +21,37 @@ windows:
           level: DEBUG
       hidden: False
 
-# Color options
-ui_theme: dark
-# ui_theme: nord
-# ui_theme: high-contrast-dark
-code_theme: pigweed-code
-# code_theme: pigweed-code-light
-# code_theme: gruvbox-dark
-swap_light_and_dark: False
-
-# Display options
-spaces_between_columns: 2
 window_column_split_method: vertical
 # window_column_split_method: horizontal
-# hide_date_from_log_time: True
+
+# Default colors:
+ui_theme: dark
+code_theme: pigweed-code
+swap_light_and_dark: False
+
+# A few other choices:
+# ui_theme: high-contrast-dark
+# ui_theme: nord
+# ui_theme: synthwave84
+# code_theme: gruvbox-dark
+# code_theme: pigweed-code-light
+# code_theme: synthwave84
+
+# Log display options:
+spaces_between_columns: 2
+hide_date_from_log_time: True
 recolor_log_lines_to_match_level: False
+
+column_order:
+  # Column name
+  - time
+  - level
+  - timestamp
+  - module
+  # Hidden:
+  # - source_name
+
+column_order_omit_unspecified_columns: True
 
 snippets:
   Echo RPC:
@@ -86,13 +102,3 @@ snippets:
       >>> call.cancel()
       True
       ```
-
-# TODO: Make snippets for the following RPCs
-# device.rpcs.blinky.Blinky.ToggleLed
-# device.rpcs.blinky.Blinky.Blink
-# device.rpcs.blinky.Blinky.Pulse
-# device.rpcs.blinky.Blinky.SetRgb
-# device.rpcs.blinky.Blinky.Rainbow
-# device.rpcs.blinky.Blinky.IsIdle
-# device.rpcs.morse_code.MorseCode.Send
-
