@@ -107,15 +107,21 @@ void StateManager::DecrementThreshold() {
 }
 
 void StateManager::SetAlarmThreshold(uint16_t alarm_threshold) {
+  alarm_ = false;  // Reset the alarm whenever the threshold changes.
+
   alarm_threshold_ = alarm_threshold;
   auto silence_threshold =
       static_cast<uint16_t>(alarm_threshold_ + kThresholdIncrement);
+
+  // Set the thresholds and reset the edge detector to a good air quality state.
   edge_detector_.set_low_and_high_thresholds(alarm_threshold_,
                                              silence_threshold);
+  edge_detector_.Update(AirSensor::kMaxScore);
+
   PW_LOG_INFO("Air quality thresholds set: alarm at %u, silence at %u",
               alarm_threshold_,
               silence_threshold);
-  edge_detector_.Update(AirSensor::kMaxScore);
+
 }
 
 void StateManager::UpdateAirQuality(uint16_t score) {
