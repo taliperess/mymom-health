@@ -14,7 +14,6 @@
 #pragma once
 
 #include "pw_assert/assert.h"
-#include "pw_function/function.h"
 
 namespace sense {
 
@@ -77,15 +76,18 @@ class HysteresisEdgeDetector : public internal::BaseHysteresisEdgeDetector {
     PW_ASSERT(low_threshold_ <= high_threshold_);
   }
 
-  /// Sets the low and high thresholds, inclusive.
-  void set_low_and_high_thresholds(Sample low_threshold, Sample high_threshold) {
+  /// Sets the low and high thresholds, inclusive. Resets the internal state.
+  void set_low_and_high_thresholds(Sample low_threshold,
+                                   Sample high_threshold) {
     PW_ASSERT(low_threshold_ <= high_threshold_);
     low_threshold_ = low_threshold;
     high_threshold_ = high_threshold;
     ResetState();
   }
 
-  Edge Update(Sample sample) {
+  /// Adds a new sample to the edge detector. Returns whether the sample crossed
+  /// below the lower threshold or above the upper threshold.
+  [[nodiscard]] Edge Update(Sample sample) {
     if (sample <= low_threshold_) {
       return UpdateLowSample();
     }

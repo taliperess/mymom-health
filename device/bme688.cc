@@ -44,7 +44,7 @@ static int8_t Write(uint8_t reg_address,
                     void* context) {
   PW_LOG_INFO("Write(reg_address=0x%02x, data=%p, length=%u, context=%p)",
               reg_address,
-              (const void*)data,
+              static_cast<const void*>(data),
               length,
               context);
   auto i2c_device = static_cast<pw::i2c::RegisterDevice*>(context);
@@ -63,7 +63,7 @@ static int8_t Read(uint8_t reg_address,
                    void* context) {
   PW_LOG_INFO("Read(reg_address=0x%02x, data=%p, length=%u, context=%p)",
               reg_address,
-              (const void*)data,
+              static_cast<const void*>(data),
               length,
               context);
   auto i2c_device = static_cast<pw::i2c::RegisterDevice*>(context);

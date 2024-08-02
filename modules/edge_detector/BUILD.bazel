@@ -24,7 +24,7 @@ cc_library(
     srcs = ["hysteresis_edge_detector.cc"],
     hdrs = ["hysteresis_edge_detector.h"],
     implementation_deps = ["@pigweed//pw_log"],
-    deps = ["@pigweed//pw_function"],
+    deps = ["@pigweed//pw_assert"],
 )
 
 cc_library(

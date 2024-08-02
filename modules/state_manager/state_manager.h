@@ -13,7 +13,9 @@
 // the License.
 #pragma once
 
-#include <cmath>
+#include <optional>
+#include <string_view>
+#include <utility>
 
 #include "modules/air_sensor/air_sensor.h"
 #include "modules/edge_detector/hysteresis_edge_detector.h"

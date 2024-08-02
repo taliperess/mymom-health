@@ -15,6 +15,7 @@
 #include "modules/state_manager/state_manager.h"
 
 #include <cmath>
+#include <variant>
 
 #include "pw_assert/check.h"
 #include "pw_log/log.h"
@@ -116,12 +117,11 @@ void StateManager::SetAlarmThreshold(uint16_t alarm_threshold) {
   // Set the thresholds and reset the edge detector to a good air quality state.
   edge_detector_.set_low_and_high_thresholds(alarm_threshold_,
                                              silence_threshold);
-  edge_detector_.Update(AirSensor::kMaxScore);
+  std::ignore = edge_detector_.Update(AirSensor::kMaxScore);
 
   PW_LOG_INFO("Air quality thresholds set: alarm at %u, silence at %u",
               alarm_threshold_,
               silence_threshold);
-
 }
 
 void StateManager::UpdateAirQuality(uint16_t score) {
@@ -153,7 +153,7 @@ void StateManager::RepeatAlarm() {
 void StateManager::SilenceAlarms() {
   alarm_ = false;
   alarm_silenced_ = true;
-  edge_detector_.Update(AirSensor::kMaxScore);
+  std::ignore = edge_detector_.Update(AirSensor::kMaxScore);
   pubsub_.Publish(TimerRequest{
       .token = kSilenceAlarmToken,
       .timeout_s = kSilenceAlarmTimeout,
