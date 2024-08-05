@@ -30,7 +30,7 @@
 
 namespace sense {
 
-/// A collection of concurrent, named timer.
+/// A collection of concurrent, named timers.
 ///
 /// `TimerRequest` events can be handled by subscribing to the `PubSub` and
 /// passing them to the `OnTimerRequest` method, e.g.
