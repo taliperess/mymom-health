@@ -48,32 +48,32 @@ git_override(
 # pico-sdk is in the BCR.
 git_override(
     module_name = "pico-sdk",
-    commit = "fb5e29760a9df97a716dfd583f59edb1355f6436",
+    commit = "23b55ffea6662dd09768626abb77dcf365f2c1f8",
     remote = "https://pigweed-internal.googlesource.com/third_party/github/raspberrypi/pico-sdk",
 )
 
 # TODO: https://pwbug.dev/354270165 - Add picotool to the BCR.
 git_override(
     module_name = "picotool",
-    commit = "9ba9194b1e5ef51e34cbab119da6aed8c42d09f9",
+    commit = "f1db749a52ae7b3b2fdd3153fa68652fadc2d953",
     remote = "https://pigweed-internal.googlesource.com/third_party/github/raspberrypi/picotool",
 )
 
 git_override(
     module_name = "pigweed",
     # ROLL: Warning: this entry is automatically updated.
-    # ROLL: Last updated 2024-08-02.
-    # ROLL: By https://cr-buildbucket.appspot.com/build/8740685897232384529.
-    commit = "35e3f50e008db8179d828cfd8b550bcdf855730c",
+    # ROLL: Last updated 2024-08-05.
+    # ROLL: By manual.
+    commit = "9d915f283713c2739889b6f3ff73f72a1271b216",
     remote = "https://pigweed-internal.googlesource.com/pigweed/pigweed",
 )
 
 git_override(
     module_name = "pw_toolchain",
     # ROLL: Warning: this entry is automatically updated.
-    # ROLL: Last updated 2024-08-02.
-    # ROLL: By https://cr-buildbucket.appspot.com/build/8740685897232384529.
-    commit = "35e3f50e008db8179d828cfd8b550bcdf855730c",
+    # ROLL: Last updated 2024-08-05.
+    # ROLL: By manual.
+    commit = "9d915f283713c2739889b6f3ff73f72a1271b216",
     remote = "https://pigweed-internal.googlesource.com/pigweed/pigweed",
     strip_prefix = "pw_toolchain_bazel",
 )
@@ -93,16 +93,6 @@ archive_override(
 http_archive = use_repo_rule(
     "@bazel_tools//tools/build_defs/repo:http.bzl",
     "http_archive",
-)
-
-# TODO: https://pwbug.dev/355058285 - Remove this once pico-sdk depends on a
-# publicly viewable version of tinyusb.
-http_archive(
-    name = "tinyusb",
-    build_file = "@pico-sdk//src/rp2_common/tinyusb:tinyusb.BUILD",
-    sha256 = "ac57109bba00d26ffa33312d5f334990ec9a9a4d82bf890ed8b825b4610d1da2",
-    strip_prefix = "tinyusb-86c416d4c0fb38432460b3e11b08b9de76941bf5",
-    url = "https://github.com/hathach/tinyusb/archive/86c416d4c0fb38432460b3e11b08b9de76941bf5.zip",
 )
 
 # TODO: https://github.com/boschsensortec/BME68x_SensorAPI/issues/24 - Can't add
