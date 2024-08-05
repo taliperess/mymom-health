@@ -61,6 +61,7 @@ cc_library(
     srcs = ["service.cc"],
     hdrs = ["service.h"],
     implementation_deps = [
+        "@pigweed//pw_assert:check",
         "@pigweed//pw_log",
         "@pigweed//pw_string",
     ],

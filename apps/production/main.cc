@@ -47,8 +47,8 @@ void InitEventTimers() {
   event_timers.AddEventTimer(StateManager::kRepeatAlarmToken);
   event_timers.AddEventTimer(StateManager::kSilenceAlarmToken);
   event_timers.AddEventTimer(StateManager::kThresholdModeToken);
-  pubsub.SubscribeTo<TimerRequest>(
-      [](TimerRequest request) { event_timers.OnTimerRequest(request); });
+  PW_CHECK(pubsub.SubscribeTo<TimerRequest>(
+      [](TimerRequest request) { event_timers.OnTimerRequest(request); }));
 }
 
 void InitBoardService() {
@@ -62,17 +62,17 @@ void InitMorseEncoder() {
   static Encoder morse_encoder;
   morse_encoder.Init(system::GetWorker(),
                      [](bool turn_on, const Encoder::State& state) {
-                       system::PubSub().Publish(MorseCodeValue{
+                       std::ignore = system::PubSub().Publish(MorseCodeValue{
                            .turn_on = turn_on,
                            .message_finished = state.message_finished(),
                        });
                      });
 
-  system::PubSub().SubscribeTo<MorseEncodeRequest>(
+  PW_CHECK(system::PubSub().SubscribeTo<MorseEncodeRequest>(
       [](MorseEncodeRequest request) {
         morse_encoder.Encode(
             request.message, request.repeat, Encoder::kDefaultIntervalMs);
-      });
+      }));
 }
 
 void InitProximitySensor() {
@@ -83,14 +83,14 @@ void InitProximitySensor() {
       system::PubSub(), kInitialFarTheshold, kInitialNearTheshold);
 
   // Log when proximity is detected.
-  system::PubSub().SubscribeTo<ProximityStateChange>(
+  PW_CHECK(system::PubSub().SubscribeTo<ProximityStateChange>(
       [](ProximityStateChange state) {
         if (state.proximity) {
           PW_LOG_INFO("Proximity detected!");
         } else {
           PW_LOG_INFO("Proximity NOT detected!");
         }
-      });
+      }));
 }
 
 void InitAirSensor() {

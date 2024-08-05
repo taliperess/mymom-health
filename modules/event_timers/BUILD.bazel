@@ -20,6 +20,7 @@ cc_library(
     deps = [
         "//modules/pubsub",
         "//modules/pubsub:events",
+        "@pigweed//pw_assert",
         "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_chrono:system_timer",
         "@pigweed//pw_containers:vector",

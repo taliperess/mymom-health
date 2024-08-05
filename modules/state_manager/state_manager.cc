@@ -42,7 +42,7 @@ StateManager::StateManager(PubSub& pubsub, PolychromeLed& led)
       pubsub_(pubsub),
       led_(led),
       state_(*this) {
-  pubsub_.Subscribe([this](Event event) { Update(event); });
+  PW_CHECK(pubsub_.Subscribe([this](Event event) { Update(event); }));
 }
 
 void StateManager::Update(Event event) {
@@ -94,10 +94,10 @@ void StateManager::Update(Event event) {
 
 void StateManager::DisplayThreshold() {
   led_.SetColor(AirSensor::GetLedValue(alarm_threshold_));
-  pubsub_.Publish(TimerRequest{
+  PW_CHECK(pubsub_.Publish(TimerRequest{
       .token = kThresholdModeToken,
       .timeout_s = kThresholdModeTimeout,
-  });
+  }));
 }
 
 void StateManager::IncrementThreshold() {
@@ -155,20 +155,20 @@ void StateManager::UpdateAirQuality(uint16_t score) {
 }
 
 void StateManager::RepeatAlarm() {
-  pubsub_.Publish(TimerRequest{
+  PW_CHECK(pubsub_.Publish(TimerRequest{
       .token = kRepeatAlarmToken,
       .timeout_s = kRepeatAlarmTimeout,
-  });
+  }));
 }
 
 void StateManager::SilenceAlarms() {
   alarm_ = false;
   alarm_silenced_ = true;
   std::ignore = edge_detector_.Update(AirSensor::kMaxScore);
-  pubsub_.Publish(TimerRequest{
+  PW_CHECK(pubsub_.Publish(TimerRequest{
       .token = kSilenceAlarmToken,
       .timeout_s = kSilenceAlarmTimeout,
-  });
+  }));
   ResetMode();
   BroadcastState();
 }
@@ -182,7 +182,9 @@ void StateManager::ResetMode() {
 }
 
 void StateManager::StartMorseReadout(std::string_view msg) {
-  pubsub_.Publish(MorseEncodeRequest{.message = msg, .repeat = 1u});
+  if (!pubsub_.Publish(MorseEncodeRequest{.message = msg, .repeat = 1u})) {
+    ResetMode();
+  }
 }
 
 const char* StateManager::AirQualityDescription(uint16_t score) {
@@ -262,7 +264,7 @@ void StateManager::LogStateChange(const char* old_state) const {
 }
 
 void StateManager::BroadcastState() const {
-  pubsub_.Publish(SenseState{
+  std::ignore = pubsub_.Publish(SenseState{
       .alarm = alarm_,
       .alarm_threshold = alarm_threshold_,
       .air_quality = air_quality(),

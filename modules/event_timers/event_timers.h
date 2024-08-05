@@ -19,6 +19,7 @@
 
 #include "modules/pubsub/pubsub.h"
 #include "modules/pubsub/pubsub_events.h"
+#include "pw_assert/assert.h"
 #include "pw_chrono/system_clock.h"
 #include "pw_chrono/system_timer.h"
 #include "pw_containers/vector.h"
@@ -136,7 +137,7 @@ void EventTimers<kCapacity>::EventTimer::Schedule(Clock::time_point expiry) {
 template <size_t kCapacity>
 void EventTimers<kCapacity>::EventTimer::OnExpiration(Clock::time_point) {
   PW_LOG_INFO("Timed event triggered: " PW_TOKEN_FMT(), token_);
-  pubsub_.Publish(TimerExpired{.token = token_});
+  PW_ASSERT(pubsub_.Publish(TimerExpired{.token = token_}));
 }
 
 }  // namespace sense

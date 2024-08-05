@@ -16,15 +16,16 @@
 
 #include <mutex>
 
+#include "pw_assert/check.h"
 #include "pw_string/util.h"
 
 namespace sense {
 
 StateManagerService::StateManagerService(PubSub& pubsub) : pubsub_(&pubsub) {
-  pubsub_->SubscribeTo<SenseState>([this](SenseState event) {
+  PW_CHECK(pubsub_->SubscribeTo<SenseState>([this](SenseState event) {
     std::lock_guard lock(current_state_lock_);
     current_state_ = event;
-  });
+  }));
 }
 
 pw::Status StateManagerService::ChangeThreshold(

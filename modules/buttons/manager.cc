@@ -88,9 +88,9 @@ pw::Status ButtonManager::SampleButton(Button& button,
                                        SystemClock::time_point now) {
   PW_TRY_ASSIGN(auto state_change, button.Sample(now));
   if (state_change == EdgeDetector::StateChange::kActivate) {
-    pub_sub_->Publish(ButtonEvent(true));
+    std::ignore = pub_sub_->Publish(ButtonEvent(true));
   } else if (state_change == EdgeDetector::StateChange::kDeactivate) {
-    pub_sub_->Publish(ButtonEvent(false));
+    std::ignore = pub_sub_->Publish(ButtonEvent(false));
   }
   return pw::OkStatus();
 }

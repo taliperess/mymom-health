@@ -16,8 +16,8 @@
 
 #include "modules/worker/test_worker.h"
 #include "pw_digital_io/digital_io.h"
-#include "pw_sync/timed_thread_notification.h"
 #include "pw_sync/interrupt_spin_lock.h"
+#include "pw_sync/timed_thread_notification.h"
 #include "pw_unit_test/framework.h"
 
 using ::pw::chrono::SystemClock;
@@ -85,7 +85,7 @@ class ManagerTest : public ::testing::Test {
 
   /// Expects that a button was pressed.
   /// If `false`, the test must abort.
-  template<typename Event>
+  template <typename Event>
   [[nodiscard]] bool AssertPressed(bool pressed = true) {
     bool acquired = notification_.try_acquire_for(kMaxWaitOnFailedTest);
     EXPECT_TRUE(acquired);
@@ -261,11 +261,11 @@ TEST_F(ManagerTest, AllButtonsTurnOnAndOffEvents) {
   ButtonManager manager(io_a_, io_b_, io_x_, io_y_);
   manager.Init(pubsub, worker);
 
-  pubsub.Subscribe([this](Event event) {
+  ASSERT_TRUE(pubsub.Subscribe([this](Event event) {
     last_event_ = event;
     events_processed_ += 1;
     notification_.release();
-  });
+  }));
 
   io_a_.SetState(State::kActive);
   ASSERT_TRUE(AssertPressed<sense::ButtonA>());
@@ -297,11 +297,11 @@ TEST_F(ManagerTest, AllButtonsTurnOnAndOffEvents) {
 TEST_F(ManagerTest, DebouncingWorksOnNoisyIo) {
   sense::TestWorker<> worker;
   PubSub pubsub(worker, event_queue_, subscribers_buffer_);
-  pubsub.Subscribe([this](Event event) {
+  ASSERT_TRUE(pubsub.Subscribe([this](Event event) {
     last_event_ = event;
     events_processed_ += 1;
     notification_.release();
-  });
+  }));
 
   ButtonManager manager(io_a_, io_b_, io_x_, io_y_);
   manager.Init(pubsub, worker);

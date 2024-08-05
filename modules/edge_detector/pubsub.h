@@ -51,10 +51,10 @@ class PubSubHysteresisEdgeDetector
       case Edge::kNone:
         break;
       case Edge::kRising:
-        pubsub_.Publish(PubSubSamplerMeta::GetEvent(Edge::kRising));
+        PW_ASSERT(pubsub_.Publish(PubSubSamplerMeta::GetEvent(Edge::kRising)));
         break;
       case Edge::kFalling:
-        pubsub_.Publish(PubSubSamplerMeta::GetEvent(Edge::kFalling));
+        PW_ASSERT(pubsub_.Publish(PubSubSamplerMeta::GetEvent(Edge::kFalling)));
         break;
     }
   }

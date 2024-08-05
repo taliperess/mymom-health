@@ -16,6 +16,7 @@
 #include "modules/pubsub/service.h"
 
 #include "modules/state_manager/state_manager.h"
+#include "pw_assert/check.h"
 #include "pw_log/log.h"
 #include "pw_string/util.h"
 
@@ -166,8 +167,8 @@ pw::Result<Event> ProtoToEvent(const pubsub_Event& proto) {
 void PubSubService::Init(PubSub& pubsub) {
   pubsub_ = &pubsub;
 
-  pubsub_->Subscribe(
-      [this](Event event) { stream_.Write(EventToProto(event)); });
+  PW_CHECK(pubsub_->Subscribe(
+      [this](Event event) { stream_.Write(EventToProto(event)); }));
 }
 
 pw::Status PubSubService::Publish(const pubsub_Event& request,

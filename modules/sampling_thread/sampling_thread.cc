@@ -37,7 +37,7 @@ void ReadProximity() {
                 sample.status().str());
     return;
   }
-  system::PubSub().Publish(ProximitySample{*sample});
+  std::ignore = system::PubSub().Publish(ProximitySample{*sample});
 }
 
 void ReadAmbientLight() {
@@ -47,7 +47,7 @@ void ReadAmbientLight() {
                 sample.status().str());
     return;
   }
-  system::PubSub().Publish(AmbientLightSample{*sample});
+  std::ignore = system::PubSub().Publish(AmbientLightSample{*sample});
 }
 
 void ReadAirSensor() {
@@ -60,7 +60,7 @@ void ReadAirSensor() {
     return;
   }
 
-  system::PubSub().Publish(AirQuality{*score});
+  std::ignore = system::PubSub().Publish(AirQuality{*score});
 }
 
 }  // namespace

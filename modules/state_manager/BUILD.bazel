@@ -27,6 +27,7 @@ cc_library(
     srcs = ["state_manager.cc"],
     hdrs = ["state_manager.h"],
     implementation_deps = [
+        "@pigweed//pw_assert:check",
         "@pigweed//pw_log",
         "@pigweed//pw_string:format",
     ],

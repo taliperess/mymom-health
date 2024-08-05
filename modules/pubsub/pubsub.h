@@ -51,13 +51,22 @@ class GenericPubSub {
 
   /// Attempts to push an event to the event queue, returning whether it was
   /// successfully published. This is both thread safe and interrupt safe.
-  bool Publish(Event event) {
+  [[nodiscard]] bool PublishFromInterrupt(Event event) {
     if (event_lock_.try_lock()) {
       bool result = PublishLocked(event);
       event_lock_.unlock();
       return result;
     }
     return false;
+  }
+
+  /// Attempts to push an event to the event queue, returning whether it was
+  /// successfully published. Unlike `PublishFromInterrupt`, this method will
+  /// block until it acquires the event queue lock. This is thread safe, but it
+  /// is not interrupt safe.
+  [[nodiscard]] bool Publish(Event event) {
+    std::lock_guard lock(event_lock_);
+    return PublishLocked(event);
   }
 
   /// Registers a callback to be run when events are received.
@@ -67,7 +76,8 @@ class GenericPubSub {
   /// All subscribed callbacks are invoked from the context of the work queue
   /// provided to the constructor. Callbacks should avoid long blocking
   /// operations to not starve other callbacks or work queue tasks.
-  std::optional<SubscribeToken> Subscribe(SubscribeCallback&& callback) {
+  [[nodiscard]] std::optional<SubscribeToken> Subscribe(
+      SubscribeCallback&& callback) {
     std::lock_guard lock(subscribers_lock_);
 
     auto subscriber =
@@ -93,7 +103,7 @@ class GenericPubSub {
   /// This is currently equivalent to checking std::holds_alternative before
   /// invoking the callback, buy may be optimized later.
   template <typename VariantType, typename Function>
-  std::optional<SubscribeToken> SubscribeTo(Function&& function) {
+  [[nodiscard]] std::optional<SubscribeToken> SubscribeTo(Function&& function) {
     static_assert(
         IsVariant<Event>(),
         "SubscribeTo may only be called when the event type is a std::variant");
@@ -135,7 +145,7 @@ class GenericPubSub {
   struct IsVariant : std::false_type {};
 
   template <typename... Types>
-  struct IsVariant<std::variant<Types...>> : std::true_type {};
+  struct IsVariant<std::variant<Types...>> : std::true_type{};
 
   // Events (or their variant elements) must be standard layout and trivially
   // copyable & destructible.
