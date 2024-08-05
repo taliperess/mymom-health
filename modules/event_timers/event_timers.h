@@ -33,14 +33,6 @@ namespace sense {
 
 /// A collection of concurrent, named timers.
 ///
-/// `TimerRequest` events can be handled by subscribing to the `PubSub` and
-/// passing them to the `OnTimerRequest` method, e.g.
-///
-/// @code{.cpp}
-/// pubsub.SubscribeTo<TimerRequest>(
-///     [](TimerRequest request) { event_timers.OnTimerRequest(request); });
-/// @endcode
-///
 /// Each timer is identified by a pw_tokenizer token. If a request is handled
 /// while another request for the same token is pending, the previous request is
 /// replaced by the new one.
@@ -78,7 +70,10 @@ class EventTimers {
   };
 
  public:
-  constexpr explicit EventTimers(PubSub& pubsub) : pubsub_(pubsub) {}
+  explicit EventTimers(PubSub& pubsub) : pubsub_(pubsub) {
+    PW_ASSERT(pubsub.SubscribeTo<TimerRequest>(
+        pw::bind_member<&EventTimers::OnTimerRequest>(this)));
+  }
 
   /// Adds a timer for the given token.
   ///

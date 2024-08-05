@@ -47,8 +47,6 @@ void InitEventTimers() {
   event_timers.AddEventTimer(StateManager::kRepeatAlarmToken);
   event_timers.AddEventTimer(StateManager::kSilenceAlarmToken);
   event_timers.AddEventTimer(StateManager::kThresholdModeToken);
-  PW_CHECK(pubsub.SubscribeTo<TimerRequest>(
-      [](TimerRequest request) { event_timers.OnTimerRequest(request); }));
 }
 
 void InitBoardService() {
