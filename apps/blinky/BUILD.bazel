@@ -12,10 +12,10 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 load("@pigweed//targets/host_device_simulator:transition.bzl", "host_device_simulator_binary")
 load("@pigweed//targets/rp2040:flash.bzl", "flash_rp2040")
 load("//targets/rp2:binary.bzl", "rp2040_binary", "rp2350_binary")
+load("//tools:tools.bzl", "sense_device_console", "sense_device_script", "sense_host_console",)
 
 package(default_visibility = ["//visibility:public"])
 
@@ -56,134 +56,61 @@ host_device_simulator_binary(
     binary = ":blinky",
 )
 
-SIMULATOR_CONSOLE_COMMON_ARGS = [
-    # This arg lets us skip manual port selection.
-    "--socket",
-    "default",
-    "--config-file",
-    "$(rootpath //:pw_console_config)",
-]
-
-# Connect to a running blinky host_device_simulator_binary with:
-#   bazel run //apps/blinky:simulator_console
-native_binary(
+sense_host_console(
     name = "simulator_console",
-    src = "//tools:console",
-    args = SIMULATOR_CONSOLE_COMMON_ARGS,
-    data = [
-        "//:pw_console_config",
-    ],
+    binary = ":simulator_blinky",
 )
 
-native_binary(
+sense_host_console(
     name = "simulator_webconsole",
-    src = "//tools:console",
-    args = SIMULATOR_CONSOLE_COMMON_ARGS + ["--browser"],
-    data = [
-        "//:pw_console_config",
-    ],
+    binary = ":simulator_blinky",
+    extra_args = ["--browser"],
 )
 
-RP2040_CONSOLE_COMMON_ARGS = [
-    "-b",
-    "115200",
-    "--token-databases",
-    "$(rootpath //apps/blinky:rp2040_blinky.elf)",
-    "--config-file",
-    "$(rootpath //:pw_console_config)",
-]
-
-RP2350_CONSOLE_COMMON_ARGS = [
-    a.replace("rp2040", "rp2350")
-    for a in RP2040_CONSOLE_COMMON_ARGS
-]
-
-native_binary(
+sense_device_console(
     name = "rp2040_console",
-    src = "//tools:console",
-    args = RP2040_CONSOLE_COMMON_ARGS,
-    data = [
-        ":rp2040_blinky.elf",
-        "//:pw_console_config",
-    ],
+    binary = ":rp2040_blinky.elf",
 )
 
-native_binary(
-    name = "rp2350_console",
-    src = "//tools:console",
-    args = RP2350_CONSOLE_COMMON_ARGS,
-    data = [
-        ":rp2350_blinky.elf",
-        "//:pw_console_config",
-    ],
-)
-
-native_binary(
+sense_device_console(
     name = "rp2040_webconsole",
-    src = "//tools:console",
-    args = RP2040_CONSOLE_COMMON_ARGS + ["--browser"],
-    data = [
-        ":rp2040_blinky.elf",
-        "//:pw_console_config",
-    ],
+    binary = ":rp2040_blinky.elf",
+    extra_args = ["--browser"]
 )
 
-native_binary(
+sense_device_console(
+    name = "rp2350_console",
+    binary = ":rp2350_blinky.elf",
+)
+
+sense_device_console(
     name = "rp2350_webconsole",
-    src = "//tools:console",
-    args = RP2350_CONSOLE_COMMON_ARGS + ["--browser"],
-    data = [
-        ":rp2350_blinky.elf",
-        "//:pw_console_config",
-    ],
+    binary = ":rp2350_blinky.elf",
+    extra_args = ["--browser"]
 )
 
-native_binary(
+sense_device_script(
     name = "rp2040_example_script",
     src = "//tools:example_script",
-    args = [
-        "--token-databases",
-        "$(rootpath //apps/blinky:rp2040_blinky.elf)",
-    ],
-    data = [
-        ":rp2040_blinky.elf",
-    ],
+    binary = ":rp2040_blinky.elf",
 )
 
-native_binary(
+sense_device_script(
     name = "rp2350_example_script",
     src = "//tools:example_script",
-    args = [
-        "--token-databases",
-        "$(rootpath //apps/blinky:rp2350_blinky.elf)",
-    ],
-    data = [
-        ":rp2350_blinky.elf",
-    ],
+    binary = ":rp2350_blinky.elf",
 )
 
-native_binary(
+sense_device_script(
     name = "rp2040_toggle_blinky",
     src = "//tools:toggle_blinky",
-    args = [
-        "--token-databases",
-        "$(rootpath //apps/blinky:rp2040_blinky.elf)",
-    ],
-    data = [
-        ":rp2040_blinky.elf",
-    ],
+    binary = ":rp2040_blinky.elf",
 )
 
-native_binary(
+sense_device_script(
     name = "rp2350_toggle_blinky",
     src = "//tools:toggle_blinky",
-    args = [
-        "--token-databases",
-        "$(rootpath //apps/blinky:rp2350_blinky.elf)",
-    ],
-    data = [
-        ":rp2350_blinky.elf",
-    ],
+    binary = ":rp2350_blinky.elf",
 )
 
 alias(
@@ -196,6 +123,7 @@ flash_rp2040(
     rp2040_binary = "rp2040_blinky.elf",
 )
 
+# Note: Despite the name, the rule works for the 2350.
 flash_rp2040(
     name = "flash_rp2350",
     rp2040_binary = "rp2350_blinky.elf",

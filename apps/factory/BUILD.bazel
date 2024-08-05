@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 load(
     "@pigweed//pw_protobuf_compiler:pw_proto_library.bzl",
     "nanopb_proto_library",
@@ -21,6 +20,7 @@ load(
 load("@pigweed//targets/rp2040:flash.bzl", "flash_rp2040")
 load("@rules_python//python:proto.bzl", "py_proto_library")
 load("//targets/rp2:binary.bzl", "rp2040_binary")
+load("//tools:tools.bzl", "sense_device_console", "sense_device_script")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -49,39 +49,20 @@ cc_binary(
     ],
 )
 
-# Create an rp2040 flashable ELF
 rp2040_binary(
     name = "rp2040.elf",
     binary = ":factory",
 )
 
-native_binary(
+sense_device_console(
     name = "rp2040_console",
-    src = "//tools:console",
-    args = [
-        "-b",
-        "115200",
-        "--token-databases",
-        "$(rootpath //apps/factory:rp2040.elf)",
-        "--config-file",
-        "$(rootpath //:pw_console_config)",
-    ],
-    data = [
-        ":rp2040.elf",
-        "//:pw_console_config",
-    ],
+    binary = ":rp2040.elf",
 )
 
-native_binary(
+sense_device_script(
     name = "rp2040_factory_test",
     src = "//tools:factory",
-    args = [
-        "--token-databases",
-        "$(rootpath //apps/factory:rp2040.elf)",
-    ],
-    data = [
-        ":rp2040.elf",
-    ],
+    binary = ":rp2040.elf",
 )
 
 flash_rp2040(
