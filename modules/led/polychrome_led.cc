@@ -12,6 +12,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+#define PW_LOG_MODULE_NAME "LED"
 #define PW_LOG_LEVEL PW_LOG_LEVEL_INFO
 
 #include "modules/led/polychrome_led.h"

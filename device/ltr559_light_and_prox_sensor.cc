@@ -12,6 +12,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+#define PW_LOG_MODULE_NAME "LTR559"
 #define PW_LOG_LEVEL PW_LOG_LEVEL_INFO
 
 #include "device/ltr559_light_and_prox_sensor.h"
