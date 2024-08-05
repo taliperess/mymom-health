@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+load("@pigweed//pw_build:pigweed.bzl", "pw_cc_test")
 load(
     "@pigweed//pw_protobuf_compiler:pw_proto_library.bzl",
     "nanopb_proto_library",
@@ -28,8 +29,10 @@ cc_library(
     hdrs = ["state_manager.h"],
     implementation_deps = [
         "@pigweed//pw_assert:check",
+        "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_log",
         "@pigweed//pw_string:format",
+        "@pigweed//pw_thread:sleep",
     ],
     deps = [
         ":common_base_union",
@@ -92,4 +95,19 @@ nanopb_rpc_proto_library(
 py_proto_library(
     name = "py_pb2",
     deps = [":proto"],
+)
+
+pw_cc_test(
+    name = "state_manager_test",
+    srcs = ["state_manager_test.cc"],
+    deps = [
+        ":state_manager",
+        "//modules/led:polychrome_led_fake",
+        "//modules/pubsub",
+        "//modules/pubsub:events",
+        "//modules/worker:test_worker",
+        "@pigweed//pw_chrono:system_clock",
+        "@pigweed//pw_sync:thread_notification",
+        "@pigweed//pw_thread:sleep",
+    ],
 )

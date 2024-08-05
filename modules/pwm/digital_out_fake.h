@@ -14,6 +14,9 @@
 #pragma once
 
 #include "modules/pwm/digital_out.h"
+#include "pw_chrono/system_clock.h"
+#include "pw_sync/thread_notification.h"
+#include "pw_sync/timed_thread_notification.h"
 
 namespace sense {
 
@@ -23,7 +26,27 @@ namespace sense {
 /// has methods that logs their parameters.
 class PwmDigitalOutFake : public PwmDigitalOut {
  public:
+  using Notification = ::pw::sync::ThreadNotification;
+
   PwmDigitalOutFake() = default;
+
+  bool enabled() const { return enabled_; }
+  uint16_t level() const { return level_; }
+
+  /// Enables or disables "synchronous mode".
+  ///
+  /// When enabled, each call to `SetLevel` will block until another thread
+  /// calls `Await`, `TryAwait`, or `TryAwaitUntil`.
+  void set_sync(bool sync) { sync_ = sync; }
+
+  /// Blocks until a call to `SetLevel` has been made.
+  void Await();
+
+  /// Returns whether a call to `SetLevel` has been made.
+  bool TryAwait();
+
+  /// Returns whether `SetLevel` is called before the given expiration.
+  bool TryAwaitUntil(pw::chrono::SystemClock::time_point expiration);
 
  private:
   void DoEnable() override;
@@ -36,6 +59,13 @@ class PwmDigitalOutFake : public PwmDigitalOut {
                      pw::chrono::SystemClock::duration interval) override;
 
   void DoClearCallback() override;
+
+  bool enabled_ = false;
+  uint16_t level_ = 0;
+  bool sync_ = false;
+  pw::sync::TimedThreadNotification notify_;
+  pw::sync::ThreadNotification ack_;
+  ;
 };
 
 }  // namespace sense

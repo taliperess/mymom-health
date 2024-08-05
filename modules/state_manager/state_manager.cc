@@ -17,12 +17,15 @@
 
 #include "modules/state_manager/state_manager.h"
 
+#include <chrono>
 #include <cmath>
 #include <variant>
 
 #include "pw_assert/check.h"
+#include "pw_chrono/system_clock.h"
 #include "pw_log/log.h"
 #include "pw_string/format.h"
+#include "pw_thread/sleep.h"
 
 namespace sense {
 
@@ -38,18 +41,13 @@ static void AddAndSmoothExponentially(std::optional<T>& aggregate,
 }
 
 StateManager::StateManager(PubSub& pubsub, PolychromeLed& led)
-    : edge_detector_(alarm_threshold_, alarm_threshold_ + kThresholdIncrement),
-      pubsub_(pubsub),
-      led_(led),
-      state_(*this) {
+    : edge_detector_(0, 0), pubsub_(pubsub), led_(led), state_(*this) {
+  SetAlarmThreshold(alarm_threshold_);
   PW_CHECK(pubsub_.Subscribe([this](Event event) { Update(event); }));
 }
 
 void StateManager::Update(Event event) {
   switch (static_cast<EventType>(event.index())) {
-    case kAirQuality:
-      UpdateAirQuality(std::get<AirQuality>(event).score);
-      break;
     case kButtonA:
       if (std::get<ButtonA>(event).pressed()) {
         state_.get().ButtonAPressed();
@@ -82,6 +80,9 @@ void StateManager::Update(Event event) {
       break;
     case kStateManagerControl:
       HandleControlEvent(std::get<StateManagerControl>(event));
+      break;
+    case kAirQuality:
+      UpdateAirQuality(std::get<AirQuality>(event).score);
       break;
     case kTimerRequest:
     case kMorseEncodeRequest:

@@ -30,6 +30,10 @@ namespace sense {
 // Wraps a PolychromeLed and sets brightness from ambient light readings.
 class AmbientLightAdjustedLed {
  public:
+  static constexpr uint8_t kMinBrightness = 10;
+  static constexpr uint8_t kDefaultBrightness = 160;
+  static constexpr uint8_t kMaxBrightness = 255;
+
   AmbientLightAdjustedLed(PolychromeLed& led);
 
   void SetColor(const LedValue& color) {
@@ -42,10 +46,6 @@ class AmbientLightAdjustedLed {
   void UpdateBrightnessFromAmbientLight(float ambient_light_sample_lux);
 
  private:
-  static constexpr uint8_t kMinBrightness = 10;
-  static constexpr uint8_t kDefaultBrightness = 160;
-  static constexpr uint8_t kMaxBrightness = 255;
-
   void UpdateAverageAmbientLight(float ambient_light_sample_lux);
 
   PolychromeLed& led_;
@@ -72,8 +72,13 @@ class StateManager {
       PW_TOKENIZE_STRING("exit threshold mode");
   static constexpr uint16_t kThresholdModeTimeout = 3;
 
-  static constexpr uint16_t kThresholdIncrement = 128;
-  static constexpr uint16_t kMaxThreshold = 768;
+  static constexpr uint16_t kDefaultThreshold =
+      static_cast<uint16_t>(AirSensor::Score::kYellow);
+  static constexpr uint16_t kThresholdIncrement =
+      static_cast<uint16_t>(AirSensor::Score::kOrange) -
+      static_cast<uint16_t>(AirSensor::Score::kRed);
+  static constexpr uint16_t kMaxThreshold =
+      static_cast<uint16_t>(AirSensor::Score::kCyan);
 
   StateManager(PubSub& pubsub, PolychromeLed& led);
 
@@ -310,7 +315,7 @@ class StateManager {
 
   bool alarm_ = false;
   bool alarm_silenced_ = false;
-  uint16_t alarm_threshold_ = static_cast<uint16_t>(AirSensor::Score::kYellow);
+  uint16_t alarm_threshold_ = kDefaultThreshold;
   HysteresisEdgeDetector<uint16_t> edge_detector_;
 
   PubSub& pubsub_;

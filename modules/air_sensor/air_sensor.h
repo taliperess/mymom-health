@@ -54,7 +54,11 @@ class AirSensor {
   static constexpr uint16_t kMaxScore = static_cast<uint16_t>(Score::kBlue);
   static constexpr uint16_t kAverageScore = static_cast<uint16_t>(Score::kCyan);
 
+  /// Get the RGB values corresponding to an air quality score.
   static LedValue GetLedValue(uint16_t score);
+  static LedValue GetLedValue(Score score) {
+    return GetLedValue(static_cast<uint16_t>(score));
+  }
 
   virtual ~AirSensor() = default;
 

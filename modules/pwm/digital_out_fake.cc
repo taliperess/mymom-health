@@ -20,24 +20,51 @@
 
 namespace sense {
 
-void PwmDigitalOutFake::DoEnable() { PW_LOG_INFO("PWM: +"); }
+void PwmDigitalOutFake::Await() {
+  if (sync_) {
+    notify_.acquire();
+    ack_.release();
+  }
+}
 
-void PwmDigitalOutFake::DoDisable() { PW_LOG_INFO("PWM: -"); }
+bool PwmDigitalOutFake::TryAwait() {
+  if (sync_ && notify_.try_acquire()) {
+    ack_.release();
+    return true;
+  }
+  return false;
+}
+
+bool PwmDigitalOutFake::TryAwaitUntil(
+    pw::chrono::SystemClock::time_point expiration) {
+  if (sync_ && notify_.try_acquire_until(expiration)) {
+    ack_.release();
+    return true;
+  }
+  return false;
+}
+
+void PwmDigitalOutFake::DoEnable() {
+  enabled_ = true;
+  PW_LOG_INFO("PWM: +");
+}
+
+void PwmDigitalOutFake::DoDisable() {
+  enabled_ = false;
+  PW_LOG_INFO("PWM: -");
+}
 
 void PwmDigitalOutFake::DoSetLevel(uint16_t level) {
-  PW_LOG_INFO("PWM: level=%u", level);
+  level_ = level;
+  if (sync_) {
+    notify_.release();
+    ack_.acquire();
+  }
 }
 
-void PwmDigitalOutFake::DoSetCallback(
-    uint16_t per_interval, pw::chrono::SystemClock::duration interval) {
-  uint32_t ms =
-      std::chrono::duration_cast<std::chrono::milliseconds>(interval).count();
-  PW_LOG_INFO(
-      "PWM: callback to be invoked %u times per %u ms", per_interval, ms);
-}
+void PwmDigitalOutFake::DoSetCallback(uint16_t,
+                                      pw::chrono::SystemClock::duration) {}
 
-void PwmDigitalOutFake::DoClearCallback() {
-  PW_LOG_INFO("PWM: callback cleared");
-}
+void PwmDigitalOutFake::DoClearCallback() {}
 
 }  // namespace sense

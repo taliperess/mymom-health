@@ -62,8 +62,11 @@ cc_library(
 
 cc_library(
     name = "polychrome_led_fake",
+    srcs = ["polychrome_led_fake.cc"],
     hdrs = ["polychrome_led_fake.h"],
     deps = [
         ":polychrome_led",
+        "//modules/pwm:digital_out_fake",
+        "@pigweed//pw_chrono:system_clock",
     ],
 )

@@ -34,5 +34,8 @@ cc_library(
     ],
     deps = [
         ":digital_out",
+        "@pigweed//pw_chrono:system_clock",
+        "@pigweed//pw_sync:thread_notification",
+        "@pigweed//pw_sync:timed_thread_notification",
     ],
 )
