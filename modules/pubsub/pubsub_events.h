@@ -110,6 +110,23 @@ struct MorseCodeValue {
   bool message_finished;
 };
 
+struct SenseState {
+  bool alarm;
+  uint16_t alarm_threshold;
+  uint16_t air_quality;
+  const char* air_quality_description;
+};
+
+struct StateManagerControl {
+  enum Action {
+    kIncrementThreshold,
+    kDecrementThreshold,
+    kSilenceAlarms,
+  } action;
+
+  explicit constexpr StateManagerControl(Action a) : action(a) {}
+};
+
 // This definition must be kept up to date with modules/pubsub/pubsub.proto and
 // the EventType enum.
 using Event = std::variant<ButtonA,
@@ -123,7 +140,9 @@ using Event = std::variant<ButtonA,
                            AmbientLightSample,
                            AirQuality,
                            MorseEncodeRequest,
-                           MorseCodeValue>;
+                           MorseCodeValue,
+                           SenseState,
+                           StateManagerControl>;
 
 // Index versions of Event variants, to support finding the event
 enum EventType : size_t {
@@ -139,7 +158,9 @@ enum EventType : size_t {
   kAirQuality,
   kMorseEncodeRequest,
   kMorseCodeValue,
-  kLastEventType = kMorseCodeValue,
+  kSenseState,
+  kStateManagerControl,
+  kLastEventType = kStateManagerControl,
 };
 
 static_assert(kLastEventType + 1 == std::variant_size_v<Event>,

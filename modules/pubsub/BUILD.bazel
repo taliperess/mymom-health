@@ -62,10 +62,12 @@ cc_library(
     hdrs = ["service.h"],
     implementation_deps = [
         "@pigweed//pw_log",
+        "@pigweed//pw_string",
     ],
     deps = [
         ":events",
         ":nanopb_rpc",
+        "//modules/state_manager",
     ],
 )
 
@@ -91,6 +93,7 @@ proto_library(
     strip_import_prefix = "/modules/pubsub",
     deps = [
         "//modules/morse_code:proto",
+        "//modules/state_manager:proto",
         "@pigweed//pw_protobuf:common_proto",
     ],
 )

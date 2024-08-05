@@ -17,6 +17,7 @@ package pubsub;
 
 import "pw_protobuf_protos/common.proto";
 import "morse_code.proto";
+import "state_manager.proto";
 
 service PubSub {
   rpc Publish(Event) returns (pw.protobuf.Empty);
@@ -48,6 +49,16 @@ message TimerExpired {
   uint32 token = 1;
 }
 
+message StateManagerControl {
+  enum Action {
+    UNKNOWN = 0;
+    INCREMENT_THRESHOLD = 1;
+    DECREMENT_THRESHOLD = 2;
+    SILENCE_ALARMS = 3;
+  }
+  Action action = 1;
+}
+
 message Event {
   // This definition must be kept up to date with
   // modules/pubsub/pubsub_events.h.
@@ -64,5 +75,7 @@ message Event {
     TimerExpired timer_expired = 10;
     morse_code.SendRequest morse_encode_request = 11;
     float ambient_light_lux = 12;
+    state_manager.State sense_state = 13;
+    StateManagerControl state_manager_control = 14;
   }
 }

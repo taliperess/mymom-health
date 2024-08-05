@@ -22,6 +22,7 @@
 #include "modules/proximity/manager.h"
 #include "modules/pubsub/service.h"
 #include "modules/sampling_thread/sampling_thread.h"
+#include "modules/state_manager/service.h"
 #include "modules/state_manager/state_manager.h"
 #include "pw_assert/check.h"
 #include "pw_log/log.h"
@@ -36,6 +37,8 @@ namespace {
 
 void InitStateManager() {
   static StateManager state_manager(system::PubSub(), system::PolychromeLed());
+  static StateManagerService state_manager_service(system::PubSub());
+  pw::System().rpc_server().RegisterService(state_manager_service);
 }
 
 void InitEventTimers() {

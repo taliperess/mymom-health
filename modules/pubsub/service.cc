@@ -15,7 +15,9 @@
 
 #include "modules/pubsub/service.h"
 
+#include "modules/state_manager/state_manager.h"
 #include "pw_log/log.h"
+#include "pw_string/util.h"
 
 namespace sense {
 namespace {
@@ -69,6 +71,31 @@ pubsub_Event EventToProto(const Event& event) {
     const auto& morse = std::get<MorseCodeValue>(event);
     proto.type.morse_code_value.turn_on = morse.turn_on;
     proto.type.morse_code_value.message_finished = morse.message_finished;
+  } else if (std::holds_alternative<SenseState>(event)) {
+    proto.which_type = pubsub_Event_sense_state_tag;
+    const auto& state = std::get<SenseState>(event);
+    proto.type.sense_state.alarm_active = state.alarm;
+    proto.type.sense_state.alarm_threshold = state.alarm_threshold;
+    proto.type.sense_state.aq_score = state.air_quality;
+    pw::string::Copy(state.air_quality_description,
+                     proto.type.sense_state.aq_description);
+  } else if (std::holds_alternative<StateManagerControl>(event)) {
+    proto.which_type = pubsub_Event_state_manager_control_tag;
+    const auto& control = std::get<StateManagerControl>(event);
+    switch (control.action) {
+      case StateManagerControl::kDecrementThreshold:
+        proto.type.state_manager_control.action =
+            pubsub_StateManagerControl_Action_DECREMENT_THRESHOLD;
+        break;
+      case StateManagerControl::kIncrementThreshold:
+        proto.type.state_manager_control.action =
+            pubsub_StateManagerControl_Action_INCREMENT_THRESHOLD;
+        break;
+      case StateManagerControl::kSilenceAlarms:
+        proto.type.state_manager_control.action =
+            pubsub_StateManagerControl_Action_SILENCE_ALARMS;
+        break;
+    }
   } else {
     PW_LOG_WARN("Unimplemented pubsub service event");
   }
@@ -104,6 +131,31 @@ pw::Result<Event> ProtoToEvent(const pubsub_Event& proto) {
       return ProximityStateChange{.proximity = proto.type.proximity};
     case pubsub_Event_air_quality_tag:
       return AirQuality{.score = static_cast<uint16_t>(proto.type.air_quality)};
+    case pubsub_Event_sense_state_tag:
+      return SenseState{
+          .alarm = proto.type.sense_state.alarm_active,
+          .alarm_threshold =
+              static_cast<uint16_t>(proto.type.sense_state.alarm_threshold),
+          .air_quality = static_cast<uint16_t>(proto.type.sense_state.aq_score),
+          .air_quality_description = StateManager::AirQualityDescription(
+              proto.type.sense_state.aq_score),
+      };
+    case pubsub_Event_state_manager_control_tag:
+      StateManagerControl::Action action;
+      switch (proto.type.state_manager_control.action) {
+        case pubsub_StateManagerControl_Action_DECREMENT_THRESHOLD:
+          action = StateManagerControl::kDecrementThreshold;
+          break;
+        case pubsub_StateManagerControl_Action_INCREMENT_THRESHOLD:
+          action = StateManagerControl::kIncrementThreshold;
+          break;
+        case pubsub_StateManagerControl_Action_SILENCE_ALARMS:
+          action = StateManagerControl::kSilenceAlarms;
+          break;
+        case pubsub_StateManagerControl_Action_UNKNOWN:
+          return pw::Status::InvalidArgument();
+      }
+      return StateManagerControl(action);
     default:
       return pw::Status::Unimplemented();
   }

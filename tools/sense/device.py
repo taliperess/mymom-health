@@ -37,6 +37,7 @@ from modules.board import board_pb2
 from factory_pb import factory_pb2
 from pubsub_pb import pubsub_pb2
 import morse_code_pb2
+import state_manager_pb2
 
 
 _LOG = logging.getLogger(__file__)
@@ -151,6 +152,7 @@ def get_all_protos() -> list[ModuleType]:
         factory_pb2,
         morse_code_pb2,
         pubsub_pb2,
+        state_manager_pb2,
     ]
 
 

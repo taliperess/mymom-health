@@ -80,6 +80,8 @@ class StateManager {
   StateManager(const StateManager&) = delete;
   StateManager& operator=(const StateManager&) = delete;
 
+  static const char* AirQualityDescription(uint16_t score);
+
  private:
   static constexpr size_t kMaxMorseCodeStringLen = 16;
   static_assert(kMaxMorseCodeStringLen <= Encoder::kMaxMsgLen);
@@ -254,6 +256,7 @@ class StateManager {
   void SetState(Args&&... args) {
     const char* old_state = state_.get().name();
     state_.emplace<StateType>(*this, std::forward<Args>(args)...);
+    BroadcastState();
     LogStateChange(old_state);
   }
 
@@ -261,14 +264,17 @@ class StateManager {
   /// air quality.
   void ResetMode();
 
-  /// Sets the LED to reflect the current alarm threshold.
-  void DisplayThreshold();
-
   /// Increases the current alarm threshold.
   void IncrementThreshold();
 
   /// Decreases the current alarm threshold.
   void DecrementThreshold();
+
+  /// Suppresses `AlarmMode` for 60 seconds.
+  void SilenceAlarms();
+
+  /// Sets the LED to reflect the current alarm threshold.
+  void DisplayThreshold();
 
   /// Sets the current alarm threshold.
   void SetAlarmThreshold(uint16_t alarm_threshold);
@@ -279,9 +285,6 @@ class StateManager {
 
   /// Send a timer request to repeat an alarm.
   void RepeatAlarm();
-
-  /// Suppresses `AlarmMode` for 60 seconds.
-  void SilenceAlarms();
 
   /// Sends a request to the Morse encoder to send `OnMorseCodeValue` events for
   /// the given message.
@@ -295,6 +298,13 @@ class StateManager {
   void FormatAirQuality(MorseCodeString& msg);
 
   void LogStateChange(const char* old_state) const;
+
+  void BroadcastState() const;
+  void HandleControlEvent(StateManagerControl& event);
+
+  constexpr uint16_t air_quality() const {
+    return air_quality_.value_or(AirSensor::kMaxScore + 1);
+  }
 
   std::optional<uint16_t> air_quality_;
 

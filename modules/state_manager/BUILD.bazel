@@ -12,6 +12,14 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+load(
+    "@pigweed//pw_protobuf_compiler:pw_proto_library.bzl",
+    "nanopb_proto_library",
+    "nanopb_rpc_proto_library",
+    "pw_proto_filegroup",
+)
+load("@rules_python//python:proto.bzl", "py_proto_library")
+
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
@@ -39,4 +47,48 @@ cc_library(
     name = "common_base_union",
     hdrs = ["common_base_union.h"],
     visibility = ["//visibility:private"],
+)
+
+cc_library(
+    name = "service",
+    srcs = ["service.cc"],
+    hdrs = ["service.h"],
+    deps = [
+        ":nanopb_rpc",
+        "//modules/pubsub:events",
+        "@pigweed//pw_string",
+        "@pigweed//pw_sync:interrupt_spin_lock",
+        "@pigweed//pw_sync:lock_annotations",
+    ],
+)
+
+pw_proto_filegroup(
+    name = "proto_and_options",
+    srcs = ["state_manager.proto"],
+    options_files = ["state_manager.options"],
+)
+
+proto_library(
+    name = "proto",
+    srcs = [":proto_and_options"],
+    strip_import_prefix = "/modules/state_manager",
+    deps = [
+        "@pigweed//pw_protobuf:common_proto",
+    ],
+)
+
+nanopb_proto_library(
+    name = "nanopb",
+    deps = [":proto"],
+)
+
+nanopb_rpc_proto_library(
+    name = "nanopb_rpc",
+    nanopb_proto_library_deps = [":nanopb"],
+    deps = [":proto"],
+)
+
+py_proto_library(
+    name = "py_pb2",
+    deps = [":proto"],
 )

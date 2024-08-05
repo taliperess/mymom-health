@@ -77,10 +77,14 @@ void StateManager::Update(Event event) {
       led_.UpdateBrightnessFromAmbientLight(
           std::get<AmbientLightSample>(event).sample_lux);
       break;
+    case kStateManagerControl:
+      HandleControlEvent(std::get<StateManagerControl>(event));
+      break;
     case kTimerRequest:
     case kMorseEncodeRequest:
     case kProximitySample:
     case kProximityStateChange:
+    case kSenseState:
       break;  // ignore these events
   }
 }
@@ -122,12 +126,15 @@ void StateManager::SetAlarmThreshold(uint16_t alarm_threshold) {
   PW_LOG_INFO("Air quality thresholds set: alarm at %u, silence at %u",
               alarm_threshold_,
               silence_threshold);
+
+  BroadcastState();
 }
 
 void StateManager::UpdateAirQuality(uint16_t score) {
   AddAndSmoothExponentially(air_quality_, score);
   state_.get().OnLedValue(AirSensor::GetLedValue(*air_quality_));
   if (alarm_silenced_) {
+    BroadcastState();
     return;
   }
   switch (edge_detector_.Update(*air_quality_)) {
@@ -141,6 +148,7 @@ void StateManager::UpdateAirQuality(uint16_t score) {
       return;
   }
   ResetMode();
+  BroadcastState();
 }
 
 void StateManager::RepeatAlarm() {
@@ -159,6 +167,7 @@ void StateManager::SilenceAlarms() {
       .timeout_s = kSilenceAlarmTimeout,
   });
   ResetMode();
+  BroadcastState();
 }
 
 void StateManager::ResetMode() {
@@ -173,7 +182,7 @@ void StateManager::StartMorseReadout(std::string_view msg) {
   pubsub_.Publish(MorseEncodeRequest{.message = msg, .repeat = 1u});
 }
 
-static constexpr const char* AirQualityDescription(uint16_t score) {
+const char* StateManager::AirQualityDescription(uint16_t score) {
   if (score > AirSensor::kMaxScore) {
     return "INVALID";
   }
@@ -202,7 +211,7 @@ static constexpr const char* AirQualityDescription(uint16_t score) {
 }
 
 void StateManager::FormatAirQuality(MorseCodeString& msg) {
-  uint16_t score = air_quality_.value_or(AirSensor::kMaxScore + 1);
+  uint16_t score = air_quality();
   pw::Status status = pw::string::FormatOverwrite(
       msg, "AQ %s %hu", AirQualityDescription(score), score);
   PW_LOG_INFO("%s", msg.data());
@@ -247,6 +256,29 @@ void AmbientLightAdjustedLed::UpdateBrightnessFromAmbientLight(
 
 void StateManager::LogStateChange(const char* old_state) const {
   PW_LOG_INFO("StateManager: %s -> %s", old_state, state_.get().name());
+}
+
+void StateManager::BroadcastState() const {
+  pubsub_.Publish(SenseState{
+      .alarm = alarm_,
+      .alarm_threshold = alarm_threshold_,
+      .air_quality = air_quality(),
+      .air_quality_description = AirQualityDescription(air_quality()),
+  });
+}
+
+void StateManager::HandleControlEvent(StateManagerControl& event) {
+  switch (event.action) {
+    case StateManagerControl::kIncrementThreshold:
+      IncrementThreshold();
+      break;
+    case StateManagerControl::kDecrementThreshold:
+      DecrementThreshold();
+      break;
+    case StateManagerControl::kSilenceAlarms:
+      SilenceAlarms();
+      break;
+  }
 }
 
 }  // namespace sense
