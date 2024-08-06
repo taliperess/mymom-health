@@ -42,10 +42,10 @@ TEST_F(PubSubTest, Publish_OneSubscriber) {
   sense::TestWorker<> worker;
   PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
-  pubsub.Subscribe([this](TestEvent event) {
+  ASSERT_TRUE(pubsub.Subscribe([this](TestEvent event) {
     result_ = event.value;
     notification_.release();
-  });
+  }));
 
   EXPECT_TRUE(pubsub.Publish({.value = 42}));
 
@@ -69,12 +69,12 @@ TEST_F(PubSubTest, Publish_MultipleSubscribers) {
             i == subscribers_buffer_.size() - 1 ? &notification_ : nullptr,
     };
 
-    pubsub.Subscribe([&context](TestEvent event) {
+    ASSERT_TRUE(pubsub.Subscribe([&context](TestEvent event) {
       *context.value += event.value;
       if (context.notification != nullptr) {
         context.notification->release();
       }
-    });
+    }));
   }
 
   EXPECT_TRUE(pubsub.Publish({.value = 4}));
@@ -88,14 +88,14 @@ TEST_F(PubSubTest, Publish_MultipleEvents) {
   sense::TestWorker<> worker;
   PubSub pubsub(worker, event_queue_, subscribers_buffer_);
 
-  pubsub.Subscribe([this](TestEvent event) {
+  ASSERT_TRUE(pubsub.Subscribe([this](TestEvent event) {
     result_ += event.value;
     events_processed_++;
 
     if (events_processed_ % 4 == 0) {
       notification_.release();
     }
-  });
+  }));
 
   EXPECT_TRUE(pubsub.Publish({.value = 1}));
   EXPECT_TRUE(pubsub.Publish({.value = 2}));
@@ -126,14 +126,14 @@ TEST_F(PubSubTest, Publish_MultipleEvents_QueueFull) {
     PW_ASSERT(work_queue_start_notification_.try_acquire_for(1s));
   });
 
-  pubsub.Subscribe([this](TestEvent event) {
+  ASSERT_TRUE(pubsub.Subscribe([this](TestEvent event) {
     result_ += event.value;
     events_processed_++;
 
     if (events_processed_ == 5) {
       notification_.release();
     }
-  });
+  }));
 
   EXPECT_TRUE(pubsub.Publish({.value = 10}));
   EXPECT_TRUE(pubsub.Publish({.value = 11}));
@@ -211,7 +211,7 @@ class PubSubAmEventsTest : public ::testing::Test {
  protected:
   pw::InlineDeque<sense::Event, 4> event_queue_;
   std::array<sense::PubSub::Subscriber, 4> subscribers_buffer_;
-  float total_voc_ = 0;
+  uint16_t total_score_ = 0;
   int events_processed_ = 0;
   pw::sync::TimedThreadNotification notification_;
   pw::sync::TimedThreadNotification work_queue_start_notification_;
@@ -226,9 +226,9 @@ TEST_F(PubSubAmEventsTest, PublishEvent) {
     PW_ASSERT(work_queue_start_notification_.try_acquire_for(1s));
   });
 
-  pubsub.Subscribe([this](sense::Event event) {
-    if (std::holds_alternative<sense::VocSample>(event)) {
-      total_voc_ += std::get<sense::VocSample>(event).voc_level;
+  ASSERT_TRUE(pubsub.Subscribe([this](sense::Event event) {
+    if (std::holds_alternative<sense::AirQuality>(event)) {
+      total_score_ += std::get<sense::AirQuality>(event).score;
     } else if (std::holds_alternative<sense::ButtonA>(event)) {
       EXPECT_TRUE(std::get<sense::ButtonA>(event).pressed());
     } else {
@@ -238,18 +238,18 @@ TEST_F(PubSubAmEventsTest, PublishEvent) {
     if (++events_processed_ > 4) {
       notification_.release();
     }
-  });
+  }));
 
-  EXPECT_TRUE(pubsub.Publish(sense::VocSample{.voc_level = 0.25f}));
-  EXPECT_TRUE(pubsub.Publish(sense::VocSample{.voc_level = 0.50f}));
+  EXPECT_TRUE(pubsub.Publish(sense::AirQuality{.score = 128u}));
+  EXPECT_TRUE(pubsub.Publish(sense::AirQuality{.score = 256u}));
   EXPECT_TRUE(pubsub.Publish(sense::ButtonA(true)));
-  EXPECT_TRUE(pubsub.Publish(sense::VocSample{.voc_level = 0.25}));
+  EXPECT_TRUE(pubsub.Publish(sense::AirQuality{.score = 384u}));
   work_queue_start_notification_.release();
 
   // This should time out as the fifth event never gets sent.
   EXPECT_FALSE(notification_.try_acquire_for(1ms));
   EXPECT_EQ(events_processed_, 4);
-  EXPECT_EQ(total_voc_, 1.0f);
+  EXPECT_EQ(total_score_, 768u);
   worker.Stop();
 }
 
@@ -262,23 +262,24 @@ TEST_F(PubSubAmEventsTest, SubscribeTo) {
     PW_ASSERT(work_queue_start_notification_.try_acquire_for(1s));
   });
 
-  pubsub.SubscribeTo<sense::VocSample>([this](sense::VocSample sample) {
-    total_voc_ += sample.voc_level;
-    if (++events_processed_ > 2) {
-      notification_.release();
-    }
-  });
+  ASSERT_TRUE(
+      pubsub.SubscribeTo<sense::AirQuality>([this](sense::AirQuality sample) {
+        total_score_ += sample.score;
+        if (++events_processed_ > 2) {
+          notification_.release();
+        }
+      }));
 
   EXPECT_TRUE(pubsub.Publish(sense::ButtonA(true)));
-  EXPECT_TRUE(pubsub.Publish(sense::VocSample{.voc_level = 0.75f}));
+  EXPECT_TRUE(pubsub.Publish(sense::AirQuality{.score = 768u}));
   EXPECT_TRUE(pubsub.Publish(sense::ButtonA(true)));
-  EXPECT_TRUE(pubsub.Publish(sense::VocSample{.voc_level = 0.25}));
+  EXPECT_TRUE(pubsub.Publish(sense::AirQuality{.score = 256u}));
   work_queue_start_notification_.release();
 
   // This should time out as the fifth event never gets sent.
   EXPECT_FALSE(notification_.try_acquire_for(1ms));
   EXPECT_EQ(events_processed_, 2) << "Only voc events are processed";
-  EXPECT_EQ(total_voc_, 1.0f);
+  EXPECT_EQ(total_score_, 1024u);
   worker.Stop();
 }
 
