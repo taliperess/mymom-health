@@ -37,7 +37,8 @@ extern "C" {
 
 void CtrlCSignalHandler(int /* ignored */) {
   printf("\nCtrl-C received; simulator exiting immediately...\n");
-  exit(0);
+  // Skipping the C++ destructors since we want to exit immediately.
+  _exit(0);
 }
 
 }  // extern "C"
