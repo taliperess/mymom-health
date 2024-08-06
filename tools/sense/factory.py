@@ -402,7 +402,7 @@ def _sample_until(
 
 class Ltr559Test(Test):
     _PROX_NEAR_THRESHOLD = 20000
-    _LIGHT_DARK_THRESHOLD = 0.5
+    _LIGHT_DARK_THRESHOLD = 2.5
     _LIGHT_BRIGHT_THRESHOLD = 4000
 
     def __init__(self, rpcs):
