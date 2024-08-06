@@ -75,8 +75,6 @@ cc_library(
 pw_cc_test(
     name = "service_test",
     srcs = ["service_test.cc"],
-    # TODO: https://pwbug.dev/352163490 - Fails in CI
-    tags = ["manual"],
     deps = [
         ":events",
         ":service",
