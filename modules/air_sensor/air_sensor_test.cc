@@ -28,7 +28,7 @@ class AirSensorTest : public ::testing::Test {
  protected:
   using Score = AirSensor::Score;
 
-  void SetUp() override { air_sensor_.Init(); }
+  void SetUp() override { ASSERT_EQ(pw::OkStatus(), air_sensor_.Init()); }
 
   void MeasureRepeated(size_t n) {
     for (size_t i = 0; i < n; ++i) {
@@ -130,7 +130,7 @@ TEST_F(AirSensorTest, MeasureAsync) {
   });
 
   for (size_t i = 0; i < 3; ++i) {
-    air_sensor_.Measure(response_);
+    ASSERT_EQ(pw::OkStatus(), air_sensor_.Measure(response_));
     request_.release();
     response_.acquire();
     EXPECT_EQ(air_sensor_.temperature(), AirSensor::kDefaultTemperature + i);

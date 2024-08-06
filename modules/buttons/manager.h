@@ -15,6 +15,7 @@
 
 #include <chrono>
 
+#include "pw_assert/check.h"
 #include "modules/pubsub/pubsub_events.h"
 #include "modules/worker/worker.h"
 #include "pw_chrono/system_clock.h"
@@ -61,7 +62,7 @@ class EdgeDetector final {
 
 class Button {
  public:
-  Button(pw::digital_io::DigitalIn& io) : io_(io) { io_.Enable(); };
+  Button(pw::digital_io::DigitalIn& io) : io_(io) { PW_CHECK_OK(io_.Enable()); };
 
   pw::Result<EdgeDetector::StateChange> Sample(
       pw::chrono::SystemClock::time_point now);

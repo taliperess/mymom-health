@@ -44,9 +44,9 @@ void InitStateManager() {
 void InitEventTimers() {
   auto& pubsub = system::PubSub();
   static EventTimers<3> event_timers(pubsub);
-  event_timers.AddEventTimer(StateManager::kRepeatAlarmToken);
-  event_timers.AddEventTimer(StateManager::kSilenceAlarmToken);
-  event_timers.AddEventTimer(StateManager::kThresholdModeToken);
+  PW_CHECK_OK(event_timers.AddEventTimer(StateManager::kRepeatAlarmToken));
+  PW_CHECK_OK(event_timers.AddEventTimer(StateManager::kSilenceAlarmToken));
+  PW_CHECK_OK(event_timers.AddEventTimer(StateManager::kThresholdModeToken));
 }
 
 void InitBoardService() {
@@ -68,8 +68,8 @@ void InitMorseEncoder() {
 
   PW_CHECK(system::PubSub().SubscribeTo<MorseEncodeRequest>(
       [](MorseEncodeRequest request) {
-        morse_encoder.Encode(
-            request.message, request.repeat, Encoder::kDefaultIntervalMs);
+        PW_CHECK_OK(morse_encoder.Encode(
+            request.message, request.repeat, Encoder::kDefaultIntervalMs));
       }));
 }
 

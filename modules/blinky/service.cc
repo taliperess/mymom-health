@@ -13,6 +13,7 @@
 // the License.
 #define PW_LOG_MODULE_NAME "BLINKY"
 
+#include "pw_assert/check.h"
 #include "modules/blinky/service.h"
 
 namespace sense {
@@ -23,7 +24,7 @@ void BlinkyService::Init(pw::async2::Dispatcher& dispatcher,
                          PolychromeLed& polychrome_led) {
   blinky_.Init(dispatcher, allocator, monochrome_led, polychrome_led);
   // Start binking once every 1000ms.
-  blinky_.Blink(/*blink_count=*/0, /*interval_ms=*/1000);
+  PW_CHECK_OK(blinky_.Blink(/*blink_count=*/0, /*interval_ms=*/1000));
 }
 
 pw::Status BlinkyService::ToggleLed(const pw_protobuf_Empty&,

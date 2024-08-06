@@ -67,6 +67,7 @@ cc_library(
     deps = [
         ":blinky",
         ":nanopb_rpc",
+        "@pigweed//pw_assert:check",
         "@pigweed//pw_allocator:allocator",
         "@pigweed//pw_async2:dispatcher",
     ],

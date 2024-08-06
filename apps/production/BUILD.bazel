@@ -16,7 +16,7 @@ load("@pigweed//pw_build:compatibility.bzl", "host_backend_alias")
 load("@pigweed//targets/host_device_simulator:transition.bzl", "host_device_simulator_binary")
 load("@pigweed//targets/rp2040:flash.bzl", "flash_rp2040")
 load("//targets/rp2:binary.bzl", "rp2040_binary", "rp2350_binary")
-load("//tools:tools.bzl", "sense_device_console", "sense_host_console",)
+load("//tools:tools.bzl", "sense_device_console", "sense_host_console")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -36,6 +36,7 @@ cc_binary(
         "//system:worker",
         "//system",
         ":threads",
+        "@pigweed//pw_assert:check",
         "@pigweed//pw_log",
         "@pigweed//pw_system:async",
         "@pigweed//pw_thread:thread",
@@ -102,7 +103,7 @@ sense_device_console(
 sense_device_console(
     name = "rp2040_webconsole",
     binary = ":rp2040.elf",
-    extra_args = ["--browser"]
+    extra_args = ["--browser"],
 )
 
 sense_device_console(
@@ -113,7 +114,7 @@ sense_device_console(
 sense_device_console(
     name = "rp2350_webconsole",
     binary = ":rp2350.elf",
-    extra_args = ["--browser"]
+    extra_args = ["--browser"],
 )
 
 alias(

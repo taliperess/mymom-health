@@ -13,6 +13,7 @@
 // the License.
 #pragma once
 
+#include "pw_assert/check.h"
 #include "pw_chrono/system_clock.h"
 #include "pw_containers/inline_deque.h"
 #include "pw_digital_io/digital_io.h"
@@ -60,7 +61,7 @@ class DigitalInOutFake : public DigitalInOutFakeImpl {
 
   DigitalInOutFake() : DigitalInOutFake(Clock::RealClock()) {}
   DigitalInOutFake(Clock& clock) : DigitalInOutFakeImpl(clock, events_) {
-    SetState(State::kInactive);
+    PW_CHECK_OK(SetState(State::kInactive));
   }
 
  private:

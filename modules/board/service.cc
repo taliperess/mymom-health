@@ -46,7 +46,10 @@ void BoardService::OnboardTempStream(
     const board_OnboardTempStreamRequest& request,
     ServerWriter<board_OnboardTempResponse>& writer) {
   if (request.sample_interval_ms < 100) {
-    writer.Finish(pw::Status::InvalidArgument());
+    if (const auto status = writer.Finish(pw::Status::InvalidArgument());
+        !status.ok()) {
+      PW_LOG_ERROR("Failed to write response: %s", status.str());
+    }
     return;
   }
 

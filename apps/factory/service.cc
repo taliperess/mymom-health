@@ -50,16 +50,13 @@ pw::Status FactoryService::StartTest(const factory_StartTestRequest& request,
       break;
     case factory_Test_Type_LTR559_PROX:
       PW_LOG_INFO("Configured for LTR559 proximity test");
-      proximity_sensor_->Enable();
-      break;
+      return proximity_sensor_->Enable();
     case factory_Test_Type_LTR559_LIGHT:
       PW_LOG_INFO("Configured for LTR559 ambient light test");
-      ambient_light_sensor_->Enable();
-      break;
+      return ambient_light_sensor_->Enable();
     case factory_Test_Type_BME688:
       PW_LOG_INFO("Configured for BME688 air sensor test");
-      air_sensor_->Init();
-      break;
+      return air_sensor_->Init();
   }
 
   return pw::OkStatus();
@@ -72,11 +69,9 @@ pw::Status FactoryService::EndTest(const factory_EndTestRequest& request,
       button_manager_->Stop();
       break;
     case factory_Test_Type_LTR559_PROX:
-      proximity_sensor_->Disable();
-      break;
+      return proximity_sensor_->Disable();
     case factory_Test_Type_LTR559_LIGHT:
-      ambient_light_sensor_->Disable();
-      break;
+      return ambient_light_sensor_->Disable();
     case factory_Test_Type_BME688:
       // Do nothing.
       break;

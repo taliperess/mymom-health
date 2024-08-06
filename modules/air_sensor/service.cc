@@ -14,6 +14,7 @@
 
 #include "modules/air_sensor/service.h"
 
+#include "pw_assert/check.h"
 #include "pw_log/log.h"
 
 namespace sense {
@@ -38,7 +39,10 @@ void AirSensorService::MeasureStream(
     const air_sensor_MeasureStreamRequest& request,
     ServerWriter<air_sensor_Measurement>& writer) {
   if (request.sample_interval_ms < 500) {
-    writer.Finish(pw::Status::InvalidArgument());
+    if (const auto status = writer.Finish(pw::Status::InvalidArgument());
+        !status.ok()) {
+      PW_LOG_ERROR("Failed to write response: %s", status.str());
+    }
     return;
   }
 

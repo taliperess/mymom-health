@@ -20,6 +20,7 @@ cc_library(
     hdrs = ["monochrome_led.h"],
     deps = [
         "//modules/pwm:digital_out",
+        "@pigweed//pw_assert:check",
         "@pigweed//pw_digital_io",
     ],
 )
@@ -42,6 +43,7 @@ cc_library(
         "@pigweed//pw_log",
     ],
     deps = [
+        "@pigweed//pw_assert:check",
         "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_containers:inline_deque",
         "@pigweed//pw_digital_io",

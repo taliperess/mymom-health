@@ -30,6 +30,7 @@ cc_library(
     hdrs = ["pubsub.h"],
     deps = [
         "//modules/worker",
+        "@pigweed//pw_assert:check",
         "@pigweed//pw_containers:inline_deque",
         "@pigweed//pw_function",
         "@pigweed//pw_sync:interrupt_spin_lock",

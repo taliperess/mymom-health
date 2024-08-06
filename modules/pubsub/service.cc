@@ -78,8 +78,12 @@ pubsub_Event EventToProto(const Event& event) {
     proto.type.sense_state.alarm_active = state.alarm;
     proto.type.sense_state.alarm_threshold = state.alarm_threshold;
     proto.type.sense_state.aq_score = state.air_quality;
-    pw::string::Copy(state.air_quality_description,
-                     proto.type.sense_state.aq_description);
+    if (const auto status =
+            pw::string::Copy(state.air_quality_description,
+                             proto.type.sense_state.aq_description);
+        !status.ok()) {
+      PW_LOG_ERROR("Failed to copy description: %s", status.status().str());
+    }
   } else if (std::holds_alternative<StateManagerControl>(event)) {
     proto.which_type = pubsub_Event_state_manager_control_tag;
     const auto& control = std::get<StateManagerControl>(event);
@@ -167,8 +171,10 @@ pw::Result<Event> ProtoToEvent(const pubsub_Event& proto) {
 void PubSubService::Init(PubSub& pubsub) {
   pubsub_ = &pubsub;
 
-  PW_CHECK(pubsub_->Subscribe(
-      [this](Event event) { stream_.Write(EventToProto(event)); }));
+  PW_CHECK(pubsub_->Subscribe([this](Event event) {
+    // Writing to an unopened stream is okay here, so we IgnoreError.
+    stream_.Write(EventToProto(event)).IgnoreError();
+  }));
 }
 
 pw::Status PubSubService::Publish(const pubsub_Event& request,

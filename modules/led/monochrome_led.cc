@@ -12,6 +12,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+#include "pw_assert/check.h"
 #include "modules/led/monochrome_led.h"
 
 namespace sense {
@@ -33,12 +34,12 @@ bool MonochromeLed::IsOn() {
 
 void MonochromeLed::TurnOn() {
   SetMode(Mode::kSio);
-  sio_.SetState(State::kActive);
+  PW_CHECK_OK(sio_.SetState(State::kActive));
 }
 
 void MonochromeLed::TurnOff() {
   SetMode(Mode::kSio);
-  sio_.SetState(State::kInactive);
+  PW_CHECK_OK(sio_.SetState(State::kInactive));
 }
 
 void MonochromeLed::SetBrightness(uint16_t level) {
@@ -51,7 +52,7 @@ void MonochromeLed::Toggle() {
   bool is_off =
       mode_ != Mode::kSio || !result.ok() || *result == State::kInactive;
   SetMode(Mode::kSio);
-  sio_.SetState(is_off ? State::kActive : State::kInactive);
+  PW_CHECK_OK(sio_.SetState(is_off ? State::kActive : State::kInactive));
 }
 
 void MonochromeLed::Pulse(uint32_t interval_ms) {
@@ -78,12 +79,12 @@ void MonochromeLed::SetMode(Mode mode) {
   }
   switch (mode_) {
     case Mode::kSio:
-      sio_.Disable();
+      PW_CHECK_OK(sio_.Disable());
       pwm_.Enable();
       break;
     case Mode::kPwm:
       pwm_.Disable();
-      sio_.Enable();
+      PW_CHECK_OK(sio_.Enable());
       break;
   }
   mode_ = mode;

@@ -15,6 +15,7 @@
 #define PW_LOG_MODULE_NAME "BUTTONS"
 
 #include "pw_assert/check.h"
+#include "pw_log/log.h"
 #include "pw_status/try.h"
 
 using pw::chrono::SystemClock;
@@ -77,7 +78,9 @@ void ButtonManager::Init(PubSub& pub_sub, Worker& worker) {
 void ButtonManager::SampleCallback(SystemClock::time_point now) {
   PW_CHECK_NOTNULL(worker_);
   worker_->RunOnce([this, now]() {
-    SampleButtons(now);
+    if (const auto status = SampleButtons(now); !status.ok()) {
+      PW_LOG_ERROR("Failed to sample buttons: %s", status.str());
+    }
     // Start the periodic sampling callbacks.
     timer_.InvokeAfter(kSampleInterval);
   });

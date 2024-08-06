@@ -16,6 +16,8 @@
 
 #include "modules/worker/test_worker.h"
 #include "pw_digital_io/digital_io.h"
+#include "pw_status/status.h"
+#include "pw_sync/timed_thread_notification.h"
 #include "pw_sync/interrupt_spin_lock.h"
 #include "pw_sync/timed_thread_notification.h"
 #include "pw_unit_test/framework.h"
@@ -77,10 +79,10 @@ class ManagerTest : public ::testing::Test {
     last_event_ = {};
     events_processed_ = 0;
 
-    io_a_.SetState(State::kInactive);
-    io_b_.SetState(State::kInactive);
-    io_x_.SetState(State::kInactive);
-    io_y_.SetState(State::kInactive);
+    ASSERT_EQ(pw::OkStatus(), io_a_.SetState(State::kInactive));
+    ASSERT_EQ(pw::OkStatus(), io_b_.SetState(State::kInactive));
+    ASSERT_EQ(pw::OkStatus(), io_x_.SetState(State::kInactive));
+    ASSERT_EQ(pw::OkStatus(), io_y_.SetState(State::kInactive));
   }
 
   /// Expects that a button was pressed.
@@ -267,28 +269,28 @@ TEST_F(ManagerTest, AllButtonsTurnOnAndOffEvents) {
     notification_.release();
   }));
 
-  io_a_.SetState(State::kActive);
+  ASSERT_EQ(pw::OkStatus(), io_a_.SetState(State::kActive));
   ASSERT_TRUE(AssertPressed<sense::ButtonA>());
 
-  io_b_.SetState(State::kActive);
+  ASSERT_EQ(pw::OkStatus(), io_b_.SetState(State::kActive));
   ASSERT_TRUE(AssertPressed<sense::ButtonB>());
 
-  io_x_.SetState(State::kActive);
+  ASSERT_EQ(pw::OkStatus(), io_x_.SetState(State::kActive));
   ASSERT_TRUE(AssertPressed<sense::ButtonX>());
 
-  io_y_.SetState(State::kActive);
+  ASSERT_EQ(pw::OkStatus(), io_y_.SetState(State::kActive));
   ASSERT_TRUE(AssertPressed<sense::ButtonY>());
 
-  io_a_.SetState(State::kInactive);
+  ASSERT_EQ(pw::OkStatus(), io_a_.SetState(State::kInactive));
   ASSERT_TRUE(AssertPressed<sense::ButtonA>(false));
 
-  io_b_.SetState(State::kInactive);
+  ASSERT_EQ(pw::OkStatus(), io_b_.SetState(State::kInactive));
   ASSERT_TRUE(AssertPressed<sense::ButtonB>(false));
 
-  io_x_.SetState(State::kInactive);
+  ASSERT_EQ(pw::OkStatus(), io_x_.SetState(State::kInactive));
   ASSERT_TRUE(AssertPressed<sense::ButtonX>(false));
 
-  io_y_.SetState(State::kInactive);
+  ASSERT_EQ(pw::OkStatus(), io_y_.SetState(State::kInactive));
   ASSERT_TRUE(AssertPressed<sense::ButtonY>(false));
 
   worker.Stop();

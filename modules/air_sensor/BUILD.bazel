@@ -99,6 +99,7 @@ cc_library(
         ":air_sensor",
         ":nanopb_rpc",
         "//modules/worker",
+        "@pigweed//pw_assert:check",
         "@pigweed//pw_chrono:system_clock",
         "@pigweed//pw_chrono:system_timer",
         "@pigweed//pw_sync:thread_notification",
