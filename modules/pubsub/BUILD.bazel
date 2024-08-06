@@ -37,6 +37,18 @@ cc_library(
     ],
 )
 
+pw_cc_test(
+    name = "pubsub_test",
+    srcs = ["pubsub_test.cc"],
+    deps = [
+        ":pubsub",
+        "//modules/worker:test_worker",
+        "@pigweed//pw_sync:lock_annotations",
+        "@pigweed//pw_sync:mutex",
+        "@pigweed//pw_sync:thread_notification",
+    ],
+)
+
 cc_library(
     name = "events",
     hdrs = ["pubsub_events.h"],
@@ -44,15 +56,12 @@ cc_library(
 )
 
 pw_cc_test(
-    name = "pubsub_test",
-    srcs = ["pubsub_test.cc"],
-    # TODO: https://pwbug.dev/352163490 - Fails in CI
-    tags = ["manual"],
+    name = "pubsub_events_test",
+    srcs = ["pubsub_events_test.cc"],
     deps = [
         ":events",
-        ":pubsub",
         "//modules/worker:test_worker",
-        "@pigweed//pw_sync:timed_thread_notification",
+        "@pigweed//pw_sync:thread_notification",
     ],
 )
 

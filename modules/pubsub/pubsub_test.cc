@@ -14,273 +14,205 @@
 
 #include "modules/pubsub/pubsub.h"
 
-#include "modules/pubsub/pubsub_events.h"
+#include <mutex>
+
 #include "modules/worker/test_worker.h"
-#include "pw_sync/timed_thread_notification.h"
+#include "pw_sync/lock_annotations.h"
+#include "pw_sync/mutex.h"
+#include "pw_sync/thread_notification.h"
 #include "pw_unit_test/framework.h"
 
 namespace {
 
 using namespace std::literals::chrono_literals;
 
-struct TestEvent {
-  int value;
+// Test fixtures.
+
+struct EchoRequest {
+  uint32_t value;
 };
-using PubSub = sense::GenericPubSub<TestEvent>;
+
+class EchoResponse {
+ public:
+  void SetNotifyAfter(size_t num_events) PW_LOCKS_EXCLUDED(lock_) {
+    std::lock_guard lock(lock_);
+    if (num_events < events_seen_) {
+      notification_.release();
+    }
+    events_seen_ = 0;
+    notify_after_ = num_events;
+  }
+
+  std::optional<uint32_t> TryGetValue() PW_LOCKS_EXCLUDED(lock_) {
+    std::optional<uint32_t> result;
+    if (notification_.try_acquire()) {
+      std::lock_guard lock(lock_);
+      result = value_;
+    }
+    return result;
+  }
+
+  uint32_t BlockAndGetValue() PW_LOCKS_EXCLUDED(lock_) {
+    notification_.acquire();
+    std::lock_guard lock(lock_);
+    return value_;
+  }
+
+  void AddValueAndUnblock(uint32_t value) PW_LOCKS_EXCLUDED(lock_) {
+    std::lock_guard lock(lock_);
+    value_ += value;
+    ++events_seen_;
+    if (events_seen_ == notify_after_) {
+      notification_.release();
+      events_seen_ = 0;
+    }
+  }
+
+ private:
+  uint32_t value_ PW_GUARDED_BY(lock_) = 0;
+  size_t events_seen_ PW_GUARDED_BY(lock_) = 0;
+  size_t notify_after_ PW_GUARDED_BY(lock_) = 1;
+  pw::sync::Mutex lock_;
+  pw::sync::ThreadNotification notification_;
+};
 
 class PubSubTest : public ::testing::Test {
  protected:
-  pw::InlineDeque<TestEvent, 4> event_queue_;
-  std::array<PubSub::Subscriber, 4> subscribers_buffer_;
-  int result_ = 0;
-  int events_processed_ = 0;
-  pw::sync::TimedThreadNotification notification_;
-  pw::sync::TimedThreadNotification work_queue_start_notification_;
+  static constexpr size_t kMaxEvents = 4;
+  static constexpr size_t kMaxSubscribers = 4;
+  using PubSub =
+      sense::GenericPubSubBuffer<EchoRequest, kMaxEvents, kMaxSubscribers>;
+
+  PubSubTest() : ::testing::Test(), pubsub_(worker_) {}
+
+  void TearDown() override { worker_.Stop(); }
+
+  sense::TestWorker<> worker_;
+  PubSub pubsub_;
+  std::array<EchoResponse, kMaxSubscribers> responses_;
 };
 
+// Unit tests.
+
 TEST_F(PubSubTest, Publish_OneSubscriber) {
-  sense::TestWorker<> worker;
-  PubSub pubsub(worker, event_queue_, subscribers_buffer_);
-
-  ASSERT_TRUE(pubsub.Subscribe([this](TestEvent event) {
-    result_ = event.value;
-    notification_.release();
+  EchoResponse& response = responses_[0];
+  ASSERT_TRUE(pubsub_.Subscribe([&response](EchoRequest request) {
+    response.AddValueAndUnblock(request.value);
   }));
-
-  EXPECT_TRUE(pubsub.Publish({.value = 42}));
-
-  // TODO: pwbug.dev/352133474 - Eliminate race conditions from tests.
-  EXPECT_TRUE(notification_.try_acquire_for(200ms));
-  EXPECT_EQ(result_, 42);
-  worker.Stop();
+  EXPECT_TRUE(pubsub_.Publish({.value = 42u}));
+  EXPECT_EQ(response.BlockAndGetValue(), 42u);
 }
 
 TEST_F(PubSubTest, Publish_MultipleSubscribers) {
-  sense::TestWorker<> worker;
-  PubSub pubsub(worker, event_queue_, subscribers_buffer_);
-
-  for (size_t i = 0; i < subscribers_buffer_.size(); ++i) {
-    struct {
-      int* value;
-      pw::sync::TimedThreadNotification* notification;
-    } context = {
-        .value = &result_,
-        .notification =
-            i == subscribers_buffer_.size() - 1 ? &notification_ : nullptr,
-    };
-
-    ASSERT_TRUE(pubsub.Subscribe([&context](TestEvent event) {
-      *context.value += event.value;
-      if (context.notification != nullptr) {
-        context.notification->release();
-      }
+  for (auto& response : responses_) {
+    ASSERT_TRUE(pubsub_.Subscribe([&response](EchoRequest request) {
+      response.AddValueAndUnblock(request.value);
     }));
   }
-
-  EXPECT_TRUE(pubsub.Publish({.value = 4}));
-
-  EXPECT_TRUE(notification_.try_acquire_for(200ms));
-  EXPECT_EQ(result_, static_cast<int>(4 * subscribers_buffer_.size()));
-  worker.Stop();
+  ASSERT_TRUE(pubsub_.Publish({.value = 4u}));
+  for (auto& response : responses_) {
+    EXPECT_EQ(response.BlockAndGetValue(), 4u);
+  }
 }
 
 TEST_F(PubSubTest, Publish_MultipleEvents) {
-  sense::TestWorker<> worker;
-  PubSub pubsub(worker, event_queue_, subscribers_buffer_);
-
-  ASSERT_TRUE(pubsub.Subscribe([this](TestEvent event) {
-    result_ += event.value;
-    events_processed_++;
-
-    if (events_processed_ % 4 == 0) {
-      notification_.release();
-    }
+  EchoResponse& response = responses_[0];
+  ASSERT_TRUE(pubsub_.Subscribe([&response](EchoRequest request) {
+    response.AddValueAndUnblock(request.value);
   }));
+  response.SetNotifyAfter(4);
+  ASSERT_TRUE(pubsub_.Publish({.value = 1}));
+  ASSERT_TRUE(pubsub_.Publish({.value = 2}));
+  ASSERT_TRUE(pubsub_.Publish({.value = 3}));
+  ASSERT_TRUE(pubsub_.Publish({.value = 4}));
+  EXPECT_EQ(response.BlockAndGetValue(), 10u);
 
-  EXPECT_TRUE(pubsub.Publish({.value = 1}));
-  EXPECT_TRUE(pubsub.Publish({.value = 2}));
-  EXPECT_TRUE(pubsub.Publish({.value = 3}));
-  EXPECT_TRUE(pubsub.Publish({.value = 4}));
-
-  EXPECT_TRUE(notification_.try_acquire_for(200ms));
-  EXPECT_EQ(result_, 10);
-  EXPECT_EQ(events_processed_, 4);
-
-  EXPECT_TRUE(pubsub.Publish({.value = 5}));
-  EXPECT_TRUE(pubsub.Publish({.value = 6}));
-  EXPECT_TRUE(pubsub.Publish({.value = 7}));
-  EXPECT_TRUE(pubsub.Publish({.value = 8}));
-
-  EXPECT_TRUE(notification_.try_acquire_for(200ms));
-  EXPECT_EQ(result_, 36);
-  EXPECT_EQ(events_processed_, 8);
-  worker.Stop();
+  ASSERT_TRUE(pubsub_.Publish({.value = 5}));
+  ASSERT_TRUE(pubsub_.Publish({.value = 6}));
+  ASSERT_TRUE(pubsub_.Publish({.value = 7}));
+  ASSERT_TRUE(pubsub_.Publish({.value = 8}));
+  EXPECT_EQ(response.BlockAndGetValue(), 36u);
 }
 
 TEST_F(PubSubTest, Publish_MultipleEvents_QueueFull) {
-  sense::TestWorker<> worker;
-  PubSub pubsub(worker, event_queue_, subscribers_buffer_);
+  EchoResponse& response = responses_[0];
 
-  worker.RunOnce([this]() {
-    // Block the work queue until all events are published.
-    PW_ASSERT(work_queue_start_notification_.try_acquire_for(1s));
-  });
+  // Block the work queue until all events are published.
+  pw::sync::ThreadNotification pause;
+  worker_.RunOnce([&pause]() { pause.acquire(); });
 
-  ASSERT_TRUE(pubsub.Subscribe([this](TestEvent event) {
-    result_ += event.value;
-    events_processed_++;
-
-    if (events_processed_ == 5) {
-      notification_.release();
-    }
+  ASSERT_TRUE(pubsub_.Subscribe([&response](EchoRequest request) {
+    response.AddValueAndUnblock(request.value);
   }));
+  response.SetNotifyAfter(5);
+  ASSERT_TRUE(pubsub_.Publish({.value = 10}));
+  ASSERT_TRUE(pubsub_.Publish({.value = 11}));
+  ASSERT_TRUE(pubsub_.Publish({.value = 12}));
+  ASSERT_TRUE(pubsub_.Publish({.value = 13}));
+  EXPECT_FALSE(pubsub_.Publish({.value = 14}));
 
-  EXPECT_TRUE(pubsub.Publish({.value = 10}));
-  EXPECT_TRUE(pubsub.Publish({.value = 11}));
-  EXPECT_TRUE(pubsub.Publish({.value = 12}));
-  EXPECT_TRUE(pubsub.Publish({.value = 13}));
-  EXPECT_FALSE(pubsub.Publish({.value = 14}));
-  work_queue_start_notification_.release();
+  // The fifth event never gets sent.
+  pause.release();
+  auto result = response.TryGetValue();
+  EXPECT_FALSE(result.has_value());
 
-  // This should time out as the fifth event never gets sent.
-  EXPECT_FALSE(notification_.try_acquire_for(1ms));
-  EXPECT_EQ(events_processed_, 4);
-  EXPECT_EQ(result_, 46);
-  worker.Stop();
+  response.SetNotifyAfter(4);
+  EXPECT_EQ(response.BlockAndGetValue(), 46u);
 }
 
 TEST_F(PubSubTest, Subscribe_Full) {
-  sense::TestWorker<> worker;
-  PubSub pubsub(worker, event_queue_, subscribers_buffer_);
+  for (auto& response : responses_) {
+    ASSERT_TRUE(pubsub_.Subscribe([&response](EchoRequest request) {
+      response.AddValueAndUnblock(request.value);
+    }));
+  }
 
-  EXPECT_TRUE(pubsub.Subscribe([this](TestEvent) { notification_.release(); })
-                  .has_value());
-  EXPECT_EQ(pubsub.subscriber_count(), 1u);
-  EXPECT_TRUE(pubsub.Subscribe([this](TestEvent) { notification_.release(); })
-                  .has_value());
-  EXPECT_EQ(pubsub.subscriber_count(), 2u);
-  EXPECT_TRUE(pubsub.Subscribe([this](TestEvent) { notification_.release(); })
-                  .has_value());
-  EXPECT_EQ(pubsub.subscriber_count(), 3u);
-  EXPECT_TRUE(pubsub.Subscribe([this](TestEvent) { notification_.release(); })
-                  .has_value());
-  EXPECT_EQ(pubsub.subscriber_count(), 4u);
-  EXPECT_EQ(pubsub.subscriber_count(), pubsub.max_subscribers());
-  EXPECT_FALSE(pubsub.Subscribe([this](TestEvent) { notification_.release(); })
-                   .has_value());
-  EXPECT_EQ(pubsub.subscriber_count(), 4u);
-  worker.Stop();
+  // Subscriber is not added when max subscribers has been reached.
+  EchoResponse extra;
+  EXPECT_FALSE(pubsub_.Subscribe([&extra](EchoRequest request) {
+    extra.AddValueAndUnblock(request.value);
+  }));
+  EXPECT_EQ(pubsub_.subscriber_count(), 4u);
+
+  // The extra subscriber never gets events.
+  ASSERT_TRUE(pubsub_.Publish({.value = 4u}));
+  auto result = extra.TryGetValue();
+  EXPECT_FALSE(result.has_value());
 }
 
 TEST_F(PubSubTest, Subscribe_Unsubscribe) {
-  sense::TestWorker<> worker;
-  PubSub pubsub(worker, event_queue_, subscribers_buffer_);
+  std::array<PubSub::SubscribeToken, kMaxSubscribers> tokens;
+  auto token = tokens.begin();
+  for (auto& response : responses_) {
+    ASSERT_NE(token, tokens.end());
+    auto result = pubsub_.Subscribe([&response](EchoRequest request) {
+      response.AddValueAndUnblock(request.value);
+    });
+    EXPECT_TRUE(result.has_value());
+    *token = *result;
+    ++token;
+  }
+  EXPECT_EQ(pubsub_.subscriber_count(), 4u);
 
-  auto token1 =
-      pubsub.Subscribe([this](TestEvent) { notification_.release(); });
-  EXPECT_EQ(pubsub.subscriber_count(), 1u);
-  auto token2 =
-      pubsub.Subscribe([this](TestEvent) { notification_.release(); });
-  EXPECT_EQ(pubsub.subscriber_count(), 2u);
-  auto token3 =
-      pubsub.Subscribe([this](TestEvent) { notification_.release(); });
-  EXPECT_EQ(pubsub.subscriber_count(), 3u);
-  auto token4 =
-      pubsub.Subscribe([this](TestEvent) { notification_.release(); });
-  EXPECT_EQ(pubsub.subscriber_count(), 4u);
+  // Remove a subscriber.
+  EXPECT_TRUE(pubsub_.Unsubscribe(tokens[1]));
+  EXPECT_EQ(pubsub_.subscriber_count(), 3u);
 
-  EXPECT_FALSE(pubsub.Subscribe([this](TestEvent) { notification_.release(); })
-                   .has_value());
-  EXPECT_EQ(pubsub.subscriber_count(), 4u);
-
-  EXPECT_TRUE(pubsub.Unsubscribe(*token2));
-  EXPECT_EQ(pubsub.subscriber_count(), 3u);
-
-  EXPECT_TRUE(pubsub.Subscribe([this](TestEvent) { notification_.release(); })
-                  .has_value());
-  EXPECT_EQ(pubsub.subscriber_count(), 4u);
-
-  EXPECT_TRUE(pubsub.Unsubscribe(*token1));
-  EXPECT_TRUE(pubsub.Unsubscribe(*token3));
-  EXPECT_TRUE(pubsub.Unsubscribe(*token4));
-  EXPECT_EQ(pubsub.subscriber_count(), 1u);
-  worker.Stop();
-}
-
-class PubSubAmEventsTest : public ::testing::Test {
- protected:
-  pw::InlineDeque<sense::Event, 4> event_queue_;
-  std::array<sense::PubSub::Subscriber, 4> subscribers_buffer_;
-  uint16_t total_score_ = 0;
-  int events_processed_ = 0;
-  pw::sync::TimedThreadNotification notification_;
-  pw::sync::TimedThreadNotification work_queue_start_notification_;
-};
-
-TEST_F(PubSubAmEventsTest, PublishEvent) {
-  sense::TestWorker<> worker;
-  sense::PubSub pubsub(worker, event_queue_, subscribers_buffer_);
-
-  worker.RunOnce([this]() {
-    // Block the work queue until all events are published.
-    PW_ASSERT(work_queue_start_notification_.try_acquire_for(1s));
-  });
-
-  ASSERT_TRUE(pubsub.Subscribe([this](sense::Event event) {
-    if (std::holds_alternative<sense::AirQuality>(event)) {
-      total_score_ += std::get<sense::AirQuality>(event).score;
-    } else if (std::holds_alternative<sense::ButtonA>(event)) {
-      EXPECT_TRUE(std::get<sense::ButtonA>(event).pressed());
-    } else {
-      FAIL() << "Unexpected event type";
-    }
-
-    if (++events_processed_ > 4) {
-      notification_.release();
-    }
+  // Add a subscriber after removing.
+  EchoResponse& response = responses_[2];
+  EXPECT_TRUE(pubsub_.Subscribe([&response](EchoRequest request) {
+    response.AddValueAndUnblock(request.value);
   }));
+  EXPECT_EQ(pubsub_.subscriber_count(), 4u);
 
-  EXPECT_TRUE(pubsub.Publish(sense::AirQuality{.score = 128u}));
-  EXPECT_TRUE(pubsub.Publish(sense::AirQuality{.score = 256u}));
-  EXPECT_TRUE(pubsub.Publish(sense::ButtonA(true)));
-  EXPECT_TRUE(pubsub.Publish(sense::AirQuality{.score = 384u}));
-  work_queue_start_notification_.release();
+  // Remove multiple subscriber.
+  EXPECT_TRUE(pubsub_.Unsubscribe(tokens[0]));
+  EXPECT_TRUE(pubsub_.Unsubscribe(tokens[2]));
+  EXPECT_TRUE(pubsub_.Unsubscribe(tokens[3]));
+  EXPECT_EQ(pubsub_.subscriber_count(), 1u);
 
-  // This should time out as the fifth event never gets sent.
-  EXPECT_FALSE(notification_.try_acquire_for(1ms));
-  EXPECT_EQ(events_processed_, 4);
-  EXPECT_EQ(total_score_, 768u);
-  worker.Stop();
-}
-
-TEST_F(PubSubAmEventsTest, SubscribeTo) {
-  sense::TestWorker<> worker;
-  sense::PubSub pubsub(worker, event_queue_, subscribers_buffer_);
-
-  worker.RunOnce([this]() {
-    // Block the work queue until all events are published.
-    PW_ASSERT(work_queue_start_notification_.try_acquire_for(1s));
-  });
-
-  ASSERT_TRUE(
-      pubsub.SubscribeTo<sense::AirQuality>([this](sense::AirQuality sample) {
-        total_score_ += sample.score;
-        if (++events_processed_ > 2) {
-          notification_.release();
-        }
-      }));
-
-  EXPECT_TRUE(pubsub.Publish(sense::ButtonA(true)));
-  EXPECT_TRUE(pubsub.Publish(sense::AirQuality{.score = 768u}));
-  EXPECT_TRUE(pubsub.Publish(sense::ButtonA(true)));
-  EXPECT_TRUE(pubsub.Publish(sense::AirQuality{.score = 256u}));
-  work_queue_start_notification_.release();
-
-  // This should time out as the fifth event never gets sent.
-  EXPECT_FALSE(notification_.try_acquire_for(1ms));
-  EXPECT_EQ(events_processed_, 2) << "Only voc events are processed";
-  EXPECT_EQ(total_score_, 1024u);
-  worker.Stop();
+  // Unsubscribe invalid.
+  EXPECT_FALSE(pubsub_.Unsubscribe(tokens[1]));
 }
 
 }  // namespace
