@@ -36,10 +36,10 @@ class EchoResponse {
  public:
   void SetNotifyAfter(size_t num_events) PW_LOCKS_EXCLUDED(lock_) {
     std::lock_guard lock(lock_);
-    if (num_events < events_seen_) {
+    if (num_events <= events_seen_) {
       notification_.release();
+      events_seen_ = 0;
     }
-    events_seen_ = 0;
     notify_after_ = num_events;
   }
 
