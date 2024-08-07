@@ -124,19 +124,6 @@ cc_library(
 )
 
 cc_library(
-    name = "device_handler",
-    srcs = [
-        "device_handler.cc",
-    ],
-    includes = ["public"],
-    deps = [
-        "@pigweed//pw_cpu_exception_cortex_m:snapshot",
-        "@pigweed//pw_system:device_handler.facade",
-        "@pico-sdk//src/rp2_common/hardware_watchdog:hardware_watchdog",
-    ],
-)
-
-cc_library(
     name = "unit_test_rpc_main",
     testonly = True,
     srcs = ["unit_test_rpc_main.cc"],
