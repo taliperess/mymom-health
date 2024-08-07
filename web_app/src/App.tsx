@@ -13,137 +13,110 @@
 // the License.
 
 import React, { useEffect, useState } from 'react'
-import { RPCService } from './common/rpcService'
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-import './App.css'
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
-const options = {
-  animation: false,
-  scales: {
-    y: {
-      suggestedMin: 15,
-      suggestedMax: 25
-    }
-  },
-  plugins: {
-    legend: {
-      position: 'top' as const,
-    },
-    title: {
-      display: true,
-      text: 'Onboard Temp',
-    },
-  },
-  scales: {
-    x: {
-      grid: {
-        color: 'rgb(136, 140, 145, 0.5)',
-      }
-    },
-    y: {
-      grid: {
-        color: 'rgb(136, 140, 145, 0.5)',
-      }
-    }
-  }
-};
-
-type Reading = {
-  time: number;
-  value: number;
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Box from '@mui/material/Box';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import { useAppState } from './common/state';
+import { HumidityPage } from './components/humidity';
+import { Hero } from './components/hero';
+import { Header } from './components/header';
+import { AirQualityPage } from './components/airquality';
+import { TemperaturePage } from './components/temperature';
+interface TabPanelProps {
+    children?: React.ReactNode;
+    index: number;
+    value: number;
 }
 
 
-function formatData(data: Reading[]){
-  return {
-    labels: data.map((_d,i)=>i),
-    datasets: [{
-      label: "Temp",
-      borderColor: 'rgb(53, 162, 235)',
-      data: data.map(d=>d.value)
-    }
-    ]
-  }
-}
+function TabPanel(props: TabPanelProps) {
+    const { children, value, index, ...other } = props;
 
-function App() {
-  const [service,] = useState<RPCService>(new RPCService());
-  const [connecting, setConnecting] = useState(false);
-  const [tempIsCharting, setTempIsCharting] = useState(false);
-  const [connected, setConnected] = useState(false);
-
-  // const [tempInterval, setTempInterval] = useState(0);
-  const [data, setData] = useState<Reading[]>([]);
-  useEffect(()=>{
-    if (tempIsCharting){
-      const t = setInterval(async ()=>{
-        const temp = (await service.getTemp()).getTemp()
-        setData((curData)=>{
-          // only keep last 40 readings
-          const arr = [...curData].slice(-40);
-          arr.push({time: Date.now(), value: temp})
-          return arr;
-        })
-      }, 500)
-
-      return ()=>{
-        clearInterval(t)
-      }
-    }
-  }, [tempIsCharting, service])
-  return (
-    <>
-      <div className="container">
-        <h1>Pigweed Sense</h1>
-        <div className="card">
-          <div className="buttons">
-            <button onClick={async () => {
-                setConnecting(true);
-                try{
-                  await service.connect();
-                  setConnected(true);
-                }
-                catch(e){}
-                setConnecting(false);
-              }} disabled={connecting}>
-              {connecting ? "Connecting" : "Connect"}
-            </button>
-            <button onClick={() => service.blink(5)} disabled={!connected}>
-              Blink 5 times
-            </button>
-            <button onClick={async () => {
-              setTempIsCharting(!tempIsCharting)
-            }} disabled={!connected}>
-              Chart Temperature
-            </button>
-          </div>
-          <div className="graph">
-            {data.length>2 && <Line width={600} height={400} data={formatData(data)} options={options}/>}
-          </div>
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`tabpanel-${index}`}
+            aria-labelledby={`tab-${index}`}
+            {...other}
+        >
+            {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
         </div>
-      </div>
-    </>
-  )
+    );
 }
 
-export default App
+export default function App() {
+    const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
+    const theme = React.useMemo(
+        () =>
+            createTheme({
+                palette: {
+                    mode: prefersDarkMode ? 'dark' : 'light',
+                },
+            }),
+        [prefersDarkMode],
+    );
+
+    return (
+        <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <Home />
+        </ThemeProvider>
+    );
+}
+
+function Home() {
+    const [tab, setTab] = useState(0);
+    const connected = useAppState(state => state.connected);
+    const basicMode = useAppState(state => state.basicMode);
+
+    const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
+        setTab(newValue);
+    };
+
+    useEffect(()=>{
+      // Can only see temperature without enviro board.
+      if (basicMode) setTab(1); 
+    }, [basicMode]);
+
+    if (!connected){
+      return (
+        <Box sx={{ width: '100%', display: 'flex', gap: '1rem', flexDirection: 'column' }}>
+          <Header />
+          <Card sx={{marginTop: "10rem"}}>
+            <CardContent>
+                <center style={{padding: "3rem 0rem"}}>To begin using the Pigweed Sense app, click <b>Connect</b> and choose your device.</center>
+            </CardContent>
+          </Card>
+        </Box>
+      )
+    }
+
+    return (
+        <Box sx={{ width: '100%', display: 'flex', gap: '1rem', flexDirection: 'column' }}>
+            <Header />
+            <Hero />
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <Tabs value={tab} onChange={handleChange}>
+                    <Tab label="Air Quality" disabled={basicMode} />
+                    <Tab label="Temperature" />
+                    <Tab label="Humidity" disabled={basicMode} />
+                </Tabs>
+            </Box>
+            <TabPanel value={tab} index={0}>
+                <AirQualityPage />
+            </TabPanel>
+            <TabPanel value={tab} index={1}>
+                <TemperaturePage />
+            </TabPanel>
+            <TabPanel value={tab} index={2}>
+                <HumidityPage/>
+            </TabPanel>
+        </Box>
+    );
+}

@@ -5,16 +5,20 @@
   "scripts": {
     "postinstall": "npm run build:protos",
     "vite": "vite",
-    "dev": "esbuild --outdir=. src/main.tsx --tsconfig=tsconfig.json --bundle --sourcemap --minify --loader:.bin=binary --servedir=.",
-    "build:protos": "vite-node copy_protos.ts && cd protos && pw_protobuf_compiler -p pw_protobuf_protos/common.proto -p blinky/blinky.proto -p board/board.proto --out collection",
+    "dev": "esbuild --outdir=. src/main.tsx --tsconfig=tsconfig.json --bundle --sourcemap --minify --loader:.bin=binary --servedir=. --log-override:direct-eval=silent",
+    "build:protos": "vite-node copy_protos.ts && cd protos && pw_protobuf_compiler -p pw_protobuf_protos/common.proto -p air_sensor/air_sensor.proto -p blinky/blinky.proto -p board/board.proto -p state_manager/state_manager.proto --out collection",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "chart.js": "^4.4.3",
+    "@emotion/react": "^11.13.0",
+    "@emotion/styled": "^11.13.0",
+    "@mui/material": "^5.16.6",
+    "@mui/x-charts": "^7.12.0",
+    "date-fns": "^3.6.0",
     "pigweedjs": "^0.0.20",
     "react": "^18.3.1",
-    "react-chartjs-2": "^5.2.0",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.4"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

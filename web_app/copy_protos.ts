@@ -20,6 +20,10 @@ interface ProtoSet {
 }
 const protos: ProtoSet[] = [
   {
+    prefix: "air_sensor",
+    protos: ["../modules/air_sensor/air_sensor.proto"],
+  },
+  {
     prefix: "blinky",
     protos: ["../modules/blinky/blinky.proto"],
   },
@@ -33,6 +37,10 @@ const protos: ProtoSet[] = [
     prefix: "board",
     protos: ["../modules/board/board.proto"],
   },
+  {
+    prefix: "state_manager",
+    protos: ["../modules/state_manager/state_manager.proto"]
+  }
 ];
 
 /**
