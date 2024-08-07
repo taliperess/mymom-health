@@ -36,7 +36,7 @@ static constexpr pw::i2c::Address kAddress =
 static constexpr uint16_t kHeaterTemperature = 300;
 static constexpr uint16_t kHeaterDuration = 100;
 static constexpr auto kTimeout =
-    pw::chrono::SystemClock::for_at_least(std::chrono::minutes(2));
+    pw::chrono::SystemClock::for_at_least(std::chrono::seconds(1));
 
 static int8_t Write(uint8_t reg_address,
                     const uint8_t* data,

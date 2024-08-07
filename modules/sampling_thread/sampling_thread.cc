@@ -63,13 +63,22 @@ void ReadAirSensor() {
   std::ignore = system::PubSub().Publish(AirQuality{*score});
 }
 
+[[nodiscard]] bool LogInit(const char* type, pw::Status init_result) {
+  if (!init_result.ok()) {
+    PW_LOG_WARN("%s sensor init failed: %s", type, init_result.str());
+  }
+  return init_result.ok();
+}
+
 }  // namespace
 
 // Reads sensor samples in a loop and publishes PubSub events for them.
 void SamplingLoop() {
-  PW_CHECK_OK(system::AmbientLightSensor().Enable());
-  PW_CHECK_OK(system::ProximitySensor().Enable());
-  PW_CHECK_OK(system::AirSensor().Init());
+  const bool ambient_light_enabled =
+      LogInit("Ambient light", system::AmbientLightSensor().Enable());
+  const bool prox_enabled =
+      LogInit("Proximity", system::ProximitySensor().Enable());
+  const bool air_enabled = LogInit("Air", system::AirSensor().Init());
 
   SystemClock::time_point deadline = SystemClock::now();
 
@@ -77,9 +86,15 @@ void SamplingLoop() {
     deadline += kPeriod;
     pw::this_thread::sleep_until(deadline);
 
-    ReadAmbientLight();
-    ReadProximity();
-    ReadAirSensor();
+    if (ambient_light_enabled) {
+      ReadAmbientLight();
+    }
+    if (prox_enabled) {
+      ReadProximity();
+    }
+    if (air_enabled) {
+      ReadAirSensor();
+    }
   }
 }
 
