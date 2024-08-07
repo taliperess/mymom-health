@@ -26,8 +26,7 @@ void GenericTestWorker::Start() {
 }
 
 void GenericTestWorker::RunOnce(pw::Function<void()>&& work) {
-  // TODO: http://b/357935830 - Maybe don't IgnoreError?
-  work_queue_->PushWork(std::move(work)).IgnoreError();
+  PW_CHECK_OK(work_queue_->PushWork(std::move(work)));
 }
 
 GenericTestWorker::~GenericTestWorker() {

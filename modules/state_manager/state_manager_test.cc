@@ -65,7 +65,8 @@ class StateManagerTest : public ::testing::Test {
   PolychromeLedFake led_;
   StateManager state_manager_;
   Event event_;
-  pw::sync::ThreadNotification event_notification_;
+  pw::sync::ThreadNotification morse_encode_request_;
+  pw::sync::ThreadNotification timer_request_;
 
  private:
   PolychromeLedFake reference_led_;
@@ -88,9 +89,9 @@ TEST_F(StateManagerTest, MorseReadout) {
   led_.Await();
 
   ASSERT_TRUE(pubsub_.SubscribeTo<MorseEncodeRequest>(
-      [this](MorseEncodeRequest) { event_notification_.release(); }));
+      [this](MorseEncodeRequest) { morse_encode_request_.release(); }));
   ASSERT_TRUE(pubsub_.Publish(ButtonY(true)));
-  event_notification_.acquire();
+  morse_encode_request_.acquire();
 
   // Responds to Morse code edges.
   EXPECT_TRUE(led_.is_on());
@@ -102,7 +103,7 @@ TEST_F(StateManagerTest, MorseReadout) {
 
 TEST_F(StateManagerTest, UpdateAirQualityAndTriggerAlarm) {
   ASSERT_TRUE(pubsub_.SubscribeTo<MorseEncodeRequest>(
-      [this](MorseEncodeRequest) { event_notification_.release(); }));
+      [this](MorseEncodeRequest) { morse_encode_request_.release(); }));
 
   uint16_t air_quality = 100;
   ASSERT_TRUE(pubsub_.Publish(AirQuality{.score = air_quality}));
@@ -114,7 +115,7 @@ TEST_F(StateManagerTest, UpdateAirQualityAndTriggerAlarm) {
   EXPECT_EQ(led_.blue(), GetExpectedBlue());
 
   // Alarm triggered; responds to Morse code edges.
-  event_notification_.acquire();
+  morse_encode_request_.acquire();
   ASSERT_TRUE(pubsub_.Publish(
       MorseCodeValue{.turn_on = false, .message_finished = false}));
   led_.Await();
@@ -123,7 +124,7 @@ TEST_F(StateManagerTest, UpdateAirQualityAndTriggerAlarm) {
 
 TEST_F(StateManagerTest, UpdateAirQualityAndDisableAlarm) {
   ASSERT_TRUE(pubsub_.SubscribeTo<MorseEncodeRequest>(
-      [this](MorseEncodeRequest) { event_notification_.release(); }));
+      [this](MorseEncodeRequest) { morse_encode_request_.release(); }));
 
   // Alarm triggered; responds to Morse code edges.
   uint16_t air_quality = 200;
@@ -131,7 +132,7 @@ TEST_F(StateManagerTest, UpdateAirQualityAndDisableAlarm) {
   led_.Await();
 
   // Alarm triggered; responds to Morse code edges.
-  event_notification_.acquire();
+  morse_encode_request_.acquire();
   ASSERT_TRUE(pubsub_.Publish(
       MorseCodeValue{.turn_on = false, .message_finished = true}));
   led_.Await();
@@ -154,14 +155,14 @@ TEST_F(StateManagerTest, UpdateAirQualityAndDisableAlarm) {
 
 TEST_F(StateManagerTest, SilenceAlarm) {
   ASSERT_TRUE(pubsub_.SubscribeTo<MorseEncodeRequest>(
-      [this](MorseEncodeRequest) { event_notification_.release(); }));
+      [this](MorseEncodeRequest) { morse_encode_request_.release(); }));
 
   // Trigger an alarm.
   ASSERT_TRUE(pubsub_.Publish(AirQuality{.score = 100}));
   led_.Await();
 
   // Alarm triggered; responds to Morse code edges.
-  event_notification_.acquire();
+  morse_encode_request_.acquire();
   EXPECT_TRUE(led_.is_on());
   ASSERT_TRUE(pubsub_.Publish(
       MorseCodeValue{.turn_on = false, .message_finished = false}));
@@ -185,10 +186,10 @@ TEST_F(StateManagerTest, SilenceAlarm) {
 TEST_F(StateManagerTest, IncrementThresholdAndTimeout) {
   ASSERT_TRUE(pubsub_.SubscribeTo<TimerRequest>([this](TimerRequest request) {
     event_ = request;
-    event_notification_.release();
+    timer_request_.release();
   }));
   ASSERT_TRUE(pubsub_.SubscribeTo<MorseEncodeRequest>(
-      [this](MorseEncodeRequest) { event_notification_.release(); }));
+      [this](MorseEncodeRequest) { morse_encode_request_.release(); }));
 
   ASSERT_TRUE(pubsub_.Publish(ButtonB(true)));
   led_.Await();
@@ -197,7 +198,7 @@ TEST_F(StateManagerTest, IncrementThresholdAndTimeout) {
   EXPECT_EQ(led_.green(), GetExpectedGreen());
   EXPECT_EQ(led_.blue(), GetExpectedBlue());
 
-  event_notification_.acquire();
+  timer_request_.acquire();
   TimerRequest request = std::get<TimerRequest>(event_);
   EXPECT_EQ(request.token, StateManager::kThresholdModeToken);
   EXPECT_EQ(request.timeout_s, StateManager::kThresholdModeTimeout);
@@ -208,6 +209,10 @@ TEST_F(StateManagerTest, IncrementThresholdAndTimeout) {
   EXPECT_EQ(led_.red(), GetExpectedRed());
   EXPECT_EQ(led_.green(), GetExpectedGreen());
   EXPECT_EQ(led_.blue(), GetExpectedBlue());
+  timer_request_.acquire();
+  request = std::get<TimerRequest>(event_);
+  EXPECT_EQ(request.token, StateManager::kThresholdModeToken);
+  EXPECT_EQ(request.timeout_s, StateManager::kThresholdModeTimeout);
 
   ASSERT_TRUE(pubsub_.Publish(ButtonA(true)));
   led_.Await();
@@ -215,6 +220,10 @@ TEST_F(StateManagerTest, IncrementThresholdAndTimeout) {
   EXPECT_EQ(led_.red(), GetExpectedRed());
   EXPECT_EQ(led_.green(), GetExpectedGreen());
   EXPECT_EQ(led_.blue(), GetExpectedBlue());
+  timer_request_.acquire();
+  request = std::get<TimerRequest>(event_);
+  EXPECT_EQ(request.token, StateManager::kThresholdModeToken);
+  EXPECT_EQ(request.timeout_s, StateManager::kThresholdModeTimeout);
 
   ASSERT_TRUE(pubsub_.Publish(ButtonA(true)));
   led_.Await();
@@ -222,6 +231,10 @@ TEST_F(StateManagerTest, IncrementThresholdAndTimeout) {
   EXPECT_EQ(led_.red(), GetExpectedRed());
   EXPECT_EQ(led_.green(), GetExpectedGreen());
   EXPECT_EQ(led_.blue(), GetExpectedBlue());
+  timer_request_.acquire();
+  request = std::get<TimerRequest>(event_);
+  EXPECT_EQ(request.token, StateManager::kThresholdModeToken);
+  EXPECT_EQ(request.timeout_s, StateManager::kThresholdModeTimeout);
 
   ASSERT_TRUE(pubsub_.Publish(ButtonA(true)));
   led_.Await();
@@ -229,6 +242,10 @@ TEST_F(StateManagerTest, IncrementThresholdAndTimeout) {
   EXPECT_EQ(led_.red(), GetExpectedRed());
   EXPECT_EQ(led_.green(), GetExpectedGreen());
   EXPECT_EQ(led_.blue(), GetExpectedBlue());
+  timer_request_.acquire();
+  request = std::get<TimerRequest>(event_);
+  EXPECT_EQ(request.token, StateManager::kThresholdModeToken);
+  EXPECT_EQ(request.timeout_s, StateManager::kThresholdModeTimeout);
 
   // At max threshold; cannot increase further.
   ASSERT_TRUE(pubsub_.Publish(ButtonA(true)));
@@ -236,20 +253,24 @@ TEST_F(StateManagerTest, IncrementThresholdAndTimeout) {
   EXPECT_EQ(led_.red(), GetExpectedRed());
   EXPECT_EQ(led_.green(), GetExpectedGreen());
   EXPECT_EQ(led_.blue(), GetExpectedBlue());
+  timer_request_.acquire();
+  request = std::get<TimerRequest>(event_);
+  EXPECT_EQ(request.token, StateManager::kThresholdModeToken);
+  EXPECT_EQ(request.timeout_s, StateManager::kThresholdModeTimeout);
 
   // Now time out of the threshold mode.
   ASSERT_TRUE(pubsub_.Publish(
       TimerExpired{.token = StateManager::kThresholdModeToken}));
-  event_notification_.acquire();
+  morse_encode_request_.acquire();
 }
 
 TEST_F(StateManagerTest, DecrementThresholdAndTimeout) {
   ASSERT_TRUE(pubsub_.SubscribeTo<TimerRequest>([this](TimerRequest request) {
     event_ = request;
-    event_notification_.release();
+    timer_request_.release();
   }));
   ASSERT_TRUE(pubsub_.SubscribeTo<MorseEncodeRequest>(
-      [this](MorseEncodeRequest) { event_notification_.release(); }));
+      [this](MorseEncodeRequest) { morse_encode_request_.release(); }));
 
   ASSERT_TRUE(pubsub_.Publish(ButtonA(true)));
   led_.Await();
@@ -257,8 +278,7 @@ TEST_F(StateManagerTest, DecrementThresholdAndTimeout) {
   EXPECT_EQ(led_.red(), GetExpectedRed());
   EXPECT_EQ(led_.green(), GetExpectedGreen());
   EXPECT_EQ(led_.blue(), GetExpectedBlue());
-
-  event_notification_.acquire();
+  timer_request_.acquire();
   TimerRequest request = std::get<TimerRequest>(event_);
   EXPECT_EQ(request.token, StateManager::kThresholdModeToken);
   EXPECT_EQ(request.timeout_s, StateManager::kThresholdModeTimeout);
@@ -269,6 +289,10 @@ TEST_F(StateManagerTest, DecrementThresholdAndTimeout) {
   EXPECT_EQ(led_.red(), GetExpectedRed());
   EXPECT_EQ(led_.green(), GetExpectedGreen());
   EXPECT_EQ(led_.blue(), GetExpectedBlue());
+  timer_request_.acquire();
+  request = std::get<TimerRequest>(event_);
+  EXPECT_EQ(request.token, StateManager::kThresholdModeToken);
+  EXPECT_EQ(request.timeout_s, StateManager::kThresholdModeTimeout);
 
   ASSERT_TRUE(pubsub_.Publish(ButtonB(true)));
   led_.Await();
@@ -276,6 +300,10 @@ TEST_F(StateManagerTest, DecrementThresholdAndTimeout) {
   EXPECT_EQ(led_.red(), GetExpectedRed());
   EXPECT_EQ(led_.green(), GetExpectedGreen());
   EXPECT_EQ(led_.blue(), GetExpectedBlue());
+  timer_request_.acquire();
+  request = std::get<TimerRequest>(event_);
+  EXPECT_EQ(request.token, StateManager::kThresholdModeToken);
+  EXPECT_EQ(request.timeout_s, StateManager::kThresholdModeTimeout);
 
   // At min threshold; cannot decrease further.
   ASSERT_TRUE(pubsub_.Publish(ButtonB(true)));
@@ -283,11 +311,15 @@ TEST_F(StateManagerTest, DecrementThresholdAndTimeout) {
   EXPECT_EQ(led_.red(), GetExpectedRed());
   EXPECT_EQ(led_.green(), GetExpectedGreen());
   EXPECT_EQ(led_.blue(), GetExpectedBlue());
+  timer_request_.acquire();
+  request = std::get<TimerRequest>(event_);
+  EXPECT_EQ(request.token, StateManager::kThresholdModeToken);
+  EXPECT_EQ(request.timeout_s, StateManager::kThresholdModeTimeout);
 
   // Now time out of the threshold mode.
   ASSERT_TRUE(pubsub_.Publish(
       TimerExpired{.token = StateManager::kThresholdModeToken}));
-  event_notification_.acquire();
+  morse_encode_request_.acquire();
 }
 
 TEST_F(StateManagerTest, AdjustBrightness) {
