@@ -29,25 +29,9 @@ cc_library(
     name = "monochrome_led_fake",
     hdrs = ["monochrome_led_fake.h"],
     deps = [
-        ":digital_io_fake",
         ":monochrome_led",
-        "//modules/pwm:digital_out_fake",
-    ],
-)
-
-cc_library(
-    name = "digital_io_fake",
-    srcs = ["digital_io_fake.cc"],
-    hdrs = ["digital_io_fake.h"],
-    implementation_deps = [
-        "@pigweed//pw_log",
-    ],
-    deps = [
-        "@pigweed//pw_assert:check",
-        "@pigweed//pw_chrono:system_clock",
-        "@pigweed//pw_containers:inline_deque",
-        "@pigweed//pw_digital_io",
-        "@pigweed//pw_result",
+	"//modules/pwm:digital_out_fake",
+        "@pigweed//pw_digital_io:digital_io_mock",
     ],
 )
 

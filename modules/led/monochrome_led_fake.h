@@ -13,10 +13,10 @@
 // the License.
 #pragma once
 
-#include "modules/led/digital_io_fake.h"
 #include "modules/led/monochrome_led.h"
 #include "modules/pwm/digital_out_fake.h"
 #include "pw_chrono/system_clock.h"
+#include "pw_digital_io/digital_io_mock.h"
 
 namespace sense {
 
@@ -24,9 +24,9 @@ class MonochromeLedFake : public MonochromeLed {
  public:
   static constexpr size_t kCapacity = 256;
 
-  using Clock = ::sense::DigitalInOutFakeImpl::Clock;
-  using Event = ::sense::DigitalInOutFakeImpl::Event;
-  using State = ::sense::DigitalInOutFakeImpl::State;
+  using Clock = pw::digital_io::DigitalInOutMockImpl::Clock;
+  using Event = pw::digital_io::DigitalInOutMockImpl::Event;
+  using State = pw::digital_io::DigitalInOutMockImpl::State;
 
   MonochromeLedFake() : MonochromeLedFake(Clock::RealClock()) {}
 
@@ -38,7 +38,7 @@ class MonochromeLedFake : public MonochromeLed {
   pw::InlineDeque<Event>& events() { return led_sio_.events(); }
 
  private:
-  DigitalInOutFake<kCapacity> led_sio_;
+  pw::digital_io::DigitalInOutMock<kCapacity> led_sio_;
   PwmDigitalOutFake led_pwm_;
 };
 
