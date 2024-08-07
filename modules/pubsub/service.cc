@@ -82,7 +82,9 @@ pubsub_Event EventToProto(const Event& event) {
             pw::string::Copy(state.air_quality_description,
                              proto.type.sense_state.aq_description);
         !status.ok()) {
-      PW_LOG_ERROR("Failed to copy description: %s", status.status().str());
+      PW_LOG_ERROR("Description truncated to %zu characters: %s",
+                   status.size(),
+                   status.status().str());
     }
   } else if (std::holds_alternative<StateManagerControl>(event)) {
     proto.which_type = pubsub_Event_state_manager_control_tag;
