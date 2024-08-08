@@ -15,9 +15,9 @@
 
 #include <chrono>
 
-#include "pw_assert/check.h"
 #include "modules/pubsub/pubsub_events.h"
 #include "modules/worker/worker.h"
+#include "pw_assert/check.h"
 #include "pw_chrono/system_clock.h"
 #include "pw_chrono/system_timer.h"
 #include "pw_digital_io/digital_io.h"
@@ -32,7 +32,8 @@ class Debouncer final {
   constexpr static pw::chrono::SystemClock::duration kDebounceInterval =
       std::chrono::milliseconds(30);
 
-  Debouncer(pw::digital_io::State initial_state) : last_input_(initial_state){};
+  Debouncer(pw::digital_io::State initial_state)
+      : last_input_(initial_state) {};
   pw::digital_io::State UpdateState(pw::chrono::SystemClock::time_point now,
                                     pw::digital_io::State state);
 
@@ -46,7 +47,7 @@ class Debouncer final {
 class EdgeDetector final {
  public:
   EdgeDetector(pw::digital_io::State initial_state)
-      : current_state_(initial_state){};
+      : current_state_(initial_state) {};
 
   enum StateChange {
     kNone,
@@ -62,7 +63,9 @@ class EdgeDetector final {
 
 class Button {
  public:
-  Button(pw::digital_io::DigitalIn& io) : io_(io) { PW_CHECK_OK(io_.Enable()); };
+  Button(pw::digital_io::DigitalIn& io) : io_(io) {
+    PW_CHECK_OK(io_.Enable());
+  };
 
   pw::Result<EdgeDetector::StateChange> Sample(
       pw::chrono::SystemClock::time_point now);

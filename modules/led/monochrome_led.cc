@@ -12,8 +12,9 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-#include "pw_assert/check.h"
 #include "modules/led/monochrome_led.h"
+
+#include "pw_assert/check.h"
 
 namespace sense {
 

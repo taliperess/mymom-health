@@ -13,8 +13,9 @@
 // the License.
 #define PW_LOG_MODULE_NAME "BLINKY"
 
-#include "pw_assert/check.h"
 #include "modules/blinky/service.h"
+
+#include "pw_assert/check.h"
 
 namespace sense {
 

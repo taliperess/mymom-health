@@ -17,7 +17,6 @@
 #include "modules/worker/test_worker.h"
 #include "pw_digital_io/digital_io.h"
 #include "pw_status/status.h"
-#include "pw_sync/timed_thread_notification.h"
 #include "pw_sync/interrupt_spin_lock.h"
 #include "pw_sync/timed_thread_notification.h"
 #include "pw_unit_test/framework.h"

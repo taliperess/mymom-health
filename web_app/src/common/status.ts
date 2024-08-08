@@ -13,13 +13,33 @@
 // the License.
 
 export const StatusData = {
-    superb: {icon: "sentiment_very_satisfied", title: "Superb", color: "#7FE3FF"},
-    excellent: {icon: "mood", title: "Excellent", color: "#93F7D9"},
-    "very good": {icon: "sentiment_satisfied", title: "Very Good", color: "#8FE8B7"},
-    good: {icon: "sentiment_calm", title: "Good", color: "#BBE5A9"},
-    okay: {icon: "sentiment_neutral", title: "Okay", color: "#F9FFB2"},
-    mediocre: {icon: "sentiment_dissatisfied", title: "Mediocre", color: "#EBA28C"},
-    bad: {icon: "mood_bad", title: "Bad", color: "#D76591"},
-    terrible: {icon: "sentiment_very_dissatisfied", title: "Terrible", color: "#B996EF"},
-    invalid: {icon: "sentiment_very_dissatisfied", title: "-", color: "#B996EF"}
-}
+  superb: {
+    icon: "sentiment_very_satisfied",
+    title: "Superb",
+    color: "#7FE3FF",
+  },
+  excellent: { icon: "mood", title: "Excellent", color: "#93F7D9" },
+  "very good": {
+    icon: "sentiment_satisfied",
+    title: "Very Good",
+    color: "#8FE8B7",
+  },
+  good: { icon: "sentiment_calm", title: "Good", color: "#BBE5A9" },
+  okay: { icon: "sentiment_neutral", title: "Okay", color: "#F9FFB2" },
+  mediocre: {
+    icon: "sentiment_dissatisfied",
+    title: "Mediocre",
+    color: "#EBA28C",
+  },
+  bad: { icon: "mood_bad", title: "Bad", color: "#D76591" },
+  terrible: {
+    icon: "sentiment_very_dissatisfied",
+    title: "Terrible",
+    color: "#B996EF",
+  },
+  invalid: {
+    icon: "sentiment_very_dissatisfied",
+    title: "-",
+    color: "#B996EF",
+  },
+};

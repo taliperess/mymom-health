@@ -26,14 +26,14 @@ _COMMON_FLAGS = merge_flags_for_transition_impl(
         "//apps/production:threads": "//targets/rp2:production_app_threads",
         "//system:system": "//targets/rp2:system",
         "@freertos//:freertos_config": "//targets/rp2:freertos_config",
-        "@pigweed//pw_system:extra_platform_libs": "//targets/rp2:extra_platform_libs",
-        "@pigweed//pw_system:io_backend": "@pigweed//pw_system:sys_io_target_io",
-        "@pigweed//pw_build:default_module_config": "//system:module_config",
         "@pico-sdk//bazel/config:PICO_CLIB": "llvm_libc",
         "@pico-sdk//bazel/config:PICO_TOOLCHAIN": "clang",
+        "@pigweed//pw_build:default_module_config": "//system:module_config",
+        "@pigweed//pw_system:extra_platform_libs": "//targets/rp2:extra_platform_libs",
+        "@pigweed//pw_system:io_backend": "@pigweed//pw_system:sys_io_target_io",
         "@pigweed//pw_toolchain:cortex-m_toolchain_kind": "clang",
         "@pigweed//pw_unit_test:config_override": "//targets/rp2:64k_unit_tests",
-    }
+    },
 )
 
 _RP2040_FLAGS = {

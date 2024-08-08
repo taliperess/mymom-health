@@ -1,8 +1,8 @@
 {
-	"type": "auto",
-	"warningsList": [
-		"load",
-		"native-build",
-		"unsorted-dict-items"
-	]
+  "type": "auto",
+  "warningsList": [
+    "load",
+    "native-build",
+    "unsorted-dict-items"
+  ]
 }

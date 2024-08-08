@@ -15,7 +15,7 @@
 load("@pigweed//targets/host_device_simulator:transition.bzl", "host_device_simulator_binary")
 load("@pigweed//targets/rp2040:flash.bzl", "flash_rp2040")
 load("//targets/rp2:binary.bzl", "rp2040_binary", "rp2350_binary")
-load("//tools:tools.bzl", "sense_device_console", "sense_device_script", "sense_host_console",)
+load("//tools:tools.bzl", "sense_device_console", "sense_device_script", "sense_host_console")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -75,7 +75,7 @@ sense_device_console(
 sense_device_console(
     name = "rp2040_webconsole",
     binary = ":rp2040_blinky.elf",
-    extra_args = ["--browser"]
+    extra_args = ["--browser"],
 )
 
 sense_device_console(
@@ -86,7 +86,7 @@ sense_device_console(
 sense_device_console(
     name = "rp2350_webconsole",
     binary = ":rp2350_blinky.elf",
-    extra_args = ["--browser"]
+    extra_args = ["--browser"],
 )
 
 sense_device_script(

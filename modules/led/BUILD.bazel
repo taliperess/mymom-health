@@ -30,7 +30,7 @@ cc_library(
     hdrs = ["monochrome_led_fake.h"],
     deps = [
         ":monochrome_led",
-	"//modules/pwm:digital_out_fake",
+        "//modules/pwm:digital_out_fake",
         "@pigweed//pw_digital_io:digital_io_mock",
     ],
 )

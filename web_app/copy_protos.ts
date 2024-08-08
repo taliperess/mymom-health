@@ -39,8 +39,8 @@ const protos: ProtoSet[] = [
   },
   {
     prefix: "state_manager",
-    protos: ["../modules/state_manager/state_manager.proto"]
-  }
+    protos: ["../modules/state_manager/state_manager.proto"],
+  },
 ];
 
 /**

@@ -16,7 +16,7 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "bme68x",
-    srcs = [ "bme68x.c" ],
+    srcs = ["bme68x.c"],
     hdrs = [
         "bme68x.h",
         "bme68x_defs.h",

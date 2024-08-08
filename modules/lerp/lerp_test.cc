@@ -16,8 +16,12 @@
 
 #include "pw_unit_test/framework.h"
 
-TEST(LerpTest, ZeroFractionReturnsA) { EXPECT_EQ(sense::Lerp(0, 20, 0, 10), 0); }
-TEST(LerpTest, OneFractionReturnsB) { EXPECT_EQ(sense::Lerp(0, 20, 10, 10), 20); }
+TEST(LerpTest, ZeroFractionReturnsA) {
+  EXPECT_EQ(sense::Lerp(0, 20, 0, 10), 0);
+}
+TEST(LerpTest, OneFractionReturnsB) {
+  EXPECT_EQ(sense::Lerp(0, 20, 10, 10), 20);
+}
 TEST(LerpTest, HalfFractionReturnsHalfwayPoint) {
   EXPECT_EQ(sense::Lerp(0, 20, 5, 10), 10);
 }
