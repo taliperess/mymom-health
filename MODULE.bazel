@@ -48,14 +48,14 @@ git_override(
 # pico-sdk is in the BCR.
 git_override(
     module_name = "pico-sdk",
-    commit = "23b55ffea6662dd09768626abb77dcf365f2c1f8",
+    commit = "b6447bba1cef88093d2eef929c2c499b8947d5ea",
     remote = "https://pigweed-internal.googlesource.com/third_party/github/raspberrypi/pico-sdk",
 )
 
 # TODO: https://pwbug.dev/354270165 - Add picotool to the BCR.
 git_override(
     module_name = "picotool",
-    commit = "f1db749a52ae7b3b2fdd3153fa68652fadc2d953",
+    commit = "9f15671a654a68aeba7f94930fdeff9d80d0c9a0",
     remote = "https://pigweed-internal.googlesource.com/third_party/github/raspberrypi/picotool",
 )
 
