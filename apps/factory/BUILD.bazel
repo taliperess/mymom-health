@@ -19,7 +19,7 @@ load(
 )
 load("@pigweed//targets/rp2040:flash.bzl", "flash_rp2040")
 load("@rules_python//python:proto.bzl", "py_proto_library")
-load("//targets/rp2:binary.bzl", "rp2040_binary")
+load("//targets/rp2:binary.bzl", "rp2040_binary", "rp2350_binary")
 load("//tools:tools.bzl", "sense_device_console", "sense_device_script")
 
 package(default_visibility = ["//visibility:public"])
@@ -54,9 +54,19 @@ rp2040_binary(
     binary = ":factory",
 )
 
+rp2350_binary(
+    name = "rp2350.elf",
+    binary = ":factory",
+)
+
 sense_device_console(
     name = "rp2040_console",
     binary = ":rp2040.elf",
+)
+
+sense_device_console(
+    name = "rp2350_console",
+    binary = ":rp2350.elf",
 )
 
 sense_device_script(
@@ -65,9 +75,21 @@ sense_device_script(
     binary = ":rp2040.elf",
 )
 
+sense_device_script(
+    name = "rp2350_factory_test",
+    src = "//tools:factory",
+    binary = ":rp2350.elf",
+)
+
 flash_rp2040(
     name = "flash",
     rp2040_binary = "rp2040.elf",
+)
+
+# Note: Despite the name, the rule works for the 2350.
+flash_rp2040(
+    name = "flash_rp2350",
+    rp2040_binary = "rp2350.elf",
 )
 
 cc_library(
