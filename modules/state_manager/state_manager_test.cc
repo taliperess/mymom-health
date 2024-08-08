@@ -67,6 +67,7 @@ class StateManagerTest : public ::testing::Test {
   Event event_;
   pw::sync::ThreadNotification morse_encode_request_;
   pw::sync::ThreadNotification timer_request_;
+  pw::sync::ThreadNotification state_update_notification_;
 
  private:
   PolychromeLedFake reference_led_;
@@ -83,15 +84,20 @@ TEST_F(StateManagerTest, UpdateAirQuality) {
 }
 
 TEST_F(StateManagerTest, MorseReadout) {
+  ASSERT_TRUE(pubsub_.SubscribeTo<SenseState>(
+      [this](SenseState) { state_update_notification_.release(); }));
+
   // The manager needs at least one score to switch to Morce code mode.
   uint16_t air_quality = 800;
   ASSERT_TRUE(pubsub_.Publish(AirQuality{.score = air_quality}));
   led_.Await();
+  state_update_notification_.acquire();
 
   ASSERT_TRUE(pubsub_.SubscribeTo<MorseEncodeRequest>(
       [this](MorseEncodeRequest) { morse_encode_request_.release(); }));
   ASSERT_TRUE(pubsub_.Publish(ButtonY(true)));
   morse_encode_request_.acquire();
+  state_update_notification_.acquire();
 
   // Responds to Morse code edges.
   EXPECT_TRUE(led_.is_on());
@@ -125,11 +131,14 @@ TEST_F(StateManagerTest, UpdateAirQualityAndTriggerAlarm) {
 TEST_F(StateManagerTest, UpdateAirQualityAndDisableAlarm) {
   ASSERT_TRUE(pubsub_.SubscribeTo<MorseEncodeRequest>(
       [this](MorseEncodeRequest) { morse_encode_request_.release(); }));
+  ASSERT_TRUE(pubsub_.SubscribeTo<SenseState>(
+      [this](SenseState) { state_update_notification_.release(); }));
 
   // Alarm triggered; responds to Morse code edges.
   uint16_t air_quality = 200;
   ASSERT_TRUE(pubsub_.Publish(AirQuality{.score = air_quality}));
   led_.Await();
+  state_update_notification_.acquire();
 
   // Alarm triggered; responds to Morse code edges.
   morse_encode_request_.acquire();
@@ -141,12 +150,14 @@ TEST_F(StateManagerTest, UpdateAirQualityAndDisableAlarm) {
   air_quality = 1000;
   ASSERT_TRUE(pubsub_.Publish(AirQuality{.score = air_quality}));
   led_.Await();
+  state_update_notification_.acquire();
 
   // The state manager updates the LED before disabling the alarm. There's no
   // other event to synchronize on, so send another update to synchronize on
   // and ensure the state change is complete.
   ASSERT_TRUE(pubsub_.Publish(AirQuality{.score = air_quality}));
   led_.Await();
+  state_update_notification_.acquire();
 
   // Don't check for a specific color. The air quality score is smoothed
   // exponentially, so only check that the alarm is disabled and the LED is on.
@@ -156,10 +167,13 @@ TEST_F(StateManagerTest, UpdateAirQualityAndDisableAlarm) {
 TEST_F(StateManagerTest, SilenceAlarm) {
   ASSERT_TRUE(pubsub_.SubscribeTo<MorseEncodeRequest>(
       [this](MorseEncodeRequest) { morse_encode_request_.release(); }));
+  ASSERT_TRUE(pubsub_.SubscribeTo<SenseState>(
+      [this](SenseState) { state_update_notification_.release(); }));
 
   // Trigger an alarm.
   ASSERT_TRUE(pubsub_.Publish(AirQuality{.score = 100}));
   led_.Await();
+  state_update_notification_.acquire();
 
   // Alarm triggered; responds to Morse code edges.
   morse_encode_request_.acquire();
@@ -174,6 +188,7 @@ TEST_F(StateManagerTest, SilenceAlarm) {
 
   ASSERT_TRUE(pubsub_.Publish(AirQuality{.score = 100}));
   led_.Await();
+  state_update_notification_.acquire();
 
   // Alarm disabled; does not respond to Morse code events
   EXPECT_TRUE(led_.is_on());
@@ -190,6 +205,8 @@ TEST_F(StateManagerTest, IncrementThresholdAndTimeout) {
   }));
   ASSERT_TRUE(pubsub_.SubscribeTo<MorseEncodeRequest>(
       [this](MorseEncodeRequest) { morse_encode_request_.release(); }));
+  ASSERT_TRUE(pubsub_.SubscribeTo<SenseState>(
+      [this](SenseState) { state_update_notification_.release(); }));
 
   ASSERT_TRUE(pubsub_.Publish(ButtonB(true)));
   led_.Await();
@@ -262,6 +279,7 @@ TEST_F(StateManagerTest, IncrementThresholdAndTimeout) {
   ASSERT_TRUE(pubsub_.Publish(
       TimerExpired{.token = StateManager::kThresholdModeToken}));
   morse_encode_request_.acquire();
+  state_update_notification_.acquire();
 }
 
 TEST_F(StateManagerTest, DecrementThresholdAndTimeout) {
@@ -271,6 +289,8 @@ TEST_F(StateManagerTest, DecrementThresholdAndTimeout) {
   }));
   ASSERT_TRUE(pubsub_.SubscribeTo<MorseEncodeRequest>(
       [this](MorseEncodeRequest) { morse_encode_request_.release(); }));
+  ASSERT_TRUE(pubsub_.SubscribeTo<SenseState>(
+      [this](SenseState) { state_update_notification_.release(); }));
 
   ASSERT_TRUE(pubsub_.Publish(ButtonA(true)));
   led_.Await();
@@ -320,6 +340,7 @@ TEST_F(StateManagerTest, DecrementThresholdAndTimeout) {
   ASSERT_TRUE(pubsub_.Publish(
       TimerExpired{.token = StateManager::kThresholdModeToken}));
   morse_encode_request_.acquire();
+  state_update_notification_.acquire();
 }
 
 TEST_F(StateManagerTest, AdjustBrightness) {

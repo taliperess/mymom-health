@@ -53,7 +53,7 @@ void ReadAmbientLight() {
 void ReadAirSensor() {
   auto& air_sensor = system::AirSensor();
 
-  // Read the sensor syncronously to avoid conflicting with other I2C sensors.
+  // Read the sensor synchronously to avoid conflicting with other I2C sensors.
   pw::Result<uint16_t> score = air_sensor.MeasureSync();
   if (!score.ok()) {
     PW_LOG_WARN("Failed to read air sensor score: %s", score.status().str());

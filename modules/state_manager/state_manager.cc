@@ -149,6 +149,7 @@ void StateManager::UpdateAirQuality(uint16_t score) {
       alarm_ = false;
       break;
     case Edge::kNone:
+      BroadcastState();
       return;
   }
   ResetMode();

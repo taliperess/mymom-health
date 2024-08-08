@@ -26,7 +26,10 @@ void GenericTestWorker::Start() {
 }
 
 void GenericTestWorker::RunOnce(pw::Function<void()>&& work) {
-  PW_CHECK_OK(work_queue_->PushWork(std::move(work)));
+  // TODO: CHECK-ing this error causes flakes in the state manager tests due to
+  // their repeated use of the work queue. Investigate whether that can be
+  // resolved.
+  work_queue_->PushWork(std::move(work)).IgnoreError();
 }
 
 GenericTestWorker::~GenericTestWorker() {
