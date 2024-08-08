@@ -18,7 +18,7 @@ module(
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "freertos", version = "10.5.1.bcr.2")
 bazel_dep(name = "nanopb", repo_name = "com_github_nanopb_nanopb")
-bazel_dep(name = "pico-sdk", version = "1.6.0-rc1")
+bazel_dep(name = "pico-sdk", version = "2.0.0")
 bazel_dep(name = "pigweed")
 bazel_dep(name = "platforms", version = "0.0.10")
 bazel_dep(name = "pw_toolchain")
@@ -44,37 +44,16 @@ git_override(
     remote = "https://github.com/nanopb/nanopb.git",
 )
 
-# TODO: https://pwbug.dev/355058285 - Remove this once the released version of
-# pico-sdk is in the BCR.
-git_override(
-    module_name = "pico-sdk",
-    commit = "b6447bba1cef88093d2eef929c2c499b8947d5ea",
-    remote = "https://pigweed-internal.googlesource.com/third_party/github/raspberrypi/pico-sdk",
-)
-
-# TODO: https://pwbug.dev/354270165 - Add picotool to the BCR.
-git_override(
-    module_name = "picotool",
-    commit = "9f15671a654a68aeba7f94930fdeff9d80d0c9a0",
-    remote = "https://pigweed-internal.googlesource.com/third_party/github/raspberrypi/picotool",
-)
-
 git_override(
     module_name = "pigweed",
-    # ROLL: Warning: this entry is automatically updated.
-    # ROLL: Last updated 2024-08-08.
-    # ROLL: By https://cr-buildbucket.appspot.com/build/8740161632928564001.
-    commit = "d29b16bda428308b56990bce6df48f62ee2d496c",
-    remote = "https://pigweed-internal.googlesource.com/pigweed/pigweed",
+    commit = "146fd4b5c55fb45c390515b9d5faa2f5abd00be2",
+    remote = "https://pigweed.googlesource.com/pigweed/pigweed",
 )
 
 git_override(
     module_name = "pw_toolchain",
-    # ROLL: Warning: this entry is automatically updated.
-    # ROLL: Last updated 2024-08-08.
-    # ROLL: By https://cr-buildbucket.appspot.com/build/8740161632928564001.
-    commit = "d29b16bda428308b56990bce6df48f62ee2d496c",
-    remote = "https://pigweed-internal.googlesource.com/pigweed/pigweed",
+    commit = "146fd4b5c55fb45c390515b9d5faa2f5abd00be2",
+    remote = "https://pigweed.googlesource.com/pigweed/pigweed",
     strip_prefix = "pw_toolchain_bazel",
 )
 
