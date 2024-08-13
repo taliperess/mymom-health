@@ -24,14 +24,19 @@ void AirSensorService::Init(Worker& worker, AirSensor& air_sensor) {
   air_sensor_ = &air_sensor;
 }
 
-pw::Status AirSensorService::Measure(const pw_protobuf_Empty&,
-                                     air_sensor_Measurement& response) {
-  PW_TRY(air_sensor_->Measure(notification_));
-  notification_.acquire();
+void AirSensorService::FillMeasurement(air_sensor_Measurement& response) {
   response.temperature = air_sensor_->temperature();
   response.pressure = air_sensor_->pressure();
   response.humidity = air_sensor_->humidity();
   response.gas_resistance = air_sensor_->gas_resistance();
+  response.score = air_sensor_->score();
+}
+
+pw::Status AirSensorService::Measure(const pw_protobuf_Empty&,
+                                     air_sensor_Measurement& response) {
+  PW_TRY(air_sensor_->Measure(notification_));
+  notification_.acquire();
+  FillMeasurement(response);
   return pw::OkStatus();
 }
 
@@ -60,19 +65,11 @@ pw::Status AirSensorService::LogMetrics(const pw_protobuf_Empty&,
 }
 
 void AirSensorService::SampleCallback(pw::chrono::SystemClock::time_point) {
-  float temperature = air_sensor_->temperature();
-  float pressure = air_sensor_->pressure();
-  float humidity = air_sensor_->humidity();
-  float gas_resistance = air_sensor_->gas_resistance();
-  uint16_t score = air_sensor_->score();
+  air_sensor_Measurement response;
 
-  pw::Status status = sample_writer_.Write({
-      .temperature = temperature,
-      .pressure = pressure,
-      .humidity = humidity,
-      .gas_resistance = gas_resistance,
-      .score = score,
-  });
+  FillMeasurement(response);
+
+  pw::Status status = sample_writer_.Write(response);
   if (status.ok()) {
     ScheduleSample();
   } else {

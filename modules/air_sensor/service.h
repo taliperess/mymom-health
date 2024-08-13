@@ -47,6 +47,8 @@ class AirSensorService final
 
   void ScheduleSample();
 
+  void FillMeasurement(air_sensor_Measurement& response);
+
   Worker* worker_ = nullptr;
   AirSensor* air_sensor_ = nullptr;
   pw::sync::ThreadNotification notification_;
