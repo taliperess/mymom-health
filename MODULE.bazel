@@ -48,8 +48,8 @@ git_override(
     module_name = "pigweed",
     # ROLL: Warning: this entry is automatically updated.
     # ROLL: Last updated 2024-08-13.
-    # ROLL: By https://cr-buildbucket.appspot.com/build/8739681433301582257.
-    commit = "d33bfc0c1620bdb695f093efa67248ea131e898a",
+    # ROLL: By https://cr-buildbucket.appspot.com/build/8739678120118658225.
+    commit = "cc53189f14208ac7897872285c547c516706a81e",
     remote = "https://pigweed.googlesource.com/pigweed/pigweed",
 )
 
@@ -57,8 +57,8 @@ git_override(
     module_name = "pw_toolchain",
     # ROLL: Warning: this entry is automatically updated.
     # ROLL: Last updated 2024-08-13.
-    # ROLL: By https://cr-buildbucket.appspot.com/build/8739681433301582257.
-    commit = "d33bfc0c1620bdb695f093efa67248ea131e898a",
+    # ROLL: By https://cr-buildbucket.appspot.com/build/8739678120118658225.
+    commit = "cc53189f14208ac7897872285c547c516706a81e",
     remote = "https://pigweed.googlesource.com/pigweed/pigweed",
     strip_prefix = "pw_toolchain_bazel",
 )
