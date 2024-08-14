@@ -40,6 +40,9 @@ message Measurement {
 
   // Air quality score, ranging from 0 (terrible) to 1023 (excellent).
   uint32 score = 5;
+
+  // The time i storded the collection in milliseconds
+  uint64 collection_time_ms = 6;
 }
 
 message MeasureStreamRequest {

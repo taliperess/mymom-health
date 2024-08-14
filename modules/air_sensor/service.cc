@@ -15,6 +15,7 @@
 #include "modules/air_sensor/service.h"
 
 #include "pw_assert/check.h"
+#include "pw_chrono/system_clock.h"
 #include "pw_log/log.h"
 
 namespace sense {
@@ -25,6 +26,8 @@ void AirSensorService::Init(Worker& worker, AirSensor& air_sensor) {
 }
 
 void AirSensorService::FillMeasurement(air_sensor_Measurement& response) {
+  response.collection_time_ms =
+      pw::chrono::SystemClock::now().time_since_epoch().count();
   response.temperature = air_sensor_->temperature();
   response.pressure = air_sensor_->pressure();
   response.humidity = air_sensor_->humidity();
